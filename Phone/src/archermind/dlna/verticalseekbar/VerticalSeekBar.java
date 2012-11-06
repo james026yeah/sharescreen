@@ -7,6 +7,7 @@ import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.AbsSeekBar;
 
 /**
@@ -23,6 +24,8 @@ import android.widget.AbsSeekBar;
  */
 public class VerticalSeekBar extends AbsSeekBar {
 	private Drawable mThumb;
+	private int height;
+	private int width;
 
 	public VerticalSeekBar(Context context) {
 		this(context, null);
@@ -79,9 +82,9 @@ public class VerticalSeekBar extends AbsSeekBar {
 
 	protected synchronized void onMeasure(int widthMeasureSpec,
 			int heightMeasureSpec) {
-		// height = View.MeasureSpec.getSize(heightMeasureSpec);
-		// width = View.MeasureSpec.getSize(widthMeasureSpec);
-		this.setMeasuredDimension(29, 120);
+		height = View.MeasureSpec.getSize(heightMeasureSpec);
+		width = View.MeasureSpec.getSize(widthMeasureSpec);
+		this.setMeasuredDimension(height, width);
 
 	}
 
