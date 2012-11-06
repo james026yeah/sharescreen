@@ -1,0 +1,24 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/pop_bg"
+    android:orientation="vertical" >
+
+    <TextView
+        android:layout_width="240dp"
+        android:layout_height="32dp"
+        android:gravity="left|center_vertical"
+        android:text="Waiting for TV"
+        android:textColor="@android:color/white" />
+
+
+
+    <TextView
+        android:id="@+id/item_ok"
+        android:layout_width="240dp"
+        android:layout_height="32dp"
+        android:gravity="center"
+        android:text="OK"
+        android:textAppearance="@style/MoreOptionsTextAppearanceFirst" />
+
+</LinearLayout>

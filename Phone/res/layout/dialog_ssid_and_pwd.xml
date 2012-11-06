@@ -1,0 +1,46 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/pop_bg"
+    android:orientation="vertical" >
+
+    <TextView
+        android:layout_width="240dp"
+        android:layout_height="32dp"
+        android:gravity="left|center_vertical"
+        android:text="Select Control Pages"
+        android:textColor="@android:color/white" />
+
+    <TextView
+        android:id="@+id/item_ssid"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:clickable="true"
+        android:drawableRight="@drawable/list_btn_arrow_sel"
+        android:gravity="left|center_vertical"
+        android:text="SSID" />
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/pop_line" />
+
+    <EditText
+        android:id="@+id/item_pwd"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:clickable="true"
+        android:drawableBottom="@drawable/pop_line"
+        android:drawableRight="@drawable/list_btn_arrow_sel"
+        android:gravity="left|center_vertical"
+        android:text="Password" />
+
+    <TextView
+        android:id="@+id/item_ok"
+        android:layout_width="240dp"
+        android:layout_height="32dp"
+        android:gravity="center"
+        android:text="OK"
+        android:textAppearance="@style/MoreOptionsTextAppearanceFirst" />
+
+</LinearLayout>

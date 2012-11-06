@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#aa000000"
+    android:gravity="center_horizontal"
+    android:orientation="vertical" >
+
+    <TextView
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="72dp"
+        android:drawableLeft="@drawable/gesture_icon1"
+        android:gravity="center_vertical"
+        android:text="@string/gesture_guide_tip1" />
+
+    <TextView
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:drawableLeft="@drawable/gesture_icon2"
+        android:gravity="center_vertical"
+        android:text="@string/gesture_guide_tip2" />
+
+    <TextView
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:drawableLeft="@drawable/gesture_icon3"
+        android:gravity="center_vertical"
+        android:text="@string/gesture_guide_tip3" />
+
+    <TextView
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:drawableLeft="@drawable/gesture_icon4"
+        android:gravity="center_vertical"
+        android:text="@string/gesture_guide_tip4" />
+
+    <TextView
+        android:id="@+id/btn_ok"
+        android:layout_width="272dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/gesture_btn_sel"
+        android:clickable="true"
+        android:gravity="center"
+        android:text="OK"
+        android:textAppearance="@style/MoreOptionsTextAppearanceFirst" />
+
+</LinearLayout>
