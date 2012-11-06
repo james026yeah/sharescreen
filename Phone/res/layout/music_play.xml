@@ -108,6 +108,7 @@
                     android:background="@drawable/music_icon_sound" />
 
                 <archermind.dlna.verticalseekbar.VerticalSeekBar
+                    android:id="@+id/volumecontrol"
                     android:layout_width="30dip"
                     android:layout_height="110dip"
                     android:layout_gravity="center_horizontal" >
