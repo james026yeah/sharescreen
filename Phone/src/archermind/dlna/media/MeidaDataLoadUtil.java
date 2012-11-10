@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import org.cybergarage.upnp.Device;
 import org.cybergarage.upnp.std.av.controller.MediaController;
 import org.cybergarage.upnp.std.av.server.object.ContentNode;
+import org.cybergarage.upnp.std.av.server.object.DIDLLiteNode;
 import org.cybergarage.upnp.std.av.server.object.container.ContainerNode;
 import org.cybergarage.upnp.std.av.server.object.item.ItemNode;
 
@@ -40,8 +41,10 @@ public class MeidaDataLoadUtil {
 						continue;
 					}
 					ItemNode node = (ItemNode) photoDirectoryNode.getNode(j);
+					DIDLLiteNode didNode = new DIDLLiteNode();
+					didNode.addNode(node);
 					//String duration,String thumbFilePath,String filePath,String title,String itemUri
-					photoList.add(new PhotoItem(node.getAlbumArtURI(),node.getPropertyValue(UPnp.FILEPATH),node.getTitle(),node.getFirstResource().getURL()));
+					photoList.add(new PhotoItem(node.getAlbumArtURI(),node.getPropertyValue(UPnp.FILEPATH),node.getTitle(),node.getFirstResource().getURL(),didNode.toString()));
 				}
 				PhotoAlbum pa = new PhotoAlbum(photoContainerNode.getContentNode(i).getTitle(), photoList);
 				photoAblumList.add(pa);
@@ -108,7 +111,11 @@ public class MeidaDataLoadUtil {
 					String filePath=node.getPropertyValue(UPnp.FILEPATH);
 					String title=node.getTitle();
 					String itemUri=node.getFirstResource().getURL();
-					allMusicList.add(new MusicItem(duration,artist,album,albumArtURI,filePath,title,itemUri));
+					DIDLLiteNode didNode = new DIDLLiteNode();
+					didNode.addNode(node);
+					String ss = didNode.toXMLString();
+					String s2 = didNode.toString();
+					allMusicList.add(new MusicItem(duration,artist,album,albumArtURI,filePath,title,itemUri,didNode.toString()));
 				}
 			}
 		} catch (Exception e) {
@@ -143,7 +150,9 @@ public class MeidaDataLoadUtil {
 					String filePath=node.getPropertyValue(UPnp.FILEPATH);
 					String title=node.getTitle();
 					String itemUri=node.getFirstResource().getURL();
-					musicList.add(new MusicItem(duration,artist,malbum,albumArtURI,filePath,title,itemUri));
+					DIDLLiteNode didNode = new DIDLLiteNode();
+					didNode.addNode(node);
+					musicList.add(new MusicItem(duration,artist,malbum,albumArtURI,filePath,title,itemUri,didNode.toString()));
 				}
 				Album album = new Album(albumsMusicNode.getContentNode(i).getTitle(), musicList);
 				albumList.add(album);
@@ -179,7 +188,9 @@ public class MeidaDataLoadUtil {
 					String filePath=node.getPropertyValue(UPnp.FILEPATH);
 					String title=node.getTitle();
 					String itemUri=node.getFirstResource().getURL();
-					musicList.add(new MusicItem(duration,artist,malbum,albumArtURI,filePath,title,itemUri));
+					DIDLLiteNode didNode = new DIDLLiteNode();
+					didNode.addNode(node);
+					musicList.add(new MusicItem(duration,artist,malbum,albumArtURI,filePath,title,itemUri,didNode.toString()));
 				}
 				Artist artist = new Artist(artistsMusicNode.getContentNode(i).getTitle(), musicList);
 				artistList.add(artist);
@@ -216,7 +227,9 @@ public class MeidaDataLoadUtil {
 					String filePath=node.getPropertyValue(UPnp.FILEPATH);
 					String title=node.getTitle();
 					String itemUri=node.getFirstResource().getURL();
-					videoList.add(new VideoItem(duration,albumArtURI,filePath,title,itemUri));
+					DIDLLiteNode didNode = new DIDLLiteNode();
+					didNode.addNode(node);
+					videoList.add(new VideoItem(duration,albumArtURI,filePath,title,itemUri,didNode.toString()));
 				}
 				VideoCategory video = new VideoCategory(videoContainerNode.getContentNode(i).getTitle(), videoList);
 				videoCategoryList.add(video);

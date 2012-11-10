@@ -10,11 +10,14 @@ import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
 import android.util.Log;
+import android.view.KeyEvent;
 
 public class SettingActivity extends PreferenceActivity implements
 		OnSharedPreferenceChangeListener {
 
 	public static final String PREFS_SHOW_GUIDE_PAGE = "showGuidePage";
+	
+	public static final String PREFS_IGNORE_VERSION = "ignoreVersion";
 
 	private EditTextPreference mLocalServiceName;
 
@@ -67,5 +70,18 @@ public class SettingActivity extends PreferenceActivity implements
 		}
 
 		return super.onPreferenceTreeClick(preferenceScreen, preference);
+	}
+	
+	
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		Log.d("MoreOptionsActivity", "keyCode: " + keyCode);
+		return super.onKeyDown(keyCode, event);
+	}
+	
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		Log.d("dispatchKeyEvent", "keyCode: " + event.getKeyCode());
+		return super.dispatchKeyEvent(event);
 	}
 }

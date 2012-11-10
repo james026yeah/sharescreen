@@ -84,9 +84,10 @@
                         android:background="@drawable/music_bth_music" />
 
                     <TextView
+                        android:id="@+id/allmusiccount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="所有音乐（63）" />
+                        android:text="所有音乐（0）" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -105,9 +106,10 @@
                         android:background="@drawable/music_bth_album_select" />
 
                     <TextView
+                        android:id="@+id/albumcount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="专辑（63）" />
+                        android:text="专辑（0）" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -131,9 +133,10 @@
                         android:background="@drawable/music_bth_album_select" />
 
                     <TextView
+                        android:id="@+id/artistcount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="歌手（63）" />
+                        android:text="歌手（0）" />
                 </LinearLayout>
 
             </LinearLayout>

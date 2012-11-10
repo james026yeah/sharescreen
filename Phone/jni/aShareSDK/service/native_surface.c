@@ -26,6 +26,7 @@
 #include "utils.h"
 #include "comm.h"
 
+extern int g_clear_screen_client;
 #if defined(LOG_DEBUG) && LOG_DEBUG == 1
 
 #define LOG_TIME_DEFINE(n) \
@@ -110,6 +111,10 @@ static void *surface_thread(void *arg)
 		size = get_image_buffer(&stream);
 		jpeg = stream;
 
+		g_clear_screen_client = jpeg->encode_time;
+		LOGD("Jerry: final g_clear_screen_client = %d",
+				g_clear_screen_client);
+
 		LOG_D("surface get buffer time delay: %d ms\n", (int)(timestamp() - jpeg->timestamp));
 		src.bits = stream + sizeof(struct jpeg_frame);
 		LOG_TIME_END(buff);
@@ -136,6 +141,7 @@ static void *surface_thread(void *arg)
 
 //		LOG_D("------get buff = %ld us, decode and display = %ld us-----\n",
 //				LOG_TIME(buff), LOG_TIME(decode));
+		g_clear_screen_client = 0;
 	}
 
 	return ((void *)0);

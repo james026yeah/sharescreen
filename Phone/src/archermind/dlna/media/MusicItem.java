@@ -4,7 +4,7 @@ import android.os.Parcelable;
 
 public class MusicItem implements Parcelable {
 
-	public MusicItem(String duration,String artist,String album,String albumArtURI,String filePath,String title,String itemUri) {
+	public MusicItem(String duration,String artist,String album,String albumArtURI,String filePath,String title,String itemUri,String metaData) {
 		this.duration=duration;
 		this.album=album;
 		this.artist=artist;
@@ -12,6 +12,7 @@ public class MusicItem implements Parcelable {
 		this.filePath=filePath;
 		this.itemUri=itemUri;
 		this.title=title;
+		this.metaData = metaData;
 
 	}
 
@@ -22,7 +23,15 @@ public class MusicItem implements Parcelable {
 	public String filePath;
 	public String title;
 	public String itemUri;
-
+	public String metaData;
+	public String size;
+	public String mime_type;
+	public String year;
+	public int itemId;
+	
+	public MusicItem() {
+		
+	}
 	public MusicItem(Parcel source) {
 		duration = source.readString();
 		artist = source.readString();
@@ -31,7 +40,11 @@ public class MusicItem implements Parcelable {
 		filePath = source.readString();
 		title = source.readString();
 		itemUri=source.readString();
-
+		metaData=source.readString();
+		size=source.readString();
+		mime_type=source.readString();
+		year=source.readString();
+		itemId=source.readInt();
 	}
 	
 	public String getDuration() {
@@ -105,7 +118,11 @@ public class MusicItem implements Parcelable {
 		dest.writeString(filePath);
 		dest.writeString(title);
 		dest.writeString(itemUri);
-
+		dest.writeString(metaData);
+		dest.writeString(size);
+		dest.writeString(mime_type);
+		dest.writeString(year);
+		dest.writeInt(itemId);
 	}
 
 	// 实例化静态内部对象CREATOR实现接口Parcelable.Creator

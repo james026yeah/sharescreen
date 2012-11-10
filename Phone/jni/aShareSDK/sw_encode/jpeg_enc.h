@@ -15,9 +15,9 @@
 #define QUALITY_LEVEL4		25
 #define QUALITY_LEVEL5		0
 
-#define QUALCOMM_JPEG_LIB		"/data/data/com.archermind.ashare/lib/libqcom_jpeg.so"
-#define QUALCOMM_JPEG_LIB2		"/data/data/com.archermind.ashare/lib/libqcom_jpeg2.so"
-#define SAMSUNG_JPEG_LIB		"/data/data/com.archermind.ashare/lib/libsamsung_jpeg.so"
+#define QUALCOMM_JPEG_LIB		"/data/data/archermind.dlna.mobile/lib/libqcom_jpeg.so"
+#define QUALCOMM_JPEG_LIB2		"/data/data/archermind.dlna.mobile/lib/libqcom_jpeg2.so"
+#define SAMSUNG_JPEG_LIB		"/data/data/archermind.dlna.mobile/lib/libsamsung_jpeg.so"
 
 #define SYSTEM_QUALCOMM_LIB		"/system/lib/libmmjpeg.so"
 #define SYSTEM_SAMSUNG_LIB		"/system/lib/libs3cjpeg.so"
@@ -62,6 +62,7 @@ struct hw_enc_param {
 	uint32_t		preference;
 	uint32_t		bytes_per_pixel;
 	cpu_platform_t		platform_type;
+	int angle;
 
 };
 

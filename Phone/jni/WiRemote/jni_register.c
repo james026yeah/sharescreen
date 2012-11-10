@@ -7,11 +7,15 @@
 #define LOG_TAG "WIREMOTE_JNI"
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG ,  LOG_TAG , __VA_ARGS__)
 #define  JNIDEFINE(fname) Java_archermind_dlna_natives_WiRemoteAgent_##fname
+#define VIRTUAL_SERVER_WIDTH	800
+#define VIRTUAL_SERVER_HEIGHT	800
 
 static JavaVM *g_javavm = NULL;
 static char j2c_string[128];
 static jclass jni_class;
 static jmethodID jni_method;
+static float x_scale, y_scale;
+
 static char *jstring2cstring(JNIEnv *env, jstring string)
 {
 	int len = (*env)->GetStringLength(env, string);
@@ -20,15 +24,31 @@ static char *jstring2cstring(JNIEnv *env, jstring string)
 	return j2c_string;
 }
 
-jint JNIDEFINE(init)(JNIEnv *env, jobject obj) 
+jint JNIDEFINE(init)(JNIEnv *env, jobject obj, int width, int height) 
 {
 	jni_class = obj;
 	jni_method = 0;
 	if(!g_javavm)
 		(*env)->GetJavaVM(env, &g_javavm);
 	init_wiremote();
+	LOGD("width = %d, height = %d\n", width, height);
+	x_scale = (float)VIRTUAL_SERVER_WIDTH/height;
+	y_scale = (float)VIRTUAL_SERVER_HEIGHT/width;
+	LOGD("x_scale = %f, y_scale = %f\n", x_scale, y_scale);
 	jni_method = (*env)->GetStaticMethodID(env, jni_class, "callback", "(Ljava/lang/String;)V");
-	connect_server("10.11.18.34");
+	return 0;
+}
+
+jint JNIDEFINE(connectServer)(JNIEnv *env, jobject obj, jstring string)
+{
+	int len;
+	char *cstring;
+	cstring = jstring2cstring(env, string);
+	len = strlen(cstring);
+	if(len >= 7 && len <=15)
+		connect_server(cstring);
+	else
+		LOGD("ip address error!\n");
 	return 0;
 }
 
@@ -54,8 +74,20 @@ jint JNIDEFINE(setKeyEvent)(JNIEnv *env, jobject obj, int press, jint code)
 	return 0;
 }
 
-jint JNIDEFINE(setTouchEvent)(JNIEnv *env, jobject obj, int press, int x, int y)
+jint JNIDEFINE(setTouchEvent)(JNIEnv *env, jobject obj, int x1, int y1, int x2, int y2, int action)
 {
+	LOGD("real value :(x1, y1) = (%d, %d)\n", x1, y1);
+	LOGD("real value :(x2, y2) = (%d, %d)\n", x2, y2);
+	x1 *= x_scale;
+        y1 *= y_scale;
+	x2 *= x_scale;
+	y2 *= y_scale;
+	LOGD("scale value :(x1, y1) = (%d, %d)\n", x1, y1);
+	LOGD("scale value :(x2, y2) = (%d, %d)\n", x2, y2);
+
+	touch_handle(x1, y1, x2, y2, action);
+		
+	return 0;
 	/*MsgMulTouch_st touch;
 	env = env;
 	obj = obj;

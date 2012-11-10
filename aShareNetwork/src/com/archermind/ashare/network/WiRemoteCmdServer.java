@@ -48,7 +48,10 @@ public final class WiRemoteCmdServer {
 	};
 	
 	public interface onWiRemoteCmdListener {
-		public void onConnectApRequest(int sessionId, String ssid, String password);
+		public void onConnectAp(int sessionId, String ssid, String password);
+		public void onDisconnectWifi(int sessionId);
+		public void onOTAUpdate(int sessionId);
+		public void onRenameDevice(int sessionId, String newName);
 	}
 	
 	public void setOnWiRemoteCmdListener(onWiRemoteCmdListener ls) {
@@ -73,8 +76,16 @@ public final class WiRemoteCmdServer {
 		int command = cmdParser.getInt(Commands.KEY_CMD, Commands.CMD_INVALID);
 		switch(command) {
 		case Commands.CMD_STICK_CONNECT_AP_REQ:
-			mListener.onConnectApRequest(sessionId, cmdParser.getString(Commands.KEY_AP_SSID), 
+			mListener.onConnectAp(sessionId, cmdParser.getString(Commands.KEY_AP_SSID), 
 					cmdParser.getString(Commands.KEY_AP_PASSWD));
+			break;
+		case Commands.CMD_STICK_DISCONNECT_WIFI:
+			mListener.onDisconnectWifi(sessionId);
+			break;
+		case Commands.CMD_STICK_OTA:
+			mListener.onOTAUpdate(sessionId);
+			break;
+		case Commands.CMD_STICK_RENAME_RENDERER:
 			break;
 		default:
 			break;

@@ -1,5 +1,7 @@
 package archermind.dlna.mobile;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,34 +9,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.annotation.SuppressLint;
-import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
-import android.provider.MediaStore;
+import android.provider.MediaStore.Video.Thumbnails;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -43,6 +40,8 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -56,8 +55,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import archermind.dlna.gallery.IImage;
-import archermind.dlna.gallery.IImageList;
+import android.widget.Toast;
 import archermind.dlna.media.Album;
 import archermind.dlna.media.Artist;
 import archermind.dlna.media.MusicCategoryInfo;
@@ -67,14 +65,14 @@ import archermind.dlna.media.PhotoItem;
 import archermind.dlna.media.VideoCategory;
 import archermind.dlna.media.VideoItem;
 
+@SuppressLint({ "HandlerLeak", "HandlerLeak"
+})
 public class LocalMediaActivity extends BaseActivity {
 	
 	private static final String TAG = "LocalMediaActivity";
 	private static final boolean DBG = true;
 	
-	private static final int THUMB_SIZE = 142;
 	private static final int CURRENT_TAB_IMAGE_HEIGHT = 5;
-	private static final int PROGRESS_DIALOG_DISMISS = 0;
 	
 	public static final int TIME_SECOND = 1000;
 	public static final int TIME_MINUTE = TIME_SECOND * 60;
@@ -84,7 +82,7 @@ public class LocalMediaActivity extends BaseActivity {
 	private static final int TAB_MUSIC = 1;
 	private static final int TAB_VIDEO = 2;
 	
-	public static final int CROP_MSG = 2;
+	private static final int PROGRESS_BAR_DISMISS = 0;
 	
 	private RelativeLayout mMainView;
 	
@@ -103,7 +101,11 @@ public class LocalMediaActivity extends BaseActivity {
 	private GridView mImageThumbnailGridView;
 	private RelativeLayout mNoImagesView;
 	private RelativeLayout mNoVideosView;
-	private ProgressDialog mProgressDialog;
+	
+	private Animation mProgressBarAnim;
+	private LinearLayout mProgressBar;
+	private ImageView mProgressIcon;
+	private TextView mProgressText;
 	
 	private ListView mMusicList;
 	
@@ -114,7 +116,6 @@ public class LocalMediaActivity extends BaseActivity {
 	private int mCurrentTabIndex = 0;
 	private int mScreenWidth;
 	private boolean mIsMusicList = false;
-	private boolean mAbort = false;
 	private boolean mOnGetVideoFinished = false;
 	private boolean mOnGetPhotoFinished = false;
 	
@@ -123,12 +124,10 @@ public class LocalMediaActivity extends BaseActivity {
 	private MyImageAdapter mImageThumbnailAdapter;
 	private VideoListViewAdapter mVideoListViewAdapter;
 	private ExpandableListView mExpandableListView;
-	private IImageList mAllImages;
-	private ImageManager.ImageListParam mParam;
 	
-	private AlbumListAdapter mAlbumListAdapter;
-	private ArtistListAdapter mArtistListAdapter;
-	private MusicListAdapter mAllMusicAdapter;
+	private AlbumListAdapter mAlbumListAdapter = null;
+	private ArtistListAdapter mArtistListAdapter = null;
+	private MusicListAdapter mAllMusicAdapter = null;
 	
 	private ArrayList<MusicItem> mAllMusicItem;
 	private ArrayList<MusicCategoryInfo> mMusicCateInfoItem;
@@ -140,8 +139,10 @@ public class LocalMediaActivity extends BaseActivity {
 	private boolean mOnGetMusicAlbumFinished = false;
 	private IMusicPlayService mMusicPlaySer = null;
 	private static List<String> mAllMusicList = new ArrayList<String>();
-	
-	private Drawable mFrameGalleryMask;
+	private TextView mAllMusicNum;
+	private TextView mAlbumNum;
+	private TextView mAritistNum;
+	private TextView mMusicListTitle;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -158,42 +159,17 @@ public class LocalMediaActivity extends BaseActivity {
 		initViewPager();
 		initCurrentTabImage(TAB_IMAGE);
 		
-		showProgressDialog();
-		mHandler.sendEmptyMessageDelayed(PROGRESS_DIALOG_DISMISS, 1000 * 15);
-	}
-	
-	@Override
-	protected void onStart() {
-		super.onStart();
-		log("onStart is call");
-	}
-	
-	@Override
-	protected void onResume() {
-		super.onResume();
-		log("onResume is call");
-	}
-	
-	@Override
-	protected void onStop() {
-		super.onStop();
-		log("onStop is call");
-	}
-	
-	@Override
-	public void onDestroy() {
-		super.onDestroy();
-		log("onDestroy is call");
+		showProgressBar();
+		mHandler.sendEmptyMessageDelayed(PROGRESS_BAR_DISMISS, 1000 * 15);
 	}
 	
 	Handler mHandler = new Handler() {
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
-				case PROGRESS_DIALOG_DISMISS:
-					if (mProgressDialog.isShowing()) {
-						mProgressDialog.dismiss();
-					}
+				case PROGRESS_BAR_DISMISS: {
+					dismissProgressBar();
 					break;
+				}
 			}
 		};
 	};
@@ -208,7 +184,6 @@ public class LocalMediaActivity extends BaseActivity {
 			mMusicCateInfoItem = musicCategory;
 			log("musics number = " + mMusicCateInfoItem.size());
 		}
-		super.onGetMusicCategoryData(musicCategory);
 	}
 	
 	@Override
@@ -221,6 +196,8 @@ public class LocalMediaActivity extends BaseActivity {
 			mMusicArtistItem = artists;
 			log("artists number = " + mMusicArtistItem.size());
 			initMusicArtistList();
+			mAritistNum = (TextView) findViewById(R.id.artistcount);
+			mAritistNum.setText(getResources().getString(R.string.lable_artist) + "（" + mMusicArtistItem.size() + "）");
 		}
 	}
 	
@@ -234,6 +211,8 @@ public class LocalMediaActivity extends BaseActivity {
 			mMusicAlbumItem = albums;
 			log("albums number = " + mMusicAlbumItem.size());
 			initMusicAlbumList();
+			mAlbumNum = (TextView) findViewById(R.id.albumcount);
+			mAlbumNum.setText(getResources().getString(R.string.lable_album) + "（" + mMusicAlbumItem.size() + "）");
 		}
 	}
 	
@@ -250,6 +229,8 @@ public class LocalMediaActivity extends BaseActivity {
 			}
 			log("musics number = " + mAllMusicItem.size());
 			initMusicList();
+			mAllMusicNum = (TextView) findViewById(R.id.allmusiccount);
+			mAllMusicNum.setText(getResources().getString(R.string.lable_all_music) + "（" + mAllMusicItem.size() + "）");
 		}
 	}
 	
@@ -262,13 +243,14 @@ public class LocalMediaActivity extends BaseActivity {
 		else {
 			mVideoCategoryList = videoCategory;
 			log("video categroy size = " + mVideoCategoryList.size());
+			initVideoGridView();
 		}
 	}
 	
 	@Override
 	protected void onGetPhotos(ArrayList<PhotoAlbum> photoAlbum) {
 		mOnGetPhotoFinished = true;
-		dismissProgressDialog();
+		dismissProgressBar();
 		if (photoAlbum == null) {
 			log("photo album is null");
 		}
@@ -294,193 +276,20 @@ public class LocalMediaActivity extends BaseActivity {
 		}
 	}
 	
-	private void showProgressDialog() {
-		mProgressDialog = ProgressDialog.show(this, getResources()
-				.getString(R.string.local_media_progress_dialog_title),
-				getResources().getString(R.string.local_media_progress_dialog_message));
-		mProgressDialog.show();
+	private void showProgressBar() {
+		mProgressBar = (LinearLayout) findViewById(R.id.progress_bar);
+		mProgressBarAnim = AnimationUtils.loadAnimation(this, R.anim.progress_bar_anim);
+		mProgressIcon = (ImageView) findViewById(R.id.progress_icon);
+		mProgressText = (TextView) findViewById(R.id.progress_text);
+		
+		mProgressBar.setVisibility(View.VISIBLE);
+		mProgressIcon.startAnimation(mProgressBarAnim);
+		mProgressText.setText(getResources().getString(R.string.local_media_progress_dialog_message));
 	}
 	
-	private void dismissProgressDialog() {
-		if (mProgressDialog != null) {
-			if (mProgressDialog.isShowing()) {
-				mProgressDialog.dismiss();
-			}
-		}
-	}
-	
-	// This is run in the worker thread.
-	// private void checkThumbBitmap(ArrayList<Item> allItems) {
-	// for (Item item : allItems) {
-	// final Bitmap b = makeMiniThumbBitmap(THUMB_SIZE, THUMB_SIZE,
-	// item.mImageList);
-	// if (mAbort) {
-	// if (b != null)
-	// b.recycle();
-	// return;
-	// }
-	//
-	// final Item finalItem = item;
-	// mHandler.post(new Runnable() {
-	// public void run() {
-	// // updateThumbBitmap(finalItem, b);
-	// }
-	// });
-	// }
-	// }
-	
-	// private Bitmap makeImageFrameBitmap(int width, int height, String path) {
-	//
-	// Bitmap bitmap = Bitmap.createBitmap(width, height,
-	// Bitmap.Config.ARGB_8888);
-	// Canvas canvas = new Canvas(bitmap);
-	//
-	// // Paint paint = new Paint();
-	// // paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_OVER));
-	// // paint.setStyle(Paint.Style.FILL);
-	// // canvas.drawRect(0, 0, width, height, paint);
-	//
-	// Bitmap image = BitmapFactory.decodeFile(path);
-	//
-	// Drawable drawable = new BitmapDrawable(image);
-	// drawable.setBounds(0, 0, width, height);
-	// drawable.draw(canvas);
-	//
-	// if (image != null) {
-	// image.recycle();
-	// }
-	//
-	// return bitmap;
-	// }
-	
-	// private Bitmap makeImageThumbnailBitmap(int width, int height, String
-	// path) {
-	//
-	// Bitmap bitmap = Bitmap.createBitmap(width, height,
-	// Bitmap.Config.ARGB_8888);
-	// Canvas canvas = new Canvas(bitmap);
-	//
-	// // Paint paint = new Paint();
-	// // paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_OVER));
-	// // paint.setStyle(Paint.Style.FILL);
-	// // canvas.drawRect(0, 0, width, height, paint);
-	//
-	// Bitmap image = BitmapFactory.decodeFile(path);
-	//
-	// Drawable drawable = new BitmapDrawable(image);
-	// drawable.setBounds(0, 0, width, height);
-	// drawable.draw(canvas);
-	//
-	// if (image != null) {
-	// image.recycle();
-	// }
-	//
-	// return bitmap;
-	// }
-	
-	// This is run in worker thread.
-	private Bitmap makeMiniThumbBitmap(int width, int height, IImageList images) {
-		int count = images.getCount();
-		// We draw three different version of the folder image depending on the
-		// number of images in the folder.
-		// For a single image, that image draws over the whole folder.
-		// For two or three images, we draw the two most recent photos.
-		// For four or more images, we draw four photos.
-		final int padding = 0;
-		int imageWidth = width - 30;
-		int imageHeight = height - 30;
-		int offsetWidth = 0;
-		int offsetHeight = 0;
-		
-		// imageWidth = (imageWidth - padding) / 2; // 2 here because we show
-		// two
-		// images
-		// imageHeight = (imageHeight - padding) / 2; // per row and column
-		
-		final Paint p = new Paint();
-		final Bitmap b = Bitmap.createBitmap(imageWidth, imageHeight, Bitmap.Config.ARGB_8888);
-		final Canvas c = new Canvas(b);
-		final Matrix m = new Matrix();
-		
-		// draw the whole canvas as transparent
-		p.setColor(0x00000000);
-		c.drawPaint(p);
-		
-		// load the drawables
-		// loadDrawableIfNeeded();
-		
-		// draw the mask normally
-		p.setColor(0x00000000);
-		mFrameGalleryMask.setBounds(10, 10, imageWidth, imageHeight);
-		mFrameGalleryMask.draw(c);
-		
-		Paint pdpaint = new Paint();
-		pdpaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
-		
-		pdpaint.setStyle(Paint.Style.FILL);
-		c.drawRect(10, 10, imageWidth, imageHeight, pdpaint);
-		
-		// for (int i = 0; i < 4; i++) {
-		if (mAbort) {
-			return null;
-		}
-		
-		Bitmap temp = null;
-		IImage image = 0 < count ? images.getImageAt(0) : null;
-		
-		if (image != null) {
-			temp = image.miniThumbBitmap();
-		}
-		
-		// if (temp != null) {
-		// if (ImageManager.isVideo(image)) {
-		// Bitmap newMap = temp.copy(temp.getConfig(), true);
-		// Canvas overlayCanvas = new Canvas(newMap);
-		// int overlayWidth = mVideoOverlay.getIntrinsicWidth();
-		// int overlayHeight = mVideoOverlay.getIntrinsicHeight();
-		// int left = (newMap.getWidth() - overlayWidth) / 2;
-		// int top = (newMap.getHeight() - overlayHeight) / 2;
-		// Rect newBounds = new Rect(left, top, left + overlayWidth, top +
-		// overlayHeight);
-		// mVideoOverlay.setBounds(newBounds);
-		// mVideoOverlay.draw(overlayCanvas);
-		// temp.recycle();
-		// temp = newMap;
-		// }
-		//
-		// temp = Util.transform(m, temp, imageWidth, imageHeight, true,
-		// Util.RECYCLE_INPUT);
-		// }
-		//
-		Bitmap thumb = Bitmap.createBitmap(imageWidth, imageHeight, Bitmap.Config.ARGB_8888);
-		Canvas tempCanvas = new Canvas(thumb);
-		if (temp != null) {
-			tempCanvas.drawBitmap(temp, new Matrix(), new Paint());
-		}
-		// mCellOutline.setBounds(0, 0, imageWidth, imageHeight);
-		// mCellOutline.draw(tempCanvas);
-		
-		placeImage(thumb, c, pdpaint, imageWidth, padding, imageHeight, padding, offsetWidth, offsetHeight, 0);
-		
-		thumb.recycle();
-		
-		if (temp != null) {
-			temp.recycle();
-		}
-		// }
-		
-		return b;
-	}
-	
-	private static void placeImage(Bitmap image, Canvas c, Paint paint, int imageWidth, int widthPadding,
-			int imageHeight, int heightPadding, int offsetX, int offsetY, int pos) {
-		int row = pos / 2;
-		int col = pos - (row * 2);
-		
-		int xPos = (col * (imageWidth + widthPadding)) - offsetX;
-		int yPos = (row * (imageHeight + heightPadding)) - offsetY;
-		
-		c.drawBitmap(image, xPos, yPos, paint);
+	private void dismissProgressBar() {
+		mProgressBar.setVisibility(View.INVISIBLE);
+		mProgressIcon.clearAnimation();
 	}
 	
 	private void getScreenWidth() {
@@ -620,6 +429,10 @@ public class LocalMediaActivity extends BaseActivity {
 			
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+				
+				log("image uri = " + imageList.get(position).getItemUri());
+				postPlay(imageList.get(position).getItemUri(), IMAGE_TYPE);
+				
 				Intent intent = new Intent(LocalMediaActivity.this, ImageViewActivity.class);
 				intent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
 				intent.putExtra(ImageViewActivity.IMAGE_INDEX, position);
@@ -648,14 +461,11 @@ public class LocalMediaActivity extends BaseActivity {
 				mExpandableListView.setAdapter(mVideoListViewAdapter);
 				mExpandableListView.setGroupIndicator(null);
 				
-				// show the first group video
-				mExpandableListView.expandGroup(0);
-				
 				// default to show all video
-				// int groupCount = mVideoListViewAdapter.getGroupCount();
-				// for (int i = 0; i < groupCount; i++) {
-				// mExpandableListView.expandGroup(i);
-				// }
+				int groupCount = mVideoListViewAdapter.getGroupCount();
+				for (int i = 0; i < groupCount; i++) {
+					mExpandableListView.expandGroup(i);
+				}
 			}
 		}
 		
@@ -783,17 +593,6 @@ public class LocalMediaActivity extends BaseActivity {
 		
 		@Override
 		public Object instantiateItem(ViewGroup container, int position) {
-			log("view pager position = " + position);
-			switch (position) {
-				case 0:
-					initImageFrameGridView();
-					break;
-				case 1:
-					break;
-				case 2:
-					initVideoGridView();
-					break;
-			}
 			((ViewPager) container).addView(list.get(position), 0);
 			return list.get(position);
 		}
@@ -831,25 +630,6 @@ public class LocalMediaActivity extends BaseActivity {
 
 			ContentResolver res = getApplicationContext().getContentResolver();
 			Uri uri = Uri.parse(mAllMusic.get(position).getAlbumArtURI());
-//			BitmapFactory.Options sBitmapOptions = new BitmapFactory.Options();
-//			bm = BitmapFactory.decodeFile(uri);
-			if (uri != null) {
-				InputStream in = null;
-				try {
-					Log.e("james","goin");
-					in = res.openInputStream(uri);
-					bm = BitmapFactory.decodeStream(in);
-				} catch (FileNotFoundException ex) {
-					Log.e("james","fileNotfound");
-				} finally {
-					try {
-						if (in != null) {
-							in.close();
-						}
-					} catch (IOException ex) {
-					}
-				}
-			}
 			if (convertView == null) {
 				view = getLayoutInflater().inflate(R.layout.music_list_item, null);
 			}
@@ -864,9 +644,9 @@ public class LocalMediaActivity extends BaseActivity {
 			titlemain.setText(mAllMusic.get(position).getTitle());
 			titlesec.setText(mAllMusic.get(position).getArtist());
 			log("artist =" + mAllMusic.get(position).getArtist());
-			detail.setText(mAllMusic.get(position).getDuration());
-			if (bm != null) {
-				img.setImageBitmap(bm);
+			detail.setText(setDurationFormat(Integer.parseInt(mAllMusic.get(position).getDuration())));
+			if (getMusicImg(mAllMusic.get(position).getAlbumArtURI()) != null) {
+				img.setImageBitmap(getMusicImg(mAllMusic.get(position).getAlbumArtURI()));
 			}
 			return view;
 		}
@@ -912,8 +692,11 @@ public class LocalMediaActivity extends BaseActivity {
 			detail = (TextView) view.findViewById(R.id.detail);
 
 			titlemain.setText(mMusicAlbum.get(position).getName());
-			titlesec.setText(mMusicAlbum.size()+"首歌曲");
+			titlesec.setText(mMusicAlbum.get(position).getMusicsList().size() + getResources().getString(R.string.music_num));
 			detail.setText("");
+			if (getMusicImg(mMusicAlbum.get(position).getMusicsList().get(0).getAlbumArtURI()) != null) {
+				img.setImageBitmap(getMusicImg(mMusicAlbum.get(position).getMusicsList().get(0).getAlbumArtURI()));
+			}
 
 			return view;
 		}
@@ -959,8 +742,11 @@ public class LocalMediaActivity extends BaseActivity {
 			detail = (TextView) view.findViewById(R.id.detail);
 
 			titlemain.setText(mMusicArtist.get(position).getName());
-			titlesec.setText("2");
+			titlesec.setText(mMusicArtistItem.get(position).getMusicsList().size() + getResources().getString(R.string.music_num));
 			detail.setText("");
+			if (getMusicImg(mMusicArtistItem.get(position).getMusicsList().get(0).getAlbumArtURI()) != null) {
+				img.setImageBitmap(getMusicImg(mMusicArtistItem.get(position).getMusicsList().get(0).getAlbumArtURI()));
+			}
 
 			return view;
 		}
@@ -997,6 +783,33 @@ public class LocalMediaActivity extends BaseActivity {
 			return position;
 		}
 		
+		private Bitmap createThumbnail(String path, int width, int height) {
+			try {
+				File file = new File(path);
+				// Decode image size
+				BitmapFactory.Options o = new BitmapFactory.Options();
+				o.inJustDecodeBounds = true;
+				BitmapFactory.decodeStream(new FileInputStream(file), null, o);
+				
+				// The new size we want to scale to
+				// final int REQUIRED_SIZE=getScreenWidthAndHeight();
+				// Find the correct scale value. It should be the power of
+				// 2.
+				int scale = 1;
+				while (o.outWidth / scale / 2 >= width - 20 && o.outHeight / scale / 2 >= height - 20)
+					scale *= 2;
+				o.inJustDecodeBounds = false;
+				// Decode with inSampleSize
+				BitmapFactory.Options o2 = new BitmapFactory.Options();
+				o2.inSampleSize = scale;
+				return ThumbnailUtils.extractThumbnail(BitmapFactory.decodeStream(new FileInputStream(file), null, o2),
+						width - 20, height - 20, ThumbnailUtils.OPTIONS_RECYCLE_INPUT);
+			}
+			catch (FileNotFoundException e) {
+			}
+			return null;
+		}
+		
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
 			
@@ -1018,9 +831,9 @@ public class LocalMediaActivity extends BaseActivity {
 				ImageFrameItem image = (ImageFrameItem) view.findViewById(R.id.frame_thumbnail);
 				image.setLayoutParams(new LinearLayout.LayoutParams(width - 20, height - 20));
 				
-				String path = mPhotoAlbums.get(position).getImageList().get(0).getThumbFilePath();
-				Bitmap bitmap = BitmapFactory.decodeFile(path);
-				image.setBackgroundDrawable(new BitmapDrawable(bitmap));
+				String path = mPhotoAlbums.get(position).getImageList().get(0).getFilePath();
+				// Bitmap bitmap = BitmapFactory.decodeFile(path);
+				image.setBackgroundDrawable(new BitmapDrawable(createThumbnail(path, width, height)));
 				
 				TextView count = (TextView) view.findViewById(R.id.frame_count);
 				TextView name = (TextView) view.findViewById(R.id.frame_name);
@@ -1029,6 +842,7 @@ public class LocalMediaActivity extends BaseActivity {
 				name.setText(mPhotoAlbums.get(position).getName());
 			}
 			else if (mPhotoItems != null) {
+				
 				if (convertView == null) {
 					view = getLayoutInflater().inflate(R.layout.local_media_image_thumbnail_item, null);
 				}
@@ -1044,17 +858,15 @@ public class LocalMediaActivity extends BaseActivity {
 				ImageThumbnailItem image = (ImageThumbnailItem) view.findViewById(R.id.image_thumbnail_item);
 				image.setLayoutParams(new LinearLayout.LayoutParams(width - 20, height - 20));
 				
-				String path = mPhotoItems.get(position).getThumbFilePath();
-				Bitmap bitmap = BitmapFactory.decodeFile(path);
-				image.setBackgroundDrawable(new BitmapDrawable(bitmap));
-				
+				String path = mPhotoItems.get(position).getFilePath();
+				image.setBackgroundDrawable(new BitmapDrawable(createThumbnail(path, width, height)));
 			}
 			return view;
 		}
 		
 	}
 	
-	private class VideoListViewAdapter extends BaseExpandableListAdapter implements OnItemClickListener {
+	private class VideoListViewAdapter extends BaseExpandableListAdapter {
 		
 		public static final int mItemHeight = 45;
 		
@@ -1094,21 +906,31 @@ public class LocalMediaActivity extends BaseActivity {
 		
 		public View getChildView(int groupPosition, int childPosition, boolean isLastChild, View convertView,
 				ViewGroup parent) {
-			if (convertView == null) {
-				convertView = getLayoutInflater().inflate(R.layout.local_media_video_gridview, null);
-				mVideoGridView = (VideoGridView) convertView.findViewById(R.id.video_gridview);
-				mVideoGridView.setNumColumns(3);
-				mVideoGridView.setGravity(Gravity.CENTER);
-				mVideoGridView.setHorizontalSpacing(15);
-				ArrayList<VideoItem> videoItem = mVideoCategories.get(groupPosition).getVideosList();
-				mVideoGridView.setAdapter(new VideoGridViewAdapter(mVideoGridView, videoItem));
-				mVideoGridView.setOnItemClickListener(this);
-			}
+			convertView = getLayoutInflater().inflate(R.layout.local_media_video_gridview, null);
+			mVideoGridView = (VideoGridView) convertView.findViewById(R.id.video_gridview);
+			mVideoGridView.setNumColumns(3);
+			mVideoGridView.setGravity(Gravity.CENTER);
+			mVideoGridView.setHorizontalSpacing(15);
+			ArrayList<VideoItem> videoItem = mVideoCategories.get(groupPosition).getVideosList();
+			final VideoGridViewAdapter adapter = new VideoGridViewAdapter(mVideoGridView, videoItem, groupPosition);
+			mVideoGridView.setAdapter(adapter);
+			mVideoGridView.setOnItemClickListener(new OnItemClickListener() {
+
+				@Override
+				public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+					mGroupPosition = adapter.getGroupPosition();
+					Intent intent = new Intent(mContext, VideoViewActivity.class);
+					intent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
+					intent.putExtra(VideoViewActivity.VIDEO_INDEX, position);
+					log("mGroupPosition = " + mGroupPosition);
+					VideoViewActivity.sVideoItemList = mVideoCategories.get(mGroupPosition).getVideosList();
+					mContext.startActivity(intent);
+				}
+			});
 			return convertView;
 		}
 		
 		public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
-			mGroupPosition = groupPosition;
 			AbsListView.LayoutParams lp = new AbsListView.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, mItemHeight);
 			convertView = (RelativeLayout) getLayoutInflater().inflate(R.layout.local_media_video_group_item, null);
 			convertView.setLayoutParams(lp);
@@ -1141,15 +963,6 @@ public class LocalMediaActivity extends BaseActivity {
 			return true;
 		}
 		
-		@Override
-		public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-			Intent intent = new Intent(mContext, VideoViewActivity.class);
-			intent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
-			intent.putExtra(VideoViewActivity.VIDEO_INDEX, position);
-			VideoViewActivity.sVideoItemList = mVideoCategories.get(mGroupPosition).getVideosList();
-			mContext.startActivity(intent);
-		}
-		
 		private class TreeNode {
 			Object parent;
 			List<Object> childs = new ArrayList<Object>();
@@ -1161,8 +974,11 @@ public class LocalMediaActivity extends BaseActivity {
 
 		private VideoGridView mVideoGridView;
 		private ArrayList<VideoItem> mVideoItems;
+		private int mGroupPosition;
 		
-		public VideoGridViewAdapter(VideoGridView view, ArrayList<VideoItem> videoItems) {
+		public VideoGridViewAdapter(VideoGridView view, ArrayList<VideoItem> videoItems, 
+				int groupPosition) {
+			mGroupPosition = groupPosition;
 			mVideoGridView = view;
 			mVideoItems = videoItems;
 		}
@@ -1182,6 +998,10 @@ public class LocalMediaActivity extends BaseActivity {
 			return position;
 		}
 
+		public int getGroupPosition() {
+			return mGroupPosition;
+		}
+		
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
 			View view;
@@ -1204,9 +1024,8 @@ public class LocalMediaActivity extends BaseActivity {
 			
 			VideoItem videoItem = mVideoItems.get(position);
 			
-			String path = videoItem.getThumbFilePath();
-			Bitmap bitmap = BitmapFactory.decodeFile(path);
-			image.setBackgroundDrawable(new BitmapDrawable(bitmap));
+			String path = videoItem.getFilePath();
+			image.setBackgroundDrawable(new BitmapDrawable(ThumbnailUtils.createVideoThumbnail(path, Thumbnails.MINI_KIND)));
 			
 			int duration = Integer.parseInt(videoItem.getDuration());
 			TextView time = (TextView) view.findViewById(R.id.video_gridview_item_time);
@@ -1252,81 +1071,158 @@ public class LocalMediaActivity extends BaseActivity {
 		return super.onKeyDown(keyCode, event);
 	}
 	
-	public void doClick(View view) {
-		
-		switch (view.getId()) {
-			case R.id.play_info:
-				Intent intent = new Intent();
-				intent.setClass(getApplicationContext(), MusicPlayActivity.class);
-				startActivity(intent);
-				break;
-			case R.id.play_status_button:
-				break;
-			case R.id.allsongs_btn:
-				mIsMusicList = true;
-				mMusicList = (ListView) findViewById(R.id.music_list);
-				mMusicList.setAdapter(mAllMusicAdapter);
-			try {
-				mMusicPlaySer.setPlayList(mAllMusicItem);
-			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			mMusicList.setOnItemClickListener(new OnItemClickListener() {
+	public void doClick(View view) throws RemoteException {
 
-				@Override
-				public void onItemClick(AdapterView<?> parent, View view,
-						int position, long id) {
-					// TODO Auto-generated method stub
-					try {
-						mMusicPlaySer.playFrom(position);
-					} catch (RemoteException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					Intent intent = new Intent(getApplicationContext(), MusicPlayActivity.class);
-					startActivity(intent);
+		switch (view.getId()) {
+		case R.id.play_info:
+			if (mMusicPlaySer.getPlayList() != null) {
+				Intent intent = new Intent();
+				intent.setClass(getApplicationContext(),
+						MusicPlayActivity.class);
+				startActivity(intent);
+			} else {
+				Toast.makeText(getApplicationContext(), R.string.no_music_playing, Toast.LENGTH_SHORT).show();
+			}
+			break;
+		case R.id.play_status_button:
+			break;
+		case R.id.allsongs_btn:
+			if (mOnGetMusicFinished) {
+
+				mIsMusicList = true;
+				mMusicListTitle = (TextView) findViewById(R.id.list_title);
+				mMusicList = (ListView) findViewById(R.id.music_list);
+				mMusicListTitle.setText(getResources().getString(R.string.lable_all_music) + "（" + mAllMusicItem.size() + "）");
+				mMusicList.setAdapter(mAllMusicAdapter);
+				try {
+					mMusicPlaySer.setPlayList(mAllMusicItem);
+				} catch (RemoteException e) {
+					e.printStackTrace();
 				}
-			});
+				mMusicList.setOnItemClickListener(new OnItemClickListener() {
+
+					@Override
+					public void onItemClick(AdapterView<?> parent, View view,
+							int position, long id) {
+						try {
+							mMusicPlaySer.playFrom(position);
+							mMusicPlaySer.play();
+						} catch (RemoteException e) {
+							e.printStackTrace();
+						}
+						Intent intent = new Intent(getApplicationContext(),
+								MusicPlayActivity.class);
+						startActivity(intent);
+					}
+				});
 				mMainView.setVisibility(View.GONE);
 				mMusicListView.setVisibility(View.VISIBLE);
 				mViewPagerAdapter.notifyDataSetChanged();
-				break;
-			case R.id.album_btn:
+			} else {
+				Toast.makeText(getApplicationContext(), R.string.music_data_not_init, Toast.LENGTH_SHORT).show();
+			}
+			break;
+		case R.id.album_btn:
+			if (mOnGetMusicAlbumFinished) {
 				mIsMusicList = true;
+				mMusicListTitle = (TextView) findViewById(R.id.list_title);
 				mMusicList = (ListView) findViewById(R.id.music_list);
 				mMusicList.setAdapter(mAlbumListAdapter);
+				mMusicListTitle.setText(getResources().getString(R.string.lable_album) + "（" + mMusicAlbumItem.size() + "）");
 				mMainView.setVisibility(View.GONE);
 				mMusicListView.setVisibility(View.VISIBLE);
+				mMusicList.setOnItemClickListener(new OnItemClickListener() {
+
+					@Override
+					public void onItemClick(AdapterView<?> arg0, View arg1,
+							int position, long arg3) {
+						Intent intent = new Intent();
+						intent.putExtra("title", mMusicAlbumItem.get(position)
+								.getName());
+						ArrayList<MusicItem> music = mMusicAlbumItem.get(
+								position).getMusicsList();
+						try {
+							mMusicPlaySer.setMusicShowList(music);
+						} catch (RemoteException e) {
+							e.printStackTrace();
+						}
+						intent.setClass(getApplicationContext(),
+								MusicListActivity.class);
+						startActivity(intent);
+					}
+				});
 				mViewPagerAdapter.notifyDataSetChanged();
-				break;
-			case R.id.artist_btn:
+			} else {
+				Toast.makeText(getApplicationContext(), R.string.music_data_not_init, Toast.LENGTH_SHORT).show();
+			}
+			break;
+		case R.id.artist_btn:
+			if (mOnGetMusicArtistFinished) {
 				mIsMusicList = true;
+				mMusicListTitle = (TextView) findViewById(R.id.list_title);
 				mMusicList = (ListView) findViewById(R.id.music_list);
 				mMusicList.setAdapter(mArtistListAdapter);
+				mMusicListTitle.setText(getResources().getString(R.string.lable_artist) + "（" + mMusicArtistItem.size() + "）");
 				mMainView.setVisibility(View.GONE);
 				mMusicListView.setVisibility(View.VISIBLE);
+				mMusicList.setOnItemClickListener(new OnItemClickListener() {
+
+					@Override
+					public void onItemClick(AdapterView<?> arg0, View arg1,
+							int position, long arg3) {
+						Intent intent = new Intent();
+						intent.putExtra("title", mMusicArtistItem.get(position)
+								.getName());
+						ArrayList<MusicItem> music = mMusicArtistItem.get(
+								position).getMusicsList();
+						try {
+							mMusicPlaySer.setMusicShowList(music);
+						} catch (RemoteException e) {
+							e.printStackTrace();
+						}
+						intent.setClass(getApplicationContext(),
+								MusicListActivity.class);
+						startActivity(intent);
+					}
+				});
 				mViewPagerAdapter.notifyDataSetChanged();
-				break;
-			case R.id.back_arrow:
-				mIsMusicList = false;
-				mMusicListView.setVisibility(View.GONE);
-				mMainView.setVisibility(View.VISIBLE);
-				mViewPagerAdapter.notifyDataSetChanged();
+			} else {
+				Toast.makeText(getApplicationContext(), R.string.music_data_not_init, Toast.LENGTH_SHORT).show();
+			}
+			break;
+		case R.id.back_arrow:
+			mIsMusicList = false;
+			mMusicListView.setVisibility(View.GONE);
+			mMainView.setVisibility(View.VISIBLE);
+			mViewPagerAdapter.notifyDataSetChanged();
 		}
+	}
+	
+	public Bitmap getMusicImg(String mAlbumArtURI) {
+        File file = new File(mAlbumArtURI);
+        Bitmap bt = null;
+        try {
+			ParcelFileDescriptor fd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY);
+			bt = BitmapFactory.decodeFileDescriptor(fd.getFileDescriptor(), null, null);
+			if (bt == null) {
+			} else {
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return bt;
 	}
 
 	private ServiceConnection mMusicSerConn = new ServiceConnection() {
 
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
-			// TODO Auto-generated method stub
 			mMusicPlaySer = null;
 		}
 
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
-			// TODO Auto-generated method stub
 			mMusicPlaySer = IMusicPlayService.Stub.asInterface(service);
 		}
 	};

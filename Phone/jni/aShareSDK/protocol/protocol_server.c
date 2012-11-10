@@ -190,7 +190,6 @@ static void process_setup_req(char client_id, const char *buf, int sock)
 	res.hdr.client_id = client_id;
 
 	ret = g_server.service_cb.set_client_media_type(client_id, *buf);
-	LOGD("send client setupMediaType %d\n", ret);
 	if (ret) {
 		res.setup_ret = SETUP_SUCCESS;
 	}
@@ -435,7 +434,7 @@ static void *listen_thread_loop(void *arg)
 		LOGD("listen select max_sock = %d - - - - - - - - - - - - \n", max_sock);
 		//WARNING: timeout.tv_sec should be set "1" for release version
 #ifdef _ISHARE_LOG_D
-		timeout.tv_sec = 3;
+		timeout.tv_sec = 2;
 #else
 		timeout.tv_sec = 1;
 #endif
@@ -578,7 +577,7 @@ LOGD("free start");
 LOGD("free end");
 }
 
-	LOGD("%s finish\n", __func__);
+	LOGI("%s finish\n", __func__);
 	return ESuccess;
 }
 

@@ -17,16 +17,20 @@ static void exit_service(void)
 {
 	int i;
 	LOGI("exit function: %s\n", __func__);
-	for(i = 0; i < 2; i++)
+	for(i = 0; i < 1 /*ONLY SERVER MODE*/; i++)
 	{
 		LOGD("i = %d", i);
 		//HERE SHOULD BE THOUGHT MORE DEEPLY
 		if (g_manager.control[i].stop_service)
 			g_manager.control[i].stop_service();
+		else
+			LOGE("ERROR: stop_service is NULL!!!!!!!!\n");
 		if (g_manager.control[i].deinit_service)
 			g_manager.control[i].deinit_service();
+		else
+			LOGE("ERROR: deinit_service is NULL!!!!!!!!!\n");
 	}
-	deinit_native_surface();
+	//deinit_native_surface();
 }
 int start_server(void)
 {

@@ -30,6 +30,7 @@
 #define LOG_TAG "ISHARE_DIS"
 
 extern int sw_encode_flag;
+extern int g_angle; //ratation, 0, 90, 180, 270
 
 void dump_frame(unsigned char* buff, size_t size)
 {
@@ -85,6 +86,8 @@ int display_detect_filp(struct display_info *di)
 int display_get_frame(struct display_info *di)
 {
 	di->timestamp = timestamp();
+	di->angle = g_angle;
+
 	if (sw_encode_flag)
 		return sw_jpeg(di);
 	else

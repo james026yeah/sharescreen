@@ -29,6 +29,7 @@ import archermind.ashare.AshareProcess;
 import archermind.dlna.renderer.RendererProcess;
 
 import com.archermind.ashare.TypeDefs;
+import com.archermind.ashare.network.WiRemoteCmdServer;
 
 public class RendererService extends Service {
 	private final static String TAG = "RendererService";
@@ -39,7 +40,7 @@ public class RendererService extends Service {
 	
 	private RendererProcess mRendererProc;
 	private AirplayProcess mAirplayProc;
-	private AshareProcess mAShareProcess;
+	//private AshareProcess mAShareProcess;
 	private String mMediaURI;
 	private int mCurrentMediaType;
 	
@@ -63,6 +64,18 @@ public class RendererService extends Service {
 				mCurrentMediaType = msg.arg1;
 				mMediaURI = (String)msg.obj;
 				break;
+			case TypeDefs.MSG_DMR_AV_TRANS_SET_NEXT_URI:
+				mCurrentMediaType = msg.arg1;
+				if(mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO)
+				{
+					DLNAPlayer.mNextAudioUrl = (String)msg.obj;
+					break;
+				}
+				else
+				{
+					mMediaURI = (String)msg.obj;
+					break;
+				}
 			case TypeDefs.MSG_DMR_AV_TRANS_PLAY:
 			case AirplayProcess.MSG_AIRPLAY_PLAY:
 				if(null == mMediaURI) {
@@ -76,13 +89,13 @@ public class RendererService extends Service {
 					tostart.putExtra(TypeDefs.KEY_MEDIA_TYPE, mCurrentMediaType);
 					tostart.putExtra(TypeDefs.KEY_MEDIA_URI, mMediaURI);
 					startActivity(tostart);
-				} else {
+				} else if(mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO || mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_VIDEO || mCurrentMediaType == TypeDefs.MEDIA_TYPE_AIRPLAY_VIDEO){
 					// Play DLNA Video/Music AIRPLAY Video/Music
 					Intent tostart = new Intent(RendererService.this, DLNAPlayer.class);
 					tostart.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 					tostart.putExtra(TypeDefs.KEY_MEDIA_TYPE, mCurrentMediaType);
 					tostart.putExtra(TypeDefs.KEY_MEDIA_URI, mMediaURI);
-					getApplicationContext().startActivity(tostart);
+					startActivity(tostart);
 				}
 				break;
 			case AirplayProcess.MSG_AIRPLAY_SHOW_PHOTO:
@@ -92,7 +105,6 @@ public class RendererService extends Service {
 				tostart.putExtra(TypeDefs.KEY_AIRPLAY_IMAGE_DATA, (byte[])msg.obj);
 				startActivity(tostart);
 				break;
-			case TypeDefs.MSG_DMR_AV_TRANS_SET_NEXT_URI:
 			case TypeDefs.MSG_DMR_AV_TRANS_PAUSE_TO_PLAY:
 			case TypeDefs.MSG_DMR_AV_TRANS_PLAY_TO_PAUSE:
 			case TypeDefs.MSG_DMR_AV_TRANS_SEEK:
@@ -124,34 +136,26 @@ public class RendererService extends Service {
 			}
 		}
 	}
-/*	
-	private void playVideo() {
-		if(null != mMediaURI) {
-			Intent tostart = new Intent(this, DLNAPlayer.class);
-			tostart.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			Bundle bundle = new Bundle();
-			bundle.putString(DLNAPlayer.KEY_MEDIA_URI, mMediaURI);
-			tostart.putExtras(bundle);
-			getApplicationContext().startActivity(tostart);
+	private WiRemoteCmdServer.onWiRemoteCmdListener mCmdListener = 
+			new WiRemoteCmdServer.onWiRemoteCmdListener() {
+		@Override
+		public void onConnectAp(int sessionId, String ssid,
+				String password) {
+			Log.v(TAG, "----------------> onConnectApRequest ");
 		}
-	}
-	
-	private void playPhoto(Message msg) {
-		Intent tostart = new Intent(this, ImageShow.class);
-		tostart.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-		if(msg.arg1 == DLNAPlayer.MSG_AV_TRANS_TYPE_NONE)
-		{
-			byte[] bytes = (byte[])msg.obj;
-		    tostart.putExtra("bytes", bytes);
+		@Override
+		public void onDisconnectWifi(int sessionId) {
+			Log.v(TAG, "----------------> onDisconnectWifi ");
 		}
-		else if(msg.arg1 == DLNAPlayer.MSG_AV_TRANS_TYPE_IMAGE)
-		{
-			tostart.putExtra(DLNAPlayer.KEY_MEDIA_URI, msg.arg1);
+		@Override
+		public void onOTAUpdate(int sessionId) {
+			Log.v(TAG, "----------------> onOTAUpdate ");
 		}
-		tostart.putExtra(DLNAPlayer.KEY_MEDIA_TYPE, mMediaType);
-		startActivity(tostart);
-	}
-*/
+		@Override
+		public void onRenameDevice(int sessionId, String newName) {
+			Log.v(TAG, "----------------> onRenameDevice newName:" + newName);
+		}
+	};
 	final Messenger mMessenger = new Messenger(mHandler);
 	@Override
 	public IBinder onBind(Intent intent) {
@@ -210,7 +214,7 @@ public class RendererService extends Service {
         			Log.v(TAG, "mWifiReceiver() wifi connected, so start procs");
         			startProcs();
         			mHandler.removeCallbacks(mApScanner);
-        		} else if(DetailedState.DISCONNECTED == detailState){
+        		} else if(DetailedState.DISCONNECTED == detailState && !isWifiApEnabled()){
         			Log.v(TAG, "mWifiReceiver() wifi disconnected, so stop procs!");
         			stopProcs();
         			mHandler.removeCallbacks(mApScanner);
@@ -241,6 +245,9 @@ public class RendererService extends Service {
 				mHandler.post(mApScanner);
 			}
 		}
+		
+		// Setup listener for WiRemoteCommand server
+		WiRemoteCmdServer.getInstance().setOnWiRemoteCmdListener(mCmdListener);
 	}
 	
 	@Override
@@ -347,6 +354,8 @@ public class RendererService extends Service {
 			mAirplayProc = new AirplayProcess(mHandler, getApplicationContext());
 			mAirplayProc.start();
 		}
+		// Start command server
+		WiRemoteCmdServer.getInstance().start();
 	}
 	
 	private void stopProcs() {
@@ -358,6 +367,8 @@ public class RendererService extends Service {
 			mAirplayProc.stopProcess();
 			mAirplayProc = null;
 		}
+		// Stop command server
+		WiRemoteCmdServer.getInstance().stop();
 	}
 	
     private void accquireMCLock() {   

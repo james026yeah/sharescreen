@@ -9,6 +9,7 @@
 
 static struct ptl_client g_client;
 extern int g_surface_ready;
+extern int g_clear_screen_client;
 
 int ptl_disconnect_internal(void);
 int ptl_connect_internal(char *srv_addr, char *name, char *key);
@@ -230,6 +231,12 @@ static int process_image_data(PktHdr_st *hdr)
 				((ImageInfo_st *)g_client.image_data)->frame_length);
 		return EFailed;
 	}
+
+#if 0
+	((ImageInfo_st *)g_client.image_data)->encode_time =
+		((ImageInfo_st *)g_client.image_data)->rotation == 0xFF ? 1 : 0;
+	LOGD("Jerry: rotation = %d\n", ((ImageInfo_st *)g_client.image_data)->rotation);
+#endif
 
 #if DEBUG_TIME_POINT
 	LOGD("-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'-'");
@@ -507,7 +514,7 @@ static void *listen_thread_loop(void *arg)
 		{
 			read_len = recv(sock, pBuf, sizeof(read_buf), 0);
 			LOGD("__recv_socket time up : '%s'\n", pBuf);
-			strcpy(ip,inet_ntoa(client_addr.sin_addr));
+			inet_ntop(AF_INET,&client_addr.sin_addr,ip,sizeof(ip));
 			LOGD("Client ip = %s\n", ip);
 			if (read_len == 0)
 				goto RECV_ERROR;
@@ -517,7 +524,6 @@ static void *listen_thread_loop(void *arg)
 				/* Have a meal with server tonight, okey */
 				ptl_init();
 				_callback_notify_status_client(1);
-				//TODO "retrieve client ip"
 				while(count++ < 1000)
 				{
 					__msleep(10);
@@ -531,7 +537,8 @@ static void *listen_thread_loop(void *arg)
 					}
 				}
 
-				ptl_connect_internal("192.168.1.1", "HOT_GIRL", "KISS_ME");
+				//ptl_connect_internal("192.168.1.1", "HOT_GIRL", "KISS_ME");
+				ptl_connect_internal(ip, "HOT_GIRL", "KISS_ME");
 				ptl_start_media();
 				break;
 			}
@@ -564,7 +571,7 @@ static void * send_thread_loop(void *arg)
 	int interval;
 
 #ifdef _ISHARE_LOG_D
-	interval = 10 * 1000;
+	interval = 2 * 1000;
 #else
 	interval = 1 * 1000;
 #endif
@@ -630,11 +637,21 @@ static void * send_thread_loop(void *arg)
 			{
 				LOGD("%s: abort protocol if release cnf packet\n", __func__);
 				disconnect_server();
+				LOGD("abort send thread\n");
 				pthread_join(g_client.recv_handle, NULL);
 				/*abort send thread after disconnect server*/
-				LOGD("abort send thread\n");
+#if 0
 				if (g_client.service_cb.connect_status)
+				{
+					LOGD("callback connection status start");
 					g_client.service_cb.connect_status(0, 0);
+					LOGD("callback connection status end");
+				}
+				else
+				{
+					LOGD("ERROR: g_client.service_cb.connect_status is NULL!\n");
+				}
+#endif
 
 				//Notify client is aborting......
 				_callback_notify_status_client(0);

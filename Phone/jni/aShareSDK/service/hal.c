@@ -32,6 +32,7 @@ struct event events[event_count];
 struct callback_set g_cb = {NULL, NULL, NULL, NULL};
 
 int sw_encode_flag = 1;
+extern int g_clear_screen;
 
 static int wait_event(int event, int status)
 {
@@ -196,7 +197,13 @@ int send_video(void *buff, size_t len,
 	jf->width = width;
 	jf->height = height;
 	jf->encode_time = 0;
+#if 0
 	jf->rotation = get_server_rotation();
+#else
+	jf->rotation = g_clear_screen ? 0xFF : 0;
+#endif
+	LOGD("HERE: g_clear_screen = %d, jf->rotation = %d\n",
+			g_clear_screen, jf->rotation);
 	if(ext)
 	{
 		memcpy(packet + image_head_size, ext, sizeof(struct jpeg_ext));
@@ -244,8 +251,16 @@ static void video_process(char *machine)
 		di->machine = UNKNOWN_PLAT;
 	}
 
-	//if (di->machine == LIBJPEG_TURBO)
+	//DEBUG:
+	//NOTE: Hi boy, these codes could be used to debug hardware encode
+	//Just open this switcher to enable hardware encodec
+#if 0
+	di->machine = QUALCOMM_PLAT;
+	sw_encode_flag = 0;
+	if (di->machine == LIBJPEG_TURBO)
+#else
 	if (1)
+#endif
 	{
 		LOGD("-------------------------------------");
 		LOGD("\t\t\tsw_jpeg_init\n");
@@ -297,6 +312,7 @@ static void video_process(char *machine)
 						di->vi.xres,
 						di->vi.yres, &ext);
 
+			g_clear_screen = 0;
 			display_done();
 		}
 	}

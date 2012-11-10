@@ -37,20 +37,26 @@
         android:name="android.hardware.touchscreen"
         android:required="false" />
     <!-- end by wenyan -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
     <application
-        android:icon="@drawable/ic_launcher"
+        android:name="archermind.dlna.mobile.MobileApplication"
+        android:icon="@drawable/app_icon"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.Light.NoTitleBar" >
         <activity android:name=".HomeActivity" />
+        <activity android:name=".WelcomeActivity"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".MobileDLNAActivity"
             android:label="@string/app_name"
-            android:theme="@android:style/Theme.NoTitleBar" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            android:theme="@android:style/Theme.NoTitleBar"
+            android:configChanges="orientation|keyboardHidden"
+            android:screenOrientation="portrait" >
         </activity>
         <activity
             android:name=".LocalMediaActivity"
@@ -104,6 +110,7 @@
             </intent-filter>
         </service>
 
+        <activity android:name=".MusicListActivity" />
         <activity
             android:name=".SettingActivity"
             android:theme="@android:style/Theme.NoTitleBar" />
@@ -197,6 +204,12 @@
         <activity android:name="FeedbackActivity"
             android:windowSoftInputMode="adjustResize" />
         <activity android:name="AboutActivity" />
+        <activity android:name="ConfigTVActivity"
+            android:screenOrientation="portrait"
+            android:theme="@android:style/Theme.NoTitleBar" />
+        <activity android:name="GameControllerActivity"
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
     </application>
 
 </manifest>

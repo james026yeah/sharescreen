@@ -15,6 +15,9 @@ import org.cybergarage.upnp.std.av.renderer.MediaRenderer;
 import org.cybergarage.upnp.std.av.server.MediaServer;
 
 import android.annotation.SuppressLint;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -37,6 +40,8 @@ import archermind.dlna.miscellaneous.DeviceInfo;
 import archermind.dlna.process.ControllerProcess;
 import archermind.dlna.process.ServerProcess;
 
+import com.archermind.ashare.network.WiRemoteCmdClient;
+
 @SuppressLint("HandlerLeak")
 public class DLNAService extends Service {
 	private final static String TAG = "DLNAService";	
@@ -44,10 +49,10 @@ public class DLNAService extends Service {
 	private final static String STANDARD_MDMS_MODEL_NAME = "aShare Media Server";
 	private final static String STANDARD_DMR_MODEL_NAME = "aShare Media Renderer";
 	
-	private final static int TIME_INTERVAL_SEARCH_DLNA_DEV = 60000; // 60secs
+	//private final static int TIME_INTERVAL_SEARCH_DLNA_DEV = 60000; // 60secs
 	
 	private WifiManager mWifiMgr = null;
-	
+	private NotificationManager mNM = null;
 	private Device mLocalMDMS = null;
 	private DeviceList mRendererList = new DeviceList();
 	private Device mCurrentRenderer = null;
@@ -56,6 +61,7 @@ public class DLNAService extends Service {
 	private MulticastLock mMulticastLock;
 	private ArrayList<Messenger> mClients = new ArrayList<Messenger>();
 	private Handler mHandler = new IncomingHandler();
+	private int mLastMessage = MessageDefs.MSG_NULL;
 	private class IncomingHandler extends Handler {    
 		@Override
         public void handleMessage(Message msg) {
@@ -67,7 +73,7 @@ public class DLNAService extends Service {
 					mMDMCProc.startController();
 					mMDMCProc.searchDevice();
             	}
-				break;           
+				break;
             case MessageDefs.MSG_MDMC_ON_SEARCH_RESPONSE:            	
             case MessageDefs.MSG_MDMC_ON_DEV_ADDED:            	
             case MessageDefs.MSG_MDMC_ON_DEV_REMOVED:            	
@@ -85,6 +91,28 @@ public class DLNAService extends Service {
             case MessageDefs.MSG_MDMC_ON_GET_MUSIC_ARTISTS_DATA:
             case MessageDefs.MSG_MDMC_ON_GET_VIDEOS_DATA:
             case MessageDefs.MSG_MDMC_ON_GET_PTOTOS_DATA:
+            	
+            case MessageDefs.MSG_MDMC_ON_GET_PLAY:
+            case MessageDefs.MSG_MDMC_ON_GET_PAUSETOPLAY:
+            case MessageDefs.MSG_MDMC_ON_GET_STOP:
+            case MessageDefs.MSG_MDMC_ON_GET_PAUSE:
+            case MessageDefs.MSG_MDMC_ON_GET_NEXT:
+            case MessageDefs.MSG_MDMC_ON_GET_PREVIOUS:
+            case MessageDefs.MSG_MDMC_ON_GET_GETPOSITIONINFO:
+            case MessageDefs.MSG_MDMC_ON_GET_SEEK:
+            case MessageDefs.MSG_MDMC_ON_GET_SETAVTRANSPORTURI:
+            case MessageDefs.MSG_MDMC_ON_GET_SETVOLUME:
+            case MessageDefs.MSG_MDMC_ON_GET_GETVOLUME:
+            case MessageDefs.MSG_MDMC_ON_GET_SETMUTE:
+            case MessageDefs.MSG_MDMC_ON_GET_GETMUTE:
+            case MessageDefs.MSG_MDMC_ON_GET_GETCURRENTTRANSPORTACTIONS:
+            case MessageDefs.MSG_MDMC_ON_GET_GETTRANSPORTINFO:
+            case MessageDefs.MSG_MDMC_ON_GET_IMAGESEEK:
+            case MessageDefs.MSG_MDMC_ON_GET_SETPLAYMODE:
+            case MessageDefs.MSG_SERVICE_ON_GET_DEVICE_LIST:
+            case MessageDefs.MSG_SERVICE_ON_DEVICE_CONNECTED:
+            case MessageDefs.MSG_SERVICE_ON_GET_IP_OF_CURRENT_RENDERER:
+            case MessageDefs.MSG_SERVICE_ON_QUITED:
 				for(Messenger messenger : mClients) {
 					try {
 						messenger.send(Message.obtain(msg));
@@ -95,9 +123,11 @@ public class DLNAService extends Service {
 				break;
             case MessageDefs.MSG_SERVICE_REGISTER_CLIENT:
             	mClients.add(msg.replyTo);
+            	Log.v(TAG, "add Client---> size:" + mClients.size());
             	break;
             case MessageDefs.MSG_SERVICE_UNREGISTER_CLIENT:
             	mClients.remove(msg.replyTo);
+            	Log.v(TAG, "remove Client---> size:" + mClients.size());
             	break;
             case MessageDefs.MSG_MDMC_CONTENT_DIR_BROWSE:
             	Bundle data = msg.getData();
@@ -127,10 +157,10 @@ public class DLNAService extends Service {
             	}
             	break;
             case MessageDefs.MSG_SERVICE_SUBSCRIBE_DEVICE_CHANGE:
-            	onRecSubscribeDevListMsg();
+            	//onRecSubscribeDevListMsg();
             	break;
             case MessageDefs.MSG_SERVICE_UNSUBSCRIBE_DEVICE_CHANGE:
-            	onRecUnsubscribeDevListMsg();
+            	//onRecUnsubscribeDevListMsg();
             	break;
             case MessageDefs.MSG_SERVICE_CONNECT_DEVICE:
             	onConnectDeviceMessage(msg);
@@ -290,7 +320,49 @@ public class DLNAService extends Service {
             	}
         		break;
             case MessageDefs.MSG_SERVICE_GET_DEVICE_LIST:
-            	sendOnGetDeviceListMessage();
+            	Log.v(TAG, "MSG_SERVICE_GET_DEVICE_LIST  send discover cmd--------------->");
+            	if(mMDMCProc != null) {
+            		mLastMessage = MessageDefs.MSG_SERVICE_GET_DEVICE_LIST;
+            		mMDMCProc.searchDevice();
+            	}
+            	break;
+            case MessageDefs.MSG_SERVICE_GET_IP_OF_CURRENT_RENDERER:
+            	for(Messenger messenger : mClients) {
+					try {
+						messenger.send(Message.obtain(
+								null, MessageDefs.MSG_SERVICE_ON_GET_IP_OF_CURRENT_RENDERER,
+								getIPAddrOfCurrntRenderer()));
+					} catch (RemoteException e) {
+						e.printStackTrace();
+					}
+				}
+            	break;
+            case MessageDefs.MSG_SERVICE_QUIT:
+            	mLastMessage = MessageDefs.MSG_SERVICE_QUIT;
+            	stopProcs();
+            	break;
+            case MessageDefs.MSG_SERVICE_ON_DMC_STOPPED:
+            	Log.v(TAG, "MSG_SERVICE_ON_DMC_STOPPED reveived !!!!!!!!!!!!!!!!!!!!");
+            	if(mLastMessage == MessageDefs.MSG_SERVICE_QUIT) {
+            		Log.v(TAG, "MSG_SERVICE_ON_DMC_STOPPED last msg->MSG_SERVICE_QUIT !!!!!!!!!!");
+	            	for(Messenger messenger : mClients) {
+						try {
+							messenger.send(Message.obtain(
+									null, MessageDefs.MSG_SERVICE_ON_QUITED));
+						} catch (RemoteException e) {
+							e.printStackTrace();
+						}
+					}
+	            	mLastMessage = MessageDefs.MSG_NULL;
+            	}
+            	break;
+            case MessageDefs.MSG_SERVICE_RENDERER_DISCONNECT_WIFI:
+            	Log.v(TAG, " --------------------> MSG_SERVICE_RENDERER_DISCONNECT_WIFI");
+            	if(WiRemoteCmdClient.getInstance().isServerConnected()) {
+            		WiRemoteCmdClient.getInstance().sendWifiDisconnectedCmd();
+            	} else {
+            		mLastMessage = MessageDefs.MSG_SERVICE_RENDERER_DISCONNECT_WIFI;
+            	}
             	break;
             default:
                 super.handleMessage(msg);
@@ -363,6 +435,11 @@ public class DLNAService extends Service {
 			}
 			sendDeviceChangedMessage();
 		}
+		
+		if(mLastMessage == MessageDefs.MSG_SERVICE_GET_DEVICE_LIST) {
+			mLastMessage = MessageDefs.MSG_NULL;
+			sendOnGetDeviceListMessage();
+		}
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -389,6 +466,7 @@ public class DLNAService extends Service {
 					mCurrentRenderer.getLocation().equals(dev.getLocation())) {
 				Log.v(TAG, "onDeviceRemoved--> current renderer removed");
 				mCurrentRenderer = null;
+				WiRemoteCmdClient.getInstance().stop();
 			}
 			Log.v(TAG, "onDeviceRemoved--> renderer removed loc:" + dev.getLocation());
 			removeFromDeviceList(mRendererList, dev);
@@ -464,6 +542,7 @@ public class DLNAService extends Service {
         }
     };
 
+    /*
 	private Runnable mDLNAScanner = new Runnable() {
 		@Override
 		public void run() {
@@ -472,7 +551,7 @@ public class DLNAService extends Service {
 				mMDMCProc.searchDevice();
 			mHandler.postDelayed(mDLNAScanner, TIME_INTERVAL_SEARCH_DLNA_DEV);
 		}
-	};
+	};*/
 
 	final Messenger mMessenger = new Messenger(mHandler);
 	@Override
@@ -481,10 +560,13 @@ public class DLNAService extends Service {
 	}
 	
 	@Override
-    public void onCreate() {	
+    public void onCreate() {
 		super.onCreate();
 		mWifiMgr = (WifiManager)getSystemService(Context.WIFI_SERVICE);
-		
+		mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+		WiRemoteCmdClient.getInstance().setOnWiRemoteCmdListener(mListener);
+		showNotification();
+
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
 		filter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
@@ -498,12 +580,33 @@ public class DLNAService extends Service {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+		mNM.cancel(R.string.notification_content_txt);
 		unregisterReceiver(mWifiReceiver);
 		releaseMCLock();
 		Log.d(TAG, "onDestroy() stop procs:");
 		stopProcs();
 	}
-	
+
+	private void showNotification() {
+		// In this sample, we'll use the same text for the ticker and the expanded notification
+		CharSequence text = getText(R.string.notification_content_txt);
+
+		// Set the icon, scrolling text and timestamp
+		Notification notification = new Notification(R.drawable.app_icon, text,
+				System.currentTimeMillis());
+
+		// The PendingIntent to launch our activity if the user selects this notification
+		PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
+				new Intent(this, MobileDLNAActivity.class), 0);
+
+		// Set the info for the views that show in the notification panel.
+		notification.setLatestEventInfo(this, getText(R.string.notification_content_txt),
+				text, contentIntent);
+
+		// Send the notification.
+		mNM.notify(R.string.notification_content_txt, notification);
+	}
+
 	private void startProcs() {
 		Log.v(TAG, "------------------------start Procs()");
 		if(mMDMCProc == null) {
@@ -525,6 +628,7 @@ public class DLNAService extends Service {
 		onLocalMDMSStatusChanged();
 		mRendererList.clear();
 		mCurrentRenderer = null;	
+		WiRemoteCmdClient.getInstance().stop();
 		sendDeviceChangedMessage();
 
 		if(mMDMCProc != null) {
@@ -558,7 +662,7 @@ public class DLNAService extends Service {
 			 mMulticastLock.release();  
 		 }
     }
-    
+    /*
     private void onRecSubscribeDevListMsg() {
     	// scan DLNA devices in preset period
     	mHandler.post(mDLNAScanner);	
@@ -566,7 +670,7 @@ public class DLNAService extends Service {
     
     private void onRecUnsubscribeDevListMsg() {
     	mHandler.removeCallbacks(mDLNAScanner);
-    }
+    }*/
     
     private void sendDeviceChangedMessage() {
     	ArrayList<DeviceInfo> devInfoList = new ArrayList<DeviceInfo>();
@@ -577,8 +681,7 @@ public class DLNAService extends Service {
     				(mRendererList.size() == 1) ? dev.getFriendlyName() : (dev.getFriendlyName() + " " + Integer.toString(pos + 1));
     		int state = (mCurrentRenderer == dev) ? DeviceInfo.DEV_STATE_CONNECTED :
     				DeviceInfo.DEV_STATE_DISCONNECTED;
-    		devInfoList.add(new DeviceInfo(devName, DeviceInfo.DEV_TYPE_RENDERER, 
-    				state, dev.getLocation()));
+    		devInfoList.add(new DeviceInfo(devName, state, dev.getUDN()));
     	}
     	
     	for(Messenger messenger : mClients) {
@@ -599,8 +702,7 @@ public class DLNAService extends Service {
     				(mRendererList.size() == 1) ? dev.getFriendlyName() : (dev.getFriendlyName() + " " + Integer.toString(pos + 1));
     		int state = (mCurrentRenderer == dev) ? DeviceInfo.DEV_STATE_CONNECTED :
     				DeviceInfo.DEV_STATE_DISCONNECTED;
-    		devInfoList.add(new DeviceInfo(devName, DeviceInfo.DEV_TYPE_RENDERER, 
-    				state, dev.getLocation()));
+    		devInfoList.add(new DeviceInfo(devName, state, dev.getUDN()));
     	}
     	
     	for(Messenger messenger : mClients) {
@@ -619,10 +721,12 @@ public class DLNAService extends Service {
     	Log.v(TAG, "onConnectDeviceMessage---------------> connect to DEV:" + info.mDevName);
     	for(int pos = 0; pos < mRendererList.size(); ++pos) {
     		Device dev = mRendererList.getDevice(pos);
-    		if(dev.getLocation().equals(info.mLocation)) {
+    		if(dev.getUDN().equals(info.mUDN)) {
     			Log.v(TAG, "onConnectDeviceMessage---------------> found the dev location:" +
     					dev.getLocation());
     			mCurrentRenderer = dev;
+    			WiRemoteCmdClient.getInstance().start(getIPAddrOfCurrntRenderer());
+    			info.mState = DeviceInfo.DEV_STATE_CONNECTED;
     			break;
     		}
     	}
@@ -698,5 +802,41 @@ public class DLNAService extends Service {
 			e.printStackTrace();
 		}
 		return isEnabled;
+	}
+	
+	private WiRemoteCmdClient.onWiRemoteCmdListener mListener = 
+			new WiRemoteCmdClient.onWiRemoteCmdListener() {
+		@Override
+		public void onServerConnected() {
+			Log.v(TAG, "-------------------> onServerConnected");
+			if(mLastMessage == MessageDefs.MSG_SERVICE_RENDERER_DISCONNECT_WIFI) {
+				Log.v(TAG, "-------------------> send disconnected wifi cmd");
+				WiRemoteCmdClient.getInstance().sendWifiDisconnectedCmd();
+				mLastMessage = MessageDefs.MSG_NULL;
+			}
+		}
+
+		@Override
+		public void onServerConnectError(int errorId) {
+		}
+		
+	};
+	
+	protected String getIPAddrOfCurrntRenderer() {
+		String ipAddr = null;
+		Log.v(TAG, "------------------> getIPAddrOfCurrntRenderer 0");
+		if(mCurrentRenderer != null) {
+			String location = mCurrentRenderer.getLocation();
+			Log.v(TAG, "------------------> getIPAddrOfCurrntRenderer location:" + location);
+			int startIndex = "http://".length();
+			int stopIndex = location.lastIndexOf(":");
+			Log.v(TAG, "------------------> startIndex:" + startIndex + ", stopIndex:" + stopIndex);
+			if(startIndex >= 0 && startIndex < location.length() && 
+					stopIndex >=0 && stopIndex < location.length()) {
+				ipAddr = location.substring(startIndex, stopIndex);
+			}
+			Log.v(TAG, "------------------> startIndex ip:" + ipAddr);
+		}
+		return ipAddr;
 	}
 }

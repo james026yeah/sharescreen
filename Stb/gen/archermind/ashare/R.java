@@ -8,24 +8,701 @@
 package archermind.ashare;
 
 public final class R {
+    public static final class anim {
+        public static final int cd_rotate=0x7f040000;
+        public static final int player_out=0x7f040001;
+    }
     public static final class attr {
+        /** 
+             The state (true for on, or false for off) that causes dependents to be disabled. By default,
+             dependents will be disabled when this is unchecked, so the value of this preference is false.
+        
+         <p>Must be a boolean value, either "<code>true</code>" or "<code>false</code>".
+<p>This may also be a reference to a resource (in the form
+"<code>@[<i>package</i>:]<i>type</i>:<i>name</i></code>") or
+theme attribute (in the form
+"<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>")
+containing a value of this type.
+         */
+        public static final int disableDependentsState=0x7f010004;
+        /** 
+             The summary for the Preference in a PreferenceActivity screen when the
+             SwitchPreference is unchecked. If separate on/off summaries are not
+             needed, the summary attribute can be used instead.
+        
+         <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+         */
+        public static final int summaryOff=0x7f010001;
+        /** 
+             The summary for the Preference in a PreferenceActivity screen when the
+             SwitchPreference is checked. If separate on/off summaries are not
+             needed, the summary attribute can be used instead.
+        
+         <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+         */
+        public static final int summaryOn=0x7f010000;
+        /**  Minimum width for the switch component 
+         <p>Must be a dimension value, which is a floating point number appended with a unit such as "<code>14.5sp</code>".
+Available units are: px (pixels), dp (density-independent pixels), sp (scaled pixels based on preferred font size),
+in (inches), mm (millimeters).
+<p>This may also be a reference to a resource (in the form
+"<code>@[<i>package</i>:]<i>type</i>:<i>name</i></code>") or
+theme attribute (in the form
+"<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>")
+containing a value of this type.
+         */
+        public static final int switchMinWidth=0x7f01000b;
+        /**  Minimum space between the switch and caption text 
+         <p>Must be a dimension value, which is a floating point number appended with a unit such as "<code>14.5sp</code>".
+Available units are: px (pixels), dp (density-independent pixels), sp (scaled pixels based on preferred font size),
+in (inches), mm (millimeters).
+<p>This may also be a reference to a resource (in the form
+"<code>@[<i>package</i>:]<i>type</i>:<i>name</i></code>") or
+theme attribute (in the form
+"<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>")
+containing a value of this type.
+         */
+        public static final int switchPadding=0x7f01000c;
+        /** <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+         */
+        public static final int switchPreferenceStyle=0x7f01000e;
+        /** <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+         */
+        public static final int switchStyle=0x7f01000d;
+        /**  TextAppearance style for text displayed on the switch thumb. 
+         <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+         */
+        public static final int switchTextAppearance=0x7f01000a;
+        /** 
+             The text used on the switch itself when in the "off" state.
+             This should be a very SHORT string, as it appears in a small space.
+        
+         <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+         */
+        public static final int switchTextOff=0x7f010003;
+        /** 
+             The text used on the switch itself when in the "on" state.
+             This should be a very SHORT string, as it appears in a small space.
+        
+         <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+         */
+        public static final int switchTextOn=0x7f010002;
+        /**  Text to use when the switch is in the unchecked/"off" state. 
+         <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+         */
+        public static final int textOff=0x7f010008;
+        /**  Text to use when the switch is in the checked/"on" state. 
+         <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+         */
+        public static final int textOn=0x7f010007;
+        /**  Drawable to use as the "thumb" that switches back and forth. 
+         <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+         */
+        public static final int thumb=0x7f010005;
+        /**  Amount of padding on either side of text within the switch thumb. 
+         <p>Must be a dimension value, which is a floating point number appended with a unit such as "<code>14.5sp</code>".
+Available units are: px (pixels), dp (density-independent pixels), sp (scaled pixels based on preferred font size),
+in (inches), mm (millimeters).
+<p>This may also be a reference to a resource (in the form
+"<code>@[<i>package</i>:]<i>type</i>:<i>name</i></code>") or
+theme attribute (in the form
+"<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>")
+containing a value of this type.
+         */
+        public static final int thumbTextPadding=0x7f010009;
+        /**  Drawable to use as the "track" that the switch thumb slides within. 
+         <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+         */
+        public static final int track=0x7f010006;
+    }
+    public static final class dimen {
+        public static final int preference_icon_minWidth=0x7f080002;
+        public static final int preference_item_padding_inner=0x7f080001;
+        public static final int preference_item_padding_side=0x7f080000;
+        public static final int preference_widget_width=0x7f080003;
     }
     public static final class drawable {
-        public static final int ic_launcher=0x7f020000;
+        public static final int ic_action_search=0x7f020000;
+        public static final int ic_launcher=0x7f020001;
+        public static final int image_btn_next=0x7f020002;
+        public static final int image_btn_prev=0x7f020003;
+        public static final int image_btn_rotate_left=0x7f020004;
+        public static final int image_btn_rotate_right=0x7f020005;
+        public static final int image_btn_zoom_in=0x7f020006;
+        public static final int image_btn_zoom_out=0x7f020007;
+        public static final int mediacontroller_bg=0x7f020008;
+        public static final int mediacontroller_pause01=0x7f020009;
+        public static final int mediacontroller_pause02=0x7f02000a;
+        public static final int mediacontroller_pause_button=0x7f02000b;
+        public static final int mediacontroller_play01=0x7f02000c;
+        public static final int mediacontroller_play02=0x7f02000d;
+        public static final int mediacontroller_play_button=0x7f02000e;
+        public static final int mediacontroller_seekbar=0x7f02000f;
+        public static final int mediacontroller_seekbar01=0x7f020010;
+        public static final int mediacontroller_seekbar02=0x7f020011;
+        public static final int mediacontroller_seekbar_thumb=0x7f020012;
+        public static final int music_bth_list_normal=0x7f020013;
+        public static final int music_bth_list_select=0x7f020014;
+        public static final int music_bth_repeat_play_normal=0x7f020015;
+        public static final int music_bth_repeat_play_select=0x7f020016;
+        public static final int music_bth_single_cycle_normal=0x7f020017;
+        public static final int music_bth_single_cycle_select=0x7f020018;
+        public static final int music_bth_upset_play_closed_normal=0x7f020019;
+        public static final int music_bth_upset_play_closed_select=0x7f02001a;
+        public static final int music_bth_upset_play_normal=0x7f02001b;
+        public static final int music_bth_upset_play_select=0x7f02001c;
+        public static final int music_btn_repeat=0x7f02001d;
+        public static final int music_btn_upset=0x7f02001e;
+        public static final int photo_bth_after_normal=0x7f02001f;
+        public static final int photo_bth_after_select=0x7f020020;
+        public static final int photo_bth_before_normal=0x7f020021;
+        public static final int photo_bth_before_select=0x7f020022;
+        public static final int photo_bth_big_normal=0x7f020023;
+        public static final int photo_bth_big_select=0x7f020024;
+        public static final int photo_bth_left_normal=0x7f020025;
+        public static final int photo_bth_left_select=0x7f020026;
+        public static final int photo_bth_right_normal=0x7f020027;
+        public static final int photo_bth_right_select=0x7f020028;
+        public static final int photo_bth_small_normal=0x7f020029;
+        public static final int photo_bth_small_select=0x7f02002a;
+        public static final int switch_bg_disabled_holo_dark=0x7f02002b;
+        public static final int switch_bg_disabled_holo_light=0x7f02002c;
+        public static final int switch_bg_focused_holo_dark=0x7f02002d;
+        public static final int switch_bg_focused_holo_light=0x7f02002e;
+        public static final int switch_bg_holo_dark=0x7f02002f;
+        public static final int switch_bg_holo_light=0x7f020030;
+        public static final int switch_inner_holo_dark=0x7f020031;
+        public static final int switch_inner_holo_light=0x7f020032;
+        public static final int switch_thumb_activated_holo_dark=0x7f020033;
+        public static final int switch_thumb_activated_holo_light=0x7f020034;
+        public static final int switch_thumb_disabled_holo_dark=0x7f020035;
+        public static final int switch_thumb_disabled_holo_light=0x7f020036;
+        public static final int switch_thumb_holo_dark=0x7f020037;
+        public static final int switch_thumb_holo_light=0x7f020038;
+        public static final int switch_thumb_pressed_holo_dark=0x7f020039;
+        public static final int switch_thumb_pressed_holo_light=0x7f02003a;
+        public static final int switch_track_holo_dark=0x7f02003b;
+        public static final int switch_track_holo_light=0x7f02003c;
+        public static final int tv_cd_guangpan1=0x7f02003d;
+        public static final int tv_cd_guangpan2=0x7f02003e;
+        public static final int tv_music_album_default=0x7f02003f;
+        public static final int tv_photo_down_bar=0x7f020040;
+        public static final int tv_photo_top_bar=0x7f020041;
+        public static final int tv_video_down_bar=0x7f020042;
+        public static final int tv_video_point=0x7f020043;
+        public static final int tv_video_progress_bar_bg=0x7f020044;
+        public static final int tv_video_progress_bar_blue=0x7f020045;
+        public static final int video_bth_next_normal=0x7f020046;
+        public static final int video_bth_next_select=0x7f020047;
+        public static final int video_bth_pause_normal=0x7f020048;
+        public static final int video_bth_pause_select=0x7f020049;
+        public static final int video_bth_play_normal=0x7f02004a;
+        public static final int video_bth_play_select=0x7f02004b;
+        public static final int video_bth_prev_normal=0x7f02004c;
+        public static final int video_bth_prev_select=0x7f02004d;
+        public static final int video_bth_stop_normal=0x7f02004e;
+        public static final int video_bth_stop_select=0x7f02004f;
+        public static final int video_btn_forward=0x7f020050;
+        public static final int video_btn_pause=0x7f020051;
+        public static final int video_btn_rewind=0x7f020052;
+        public static final int video_btn_start=0x7f020053;
+        public static final int video_btn_stop=0x7f020054;
+        public static final int video_down_bar=0x7f020055;
+        public static final int video_point=0x7f020056;
+        public static final int video_preview_black=0x7f020057;
+        public static final int video_progress_bar_bg=0x7f020058;
+        public static final int video_progress_bar_blue=0x7f020059;
+        public static final int video_sound_normal=0x7f02005a;
+        public static final int video_sound_select=0x7f02005b;
     }
     public static final class id {
-        public static final int img_view=0x7f050001;
-        public static final int server_screen_view=0x7f050000;
-        public static final int surface=0x7f050002;
+        public static final int image_view_bottom_layout=0x7f0a0004;
+        public static final int image_view_btn_layout=0x7f0a0005;
+        public static final int image_view_btn_next=0x7f0a000b;
+        public static final int image_view_btn_prev=0x7f0a0006;
+        public static final int image_view_btn_rotate_left=0x7f0a0007;
+        public static final int image_view_btn_rotate_right=0x7f0a0008;
+        public static final int image_view_btn_zoom_in=0x7f0a0009;
+        public static final int image_view_btn_zoom_out=0x7f0a000a;
+        public static final int image_view_name=0x7f0a0003;
+        public static final int image_view_top_layout=0x7f0a0002;
+        public static final int img_view=0x7f0a0001;
+        public static final int mediacontroller_file_name=0x7f0a0010;
+        public static final int mediacontroller_play_pause=0x7f0a000c;
+        public static final int mediacontroller_seekbar=0x7f0a000f;
+        public static final int mediacontroller_time_current=0x7f0a000d;
+        public static final int mediacontroller_time_total=0x7f0a000e;
+        public static final int menu_settings=0x7f0a003c;
+        public static final int music_album=0x7f0a0027;
+        public static final int music_album_layout=0x7f0a0028;
+        public static final int music_album_left=0x7f0a0029;
+        public static final int music_album_right=0x7f0a002a;
+        public static final int music_author_layout=0x7f0a0016;
+        public static final int music_view_album_layout=0x7f0a0026;
+        public static final int music_view_all_time=0x7f0a001c;
+        public static final int music_view_author=0x7f0a0017;
+        public static final int music_view_bottom_layout=0x7f0a0019;
+        public static final int music_view_btn_layout=0x7f0a001e;
+        public static final int music_view_current_time=0x7f0a001b;
+        public static final int music_view_forward=0x7f0a0024;
+        public static final int music_view_info_layout=0x7f0a0013;
+        public static final int music_view_name=0x7f0a0014;
+        public static final int music_view_pause=0x7f0a0022;
+        public static final int music_view_repeat=0x7f0a0025;
+        public static final int music_view_rewind=0x7f0a0020;
+        public static final int music_view_seekbar=0x7f0a001d;
+        public static final int music_view_seekbar_layout=0x7f0a001a;
+        public static final int music_view_sound=0x7f0a0015;
+        public static final int music_view_start=0x7f0a0021;
+        public static final int music_view_stop=0x7f0a0023;
+        public static final int music_view_surface=0x7f0a0011;
+        public static final int music_view_top_layout=0x7f0a0012;
+        public static final int music_view_upset=0x7f0a001f;
+        public static final int server_screen_view=0x7f0a0000;
+        public static final int surface=0x7f0a002b;
+        public static final int switchWidget=0x7f0a002c;
+        public static final int video_view_all_time=0x7f0a0034;
+        public static final int video_view_bottom_layout=0x7f0a0031;
+        public static final int video_view_btn_layout=0x7f0a0036;
+        public static final int video_view_current_time=0x7f0a0033;
+        public static final int video_view_forward=0x7f0a003b;
+        public static final int video_view_name=0x7f0a002f;
+        public static final int video_view_pause=0x7f0a0039;
+        public static final int video_view_rewind=0x7f0a0037;
+        public static final int video_view_seekbar=0x7f0a0035;
+        public static final int video_view_seekbar_layout=0x7f0a0032;
+        public static final int video_view_sound=0x7f0a0030;
+        public static final int video_view_start=0x7f0a0038;
+        public static final int video_view_stop=0x7f0a003a;
+        public static final int video_view_surface=0x7f0a002d;
+        public static final int video_view_top_layout=0x7f0a002e;
+        public static final int volum_contro=0x7f0a0018;
     }
     public static final class layout {
-        public static final int ashare_show=0x7f030000;
-        public static final int image_show=0x7f030001;
-        public static final int main=0x7f030002;
-        public static final int player=0x7f030003;
+        public static final int activity_main=0x7f030000;
+        public static final int ashare_show=0x7f030001;
+        public static final int image_player=0x7f030002;
+        public static final int image_show=0x7f030003;
+        public static final int main=0x7f030004;
+        public static final int mediacontroller=0x7f030005;
+        public static final int music_player=0x7f030006;
+        public static final int player=0x7f030007;
+        public static final int preference=0x7f030008;
+        public static final int preference_widget_switch=0x7f030009;
+        public static final int seek_thumb=0x7f03000a;
+        public static final int seekbar_style=0x7f03000b;
+        public static final int vertical_seekbar_style=0x7f03000c;
+        public static final int video_player=0x7f03000d;
+    }
+    public static final class menu {
+        public static final int activity_main=0x7f090000;
+    }
+    public static final class raw {
+        public static final int libarm=0x7f050000;
     }
     public static final class string {
-        public static final int app_name=0x7f040001;
-        public static final int hello=0x7f040000;
+        public static final int app_name=0x7f060009;
+        public static final int hello=0x7f06000d;
+        public static final int hello_world=0x7f06000a;
+        public static final int mediacontroller_play_pause=0x7f060006;
+        public static final int menu_settings=0x7f06000b;
+        public static final int switch_off=0x7f060008;
+        public static final int switch_on=0x7f060007;
+        public static final int title_activity_main=0x7f06000c;
+        public static final int vitamio_init_decoders=0x7f060001;
+        public static final int vitamio_name=0x7f060000;
+        public static final int vitamio_videoview_error_button=0x7f060005;
+        public static final int vitamio_videoview_error_text_invalid_progressive_playback=0x7f060003;
+        public static final int vitamio_videoview_error_text_unknown=0x7f060004;
+        public static final int vitamio_videoview_error_title=0x7f060002;
     }
+    public static final class style {
+        public static final int MediaController_SeekBar=0x7f070000;
+        public static final int MediaController_Text=0x7f070001;
+        public static final int Preference_SwitchPreference=0x7f070004;
+        public static final int Widget_Holo_CompoundButton_Switch=0x7f070002;
+        public static final int Widget_Holo_Light_CompoundButton_Switch=0x7f070003;
+    }
+    public static final class styleable {
+        /** Attributes that can be used with a Android.
+           <p>Includes the following attributes:</p>
+           <table>
+           <colgroup align="left" />
+           <colgroup align="left" />
+           <tr><th>Attribute</th><th>Description</th></tr>
+           <tr><td><code>{@link #Android_android_textColor archermind.ashare:android_textColor}</code></td><td> Text color.</td></tr>
+           <tr><td><code>{@link #Android_android_textColorHighlight archermind.ashare:android_textColorHighlight}</code></td><td> Color of the text selection highlight.</td></tr>
+           <tr><td><code>{@link #Android_android_textColorHint archermind.ashare:android_textColorHint}</code></td><td> Color of the hint text.</td></tr>
+           <tr><td><code>{@link #Android_android_textColorLink archermind.ashare:android_textColorLink}</code></td><td> Color of the links.</td></tr>
+           <tr><td><code>{@link #Android_android_textSize archermind.ashare:android_textSize}</code></td><td> Size of the text.</td></tr>
+           <tr><td><code>{@link #Android_android_textStyle archermind.ashare:android_textStyle}</code></td><td> Style (bold, italic, bolditalic) for the text.</td></tr>
+           <tr><td><code>{@link #Android_android_typeface archermind.ashare:android_typeface}</code></td><td> Typeface (normal, sans, serif, monospace) for the text.</td></tr>
+           </table>
+           @see #Android_android_textColor
+           @see #Android_android_textColorHighlight
+           @see #Android_android_textColorHint
+           @see #Android_android_textColorLink
+           @see #Android_android_textSize
+           @see #Android_android_textStyle
+           @see #Android_android_typeface
+         */
+        public static final int[] Android = {
+            0x01010095, 0x01010096, 0x01010097, 0x01010098,
+            0x01010099, 0x0101009a, 0x0101009b
+        };
+        /**
+          <p>
+          @attr description
+           Text color. 
+          <p>This corresponds to the global attribute          resource symbol {@link archermind.ashare.R.attr#android_textColor}.
+          @attr name android:android_textColor
+        */
+        public static final int Android_android_textColor = 3;
+        /**
+          <p>
+          @attr description
+           Color of the text selection highlight. 
+          <p>This corresponds to the global attribute          resource symbol {@link archermind.ashare.R.attr#android_textColorHighlight}.
+          @attr name android:android_textColorHighlight
+        */
+        public static final int Android_android_textColorHighlight = 4;
+        /**
+          <p>
+          @attr description
+           Color of the hint text. 
+          <p>This corresponds to the global attribute          resource symbol {@link archermind.ashare.R.attr#android_textColorHint}.
+          @attr name android:android_textColorHint
+        */
+        public static final int Android_android_textColorHint = 5;
+        /**
+          <p>
+          @attr description
+           Color of the links. 
+          <p>This corresponds to the global attribute          resource symbol {@link archermind.ashare.R.attr#android_textColorLink}.
+          @attr name android:android_textColorLink
+        */
+        public static final int Android_android_textColorLink = 6;
+        /**
+          <p>
+          @attr description
+           Size of the text. Recommended dimension type for text is "sp" for scaled-pixels (example: 15sp). 
+          <p>This corresponds to the global attribute          resource symbol {@link archermind.ashare.R.attr#android_textSize}.
+          @attr name android:android_textSize
+        */
+        public static final int Android_android_textSize = 0;
+        /**
+          <p>
+          @attr description
+           Style (bold, italic, bolditalic) for the text. 
+          <p>This corresponds to the global attribute          resource symbol {@link archermind.ashare.R.attr#android_textStyle}.
+          @attr name android:android_textStyle
+        */
+        public static final int Android_android_textStyle = 2;
+        /**
+          <p>
+          @attr description
+           Typeface (normal, sans, serif, monospace) for the text. 
+          <p>This corresponds to the global attribute          resource symbol {@link archermind.ashare.R.attr#android_typeface}.
+          @attr name android:android_typeface
+        */
+        public static final int Android_android_typeface = 1;
+        /** Attributes that can be used with a Switch.
+           <p>Includes the following attributes:</p>
+           <table>
+           <colgroup align="left" />
+           <colgroup align="left" />
+           <tr><th>Attribute</th><th>Description</th></tr>
+           <tr><td><code>{@link #Switch_switchMinWidth archermind.ashare:switchMinWidth}</code></td><td> Minimum width for the switch component </td></tr>
+           <tr><td><code>{@link #Switch_switchPadding archermind.ashare:switchPadding}</code></td><td> Minimum space between the switch and caption text </td></tr>
+           <tr><td><code>{@link #Switch_switchTextAppearance archermind.ashare:switchTextAppearance}</code></td><td> TextAppearance style for text displayed on the switch thumb.</td></tr>
+           <tr><td><code>{@link #Switch_textOff archermind.ashare:textOff}</code></td><td> Text to use when the switch is in the unchecked/"off" state.</td></tr>
+           <tr><td><code>{@link #Switch_textOn archermind.ashare:textOn}</code></td><td> Text to use when the switch is in the checked/"on" state.</td></tr>
+           <tr><td><code>{@link #Switch_thumb archermind.ashare:thumb}</code></td><td> Drawable to use as the "thumb" that switches back and forth.</td></tr>
+           <tr><td><code>{@link #Switch_thumbTextPadding archermind.ashare:thumbTextPadding}</code></td><td> Amount of padding on either side of text within the switch thumb.</td></tr>
+           <tr><td><code>{@link #Switch_track archermind.ashare:track}</code></td><td> Drawable to use as the "track" that the switch thumb slides within.</td></tr>
+           </table>
+           @see #Switch_switchMinWidth
+           @see #Switch_switchPadding
+           @see #Switch_switchTextAppearance
+           @see #Switch_textOff
+           @see #Switch_textOn
+           @see #Switch_thumb
+           @see #Switch_thumbTextPadding
+           @see #Switch_track
+         */
+        public static final int[] Switch = {
+            0x7f010005, 0x7f010006, 0x7f010007, 0x7f010008,
+            0x7f010009, 0x7f01000a, 0x7f01000b, 0x7f01000c
+        };
+        /**
+          <p>
+          @attr description
+           Minimum width for the switch component 
+
+
+          <p>Must be a dimension value, which is a floating point number appended with a unit such as "<code>14.5sp</code>".
+Available units are: px (pixels), dp (density-independent pixels), sp (scaled pixels based on preferred font size),
+in (inches), mm (millimeters).
+<p>This may also be a reference to a resource (in the form
+"<code>@[<i>package</i>:]<i>type</i>:<i>name</i></code>") or
+theme attribute (in the form
+"<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>")
+containing a value of this type.
+          <p>This is a private symbol.
+          @attr name android:switchMinWidth
+        */
+        public static final int Switch_switchMinWidth = 6;
+        /**
+          <p>
+          @attr description
+           Minimum space between the switch and caption text 
+
+
+          <p>Must be a dimension value, which is a floating point number appended with a unit such as "<code>14.5sp</code>".
+Available units are: px (pixels), dp (density-independent pixels), sp (scaled pixels based on preferred font size),
+in (inches), mm (millimeters).
+<p>This may also be a reference to a resource (in the form
+"<code>@[<i>package</i>:]<i>type</i>:<i>name</i></code>") or
+theme attribute (in the form
+"<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>")
+containing a value of this type.
+          <p>This is a private symbol.
+          @attr name android:switchPadding
+        */
+        public static final int Switch_switchPadding = 7;
+        /**
+          <p>
+          @attr description
+           TextAppearance style for text displayed on the switch thumb. 
+
+
+          <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+          <p>This is a private symbol.
+          @attr name android:switchTextAppearance
+        */
+        public static final int Switch_switchTextAppearance = 5;
+        /**
+          <p>
+          @attr description
+           Text to use when the switch is in the unchecked/"off" state. 
+
+
+          <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+          <p>This is a private symbol.
+          @attr name android:textOff
+        */
+        public static final int Switch_textOff = 3;
+        /**
+          <p>
+          @attr description
+           Text to use when the switch is in the checked/"on" state. 
+
+
+          <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+          <p>This is a private symbol.
+          @attr name android:textOn
+        */
+        public static final int Switch_textOn = 2;
+        /**
+          <p>
+          @attr description
+           Drawable to use as the "thumb" that switches back and forth. 
+
+
+          <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+          <p>This is a private symbol.
+          @attr name android:thumb
+        */
+        public static final int Switch_thumb = 0;
+        /**
+          <p>
+          @attr description
+           Amount of padding on either side of text within the switch thumb. 
+
+
+          <p>Must be a dimension value, which is a floating point number appended with a unit such as "<code>14.5sp</code>".
+Available units are: px (pixels), dp (density-independent pixels), sp (scaled pixels based on preferred font size),
+in (inches), mm (millimeters).
+<p>This may also be a reference to a resource (in the form
+"<code>@[<i>package</i>:]<i>type</i>:<i>name</i></code>") or
+theme attribute (in the form
+"<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>")
+containing a value of this type.
+          <p>This is a private symbol.
+          @attr name android:thumbTextPadding
+        */
+        public static final int Switch_thumbTextPadding = 4;
+        /**
+          <p>
+          @attr description
+           Drawable to use as the "track" that the switch thumb slides within. 
+
+
+          <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+          <p>This is a private symbol.
+          @attr name android:track
+        */
+        public static final int Switch_track = 1;
+        /** Attributes that can be used with a SwitchPreference.
+           <p>Includes the following attributes:</p>
+           <table>
+           <colgroup align="left" />
+           <colgroup align="left" />
+           <tr><th>Attribute</th><th>Description</th></tr>
+           <tr><td><code>{@link #SwitchPreference_disableDependentsState archermind.ashare:disableDependentsState}</code></td><td>
+             The state (true for on, or false for off) that causes dependents to be disabled.</td></tr>
+           <tr><td><code>{@link #SwitchPreference_summaryOff archermind.ashare:summaryOff}</code></td><td>
+             The summary for the Preference in a PreferenceActivity screen when the
+             SwitchPreference is unchecked.</td></tr>
+           <tr><td><code>{@link #SwitchPreference_summaryOn archermind.ashare:summaryOn}</code></td><td>
+             The summary for the Preference in a PreferenceActivity screen when the
+             SwitchPreference is checked.</td></tr>
+           <tr><td><code>{@link #SwitchPreference_switchTextOff archermind.ashare:switchTextOff}</code></td><td>
+             The text used on the switch itself when in the "off" state.</td></tr>
+           <tr><td><code>{@link #SwitchPreference_switchTextOn archermind.ashare:switchTextOn}</code></td><td>
+             The text used on the switch itself when in the "on" state.</td></tr>
+           </table>
+           @see #SwitchPreference_disableDependentsState
+           @see #SwitchPreference_summaryOff
+           @see #SwitchPreference_summaryOn
+           @see #SwitchPreference_switchTextOff
+           @see #SwitchPreference_switchTextOn
+         */
+        public static final int[] SwitchPreference = {
+            0x7f010000, 0x7f010001, 0x7f010002, 0x7f010003,
+            0x7f010004
+        };
+        /**
+          <p>
+          @attr description
+          
+             The state (true for on, or false for off) that causes dependents to be disabled. By default,
+             dependents will be disabled when this is unchecked, so the value of this preference is false.
+        
+
+
+          <p>Must be a boolean value, either "<code>true</code>" or "<code>false</code>".
+<p>This may also be a reference to a resource (in the form
+"<code>@[<i>package</i>:]<i>type</i>:<i>name</i></code>") or
+theme attribute (in the form
+"<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>")
+containing a value of this type.
+          <p>This is a private symbol.
+          @attr name android:disableDependentsState
+        */
+        public static final int SwitchPreference_disableDependentsState = 4;
+        /**
+          <p>
+          @attr description
+          
+             The summary for the Preference in a PreferenceActivity screen when the
+             SwitchPreference is unchecked. If separate on/off summaries are not
+             needed, the summary attribute can be used instead.
+        
+
+
+          <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+          <p>This is a private symbol.
+          @attr name android:summaryOff
+        */
+        public static final int SwitchPreference_summaryOff = 1;
+        /**
+          <p>
+          @attr description
+          
+             The summary for the Preference in a PreferenceActivity screen when the
+             SwitchPreference is checked. If separate on/off summaries are not
+             needed, the summary attribute can be used instead.
+        
+
+
+          <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+          <p>This is a private symbol.
+          @attr name android:summaryOn
+        */
+        public static final int SwitchPreference_summaryOn = 0;
+        /**
+          <p>
+          @attr description
+          
+             The text used on the switch itself when in the "off" state.
+             This should be a very SHORT string, as it appears in a small space.
+        
+
+
+          <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+          <p>This is a private symbol.
+          @attr name android:switchTextOff
+        */
+        public static final int SwitchPreference_switchTextOff = 3;
+        /**
+          <p>
+          @attr description
+          
+             The text used on the switch itself when in the "on" state.
+             This should be a very SHORT string, as it appears in a small space.
+        
+
+
+          <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+          <p>This is a private symbol.
+          @attr name android:switchTextOn
+        */
+        public static final int SwitchPreference_switchTextOn = 2;
+        /** Attributes that can be used with a Theme.
+           <p>Includes the following attributes:</p>
+           <table>
+           <colgroup align="left" />
+           <colgroup align="left" />
+           <tr><th>Attribute</th><th>Description</th></tr>
+           <tr><td><code>{@link #Theme_switchPreferenceStyle archermind.ashare:switchPreferenceStyle}</code></td><td></td></tr>
+           <tr><td><code>{@link #Theme_switchStyle archermind.ashare:switchStyle}</code></td><td></td></tr>
+           </table>
+           @see #Theme_switchPreferenceStyle
+           @see #Theme_switchStyle
+         */
+        public static final int[] Theme = {
+            0x7f01000d, 0x7f01000e
+        };
+        /**
+          <p>This symbol is the offset where the {@link archermind.ashare.R.attr#switchPreferenceStyle}
+          attribute's value can be found in the {@link #Theme} array.
+
+
+          <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+          @attr name android:switchPreferenceStyle
+        */
+        public static final int Theme_switchPreferenceStyle = 1;
+        /**
+          <p>This symbol is the offset where the {@link archermind.ashare.R.attr#switchStyle}
+          attribute's value can be found in the {@link #Theme} array.
+
+
+          <p>Must be a reference to another resource, in the form "<code>@[+][<i>package</i>:]<i>type</i>:<i>name</i></code>"
+or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>name</i></code>".
+          @attr name android:switchStyle
+        */
+        public static final int Theme_switchStyle = 0;
+    };
 }

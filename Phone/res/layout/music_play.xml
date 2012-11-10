@@ -12,18 +12,20 @@
         android:background="@drawable/top_bar" >
 
         <ImageButton
+            android:id="@+id/nowplayinglist"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_centerVertical="true"
             android:layout_marginLeft="12dip"
-            android:background="@drawable/photo_bth_list_normal" />
+            android:background="@drawable/btn_media_list"
+            android:onClick="doClick" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="IMFSF026"
+            android:text=""
             android:textColor="#FFFFFF"
             android:textSize="18dip" />
 
@@ -34,7 +36,7 @@
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
             android:layout_marginRight="12dip"
-            android:background="@drawable/music_bth_change_screen_normal" />
+            android:background="@drawable/btn_media_phone" />
     </RelativeLayout>
 
     <LinearLayout
@@ -65,7 +67,13 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="5dip"
             android:layout_marginTop="5dip"
+            android:ellipsize="marquee"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
             android:gravity="center_horizontal"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:scrollHorizontally="true"
+            android:singleLine="true"
             android:text="Bad Romance"
             android:textSize="20dip" />
     </LinearLayout>
@@ -83,6 +91,7 @@
         android:padding="1dip" >
 
         <ImageView
+            android:id= "@+id/musicimg"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_gravity="center"
@@ -107,17 +116,29 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/music_icon_sound" />
 
-                <archermind.dlna.verticalseekbar.VerticalSeekBar
-                    android:id="@+id/volumecontrol"
-                    android:layout_width="30dip"
-                    android:layout_height="110dip"
-                    android:layout_gravity="center_horizontal" >
-                </archermind.dlna.verticalseekbar.VerticalSeekBar>
-
-                <ImageView
+                <RelativeLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/music_icon_no_sound" />
+                    android:layout_gravity="center_horizontal"
+                    android:background="@drawable/music_sound_bg" >
+
+                    <archermind.dlna.verticalseekbar.VerticalSeekBar
+                        android:id="@+id/volumecontrol"
+                        android:layout_width="12dip"
+                        android:layout_height="100dip"
+                        android:thumbOffset="2dip"
+                        android:layout_centerInParent="true"
+                        android:progressDrawable="@drawable/vertical_seekbar_img"
+                        android:thumb="@drawable/music_sound_point" >
+                    </archermind.dlna.verticalseekbar.VerticalSeekBar>
+                </RelativeLayout>
+
+                <ImageView
+                    android:id="@+id/besilient"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/music_icon_no_sound"
+                    android:onClick="doClick" />
             </LinearLayout>
 
             <LinearLayout
@@ -133,14 +154,16 @@
                     android:layout_below="@+id/music_album_container" >
 
                     <ImageButton
+                        android:id="@+id/shuffle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentLeft="true"
                         android:layout_marginLeft="15dip"
                         android:layout_marginTop="3dip"
-                        android:background="@drawable/music_bth_upset_play_normal" />
+                        android:background="@drawable/music_bth_shuffle_play_closed_normal" />
 
                     <ImageButton
+                        android:id="@+id/repeat"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentRight="true"
@@ -152,27 +175,36 @@
                 <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="15dip" >
+                    android:paddingLeft="5dip"
+                    android:paddingRight="5dip"
+                    android:layout_marginTop="5dip"
+                    android:layout_marginBottom="5dip" >
 
                     <TextView
+                        android:id="@+id/nowposition"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentLeft="true"
                         android:layout_centerVertical="true"
-                        android:text="10:14"
+                        android:text="00:00"
                         android:textColor="#FFFFFF" />
 
                     <SeekBar
-                        android:layout_width="200dip"
-                        android:layout_height="wrap_content"
-                        android:layout_centerInParent="true" />
+                        android:id="@+id/musicprogress"
+                        android:layout_width="180dip"
+                        android:layout_height="10dip"
+                        android:layout_centerInParent="true"
+                        android:progressDrawable="@drawable/seekbar_img"
+                        android:thumb="@drawable/video_progress_bar_piont"
+                        android:thumbOffset="2dip" />
 
                     <TextView
+                        android:id="@+id/totaltime"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentRight="true"
                         android:layout_centerVertical="true"
-                        android:text="10:14"
+                        android:text="00:00"
                         android:textColor="#FFFFFF" />
                 </RelativeLayout>
             </LinearLayout>
@@ -204,8 +236,8 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:layout_weight="1"
-            android:onClick="doClick"
             android:background="#00000000"
+            android:onClick="doClick"
             android:src="@drawable/video_bth_pause_normal" />
 
         <ImageButton
@@ -219,7 +251,7 @@
             android:src="@drawable/btn_media_stop" />
 
         <ImageButton
-            android:id= "@+id/next"
+            android:id="@+id/next"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"

@@ -6,19 +6,30 @@
 
     <TextView
         android:layout_width="240dp"
-        android:layout_height="32dp"
+        android:layout_height="28dp"
+        android:layout_marginLeft="20dp"
         android:gravity="left|center_vertical"
-        android:text="Waiting for TV"
-        android:textColor="@android:color/white" />
+        android:text="@string/device_config_dlg_tv_check_title"
+        android:textAppearance="@style/DialogTextAppearanceTitle" />
 
-
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginLeft="20dp"
+        android:gravity="left|center_vertical"
+        android:text="@string/device_config_dlg_tv_check_content"
+        android:textAppearance="@style/DialogTextAppearanceContent" />
 
     <TextView
         android:id="@+id/item_ok"
-        android:layout_width="240dp"
-        android:layout_height="32dp"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
         android:gravity="center"
-        android:text="OK"
+        android:background="@drawable/more_options_btn_sel"
+        android:text="@string/device_config_dlg_ok"
         android:textAppearance="@style/MoreOptionsTextAppearanceFirst" />
 
 </LinearLayout>

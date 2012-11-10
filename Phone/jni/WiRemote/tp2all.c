@@ -3,6 +3,8 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <signal.h>
+#include <time.h>
 #include <android/log.h>
 #include "wi_remote.h"
 
@@ -22,6 +24,11 @@ static int left_button = 0;
 static int left_x, left_y;
 static int left_out_range;
 static int finger2_status = 0;
+struct itimerval value;
+int g_action = 0;
+
+static void init_timer_trigger(void);
+static void deinit_timer_trigger(void);
 
 static uint64_t timestamp()
 {
@@ -61,13 +68,49 @@ static int update_state(int action)
 	return action;
 }
 
+void timer_trigger(int signum)
+{
+	LOGD("%s at %d line\n", __func__, __LINE__);
+	if(g_action == 0)
+	{
+		LOGD("long press left!\n");
+		left_button = 1;
+		send_mouse_button(MOUSE_BUTTON_LEFT, 1);
+		send_mouse_move(1, 1);
+	}
+	deinit_timer_trigger();
+}
+
+static void init_timer_trigger(void)
+{
+	signal(SIGALRM, timer_trigger);
+
+	value.it_value.tv_sec = 0;
+	value.it_value.tv_usec = 200000;
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_usec = 0;
+
+	setitimer(ITIMER_REAL, &value, NULL);
+}
+
+static void deinit_timer_trigger(void)
+{
+	value.it_value.tv_sec = 0;
+	value.it_value.tv_usec = 0;
+	value.it_interval.tv_sec = 0;
+	value.it_interval.tv_usec = 0;
+}
+
 
 void tp2all(int x1, int y1, int x2, int y2, int action)
 {
+	g_action = action;
 	action = update_state(action);
+
 	switch(action)
 	{
 		case 0:
+			init_timer_trigger();
 			if(finger_count == 1)
 			{
 				last_time = timestamp();

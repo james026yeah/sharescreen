@@ -899,8 +899,12 @@ public class RenderingControl implements ActionListener, QueryListener
 
 		if (actionName == null)
 			return false;
-		
-		isActionSuccess = false;
+		/**************************
+		 * when action received,return true
+		 */
+		//isActionSuccess = false;
+		isActionSuccess = true;
+		/**************************/
 		MediaRenderer dmr = getMediaRenderer();
 		if (dmr != null) {
 			ActionListener listener = dmr.getActionListener();

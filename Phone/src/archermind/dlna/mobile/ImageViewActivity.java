@@ -1,25 +1,22 @@
 package archermind.dlna.mobile;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
-import android.annotation.SuppressLint;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
+import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.View.OnClickListener;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AdapterView.OnItemSelectedListener;
-import android.widget.BaseAdapter;
-import android.widget.Gallery;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -27,7 +24,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import archermind.dlna.media.PhotoItem;
 
-@SuppressLint("HandlerLeak")
 public class ImageViewActivity extends BaseActivity implements OnClickListener {
 	
 	private static final String TAG = "ImageViewActivity";
@@ -35,22 +31,25 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 	public static final String IMAGE_INDEX = "image_index";
 	public static ArrayList<PhotoItem> sImageItemList = new ArrayList<PhotoItem>();
 	
-	private static final int IMAGE_ROTATE_LEFT_VALUE = -90;
-	private static final int IMAGE_ROTATE_RIGHT_VALUE = 90;
-	private static final int IMAGE_ROTATE_ANGLE_DEFAULT = 0;
+	private static final float IMAGE_ROTATE_ANGLE_DEFAULT = 0.0f;
+	private static final float IMAGE_ROTATE_LEFT_VALUE = -90.0f;
+	private static final float IMAGE_ROTATE_RIGHT_VALUE = 90.0f;
 	
-	private static final int IMAGE_BITMAP_CREATED = 0;
+	private static final float IMAGE_ZOOM_RATIO_DEFAULT = 1.0f;
+	private static final float IMAGE_ZOOM_OUT_VALUE = 0.8f;
+	private static final float IMAGE_ZOOM_IN_VALUE = 1.25f;
 	
 	private ArrayList<Bitmap> mBitmapList = new ArrayList<Bitmap>();
-	private ArrayList<Integer> mBackgroudList = new ArrayList<Integer>();
-	private ArrayList<Integer> mRotateAngleList = new ArrayList<Integer>();
+	private ArrayList<Float> mZoomRatioList = new ArrayList<Float>();
+	private ArrayList<Float> mRotateList = new ArrayList<Float>();
 	
 	private RelativeLayout mTopLayout;
 	private LinearLayout mBottomLayout;
 	
+	private ViewPager mViewPager;
+	
 	private LinearLayout mListView;
 	private TextView mNameView;
-	private Gallery mGallery;
 	private ImageView mPrevView;
 	private ImageView mRotateLeftView;
 	private ImageView mRotateRightView;
@@ -58,30 +57,36 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 	private ImageView mZoomOutView;
 	private ImageView mNextView;
 	
-	private int mImageCurrentIndex;
-	private int mImageListMaxSize;
-	private int mImageRotateAngle;
-	
 	private int mScreenWidth;
 	private int mScreenHeight;
+	private int mImageCurrentIndex;
+	private int mImageListMaxSize;
 	
-	private ImageAdapter mImageAdapter;
+	private ViewPagerAdapter mViewPagerAdapter;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		log("onCreate is call");
 		
-		setContentView(R.layout.local_media_image_view);
-		
 		mImageCurrentIndex = getIntent().getIntExtra(IMAGE_INDEX, 0);
+		
 		mImageListMaxSize = sImageItemList.size();
 		
+		setContentView(R.layout.local_media_image_view);
 		getScreenWidthAndHeight();
 		
 		initImageView();
 		
 	}
+	
+	protected void onStop() {
+		super.onStop();
+		sImageItemList.removeAll(sImageItemList);
+		mBitmapList.removeAll(mBitmapList);
+		sImageItemList = null;
+		mBitmapList = null;
+	};
 	
 	private void getScreenWidthAndHeight() {
 		DisplayMetrics dm = new DisplayMetrics();
@@ -114,61 +119,53 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 		mZoomOutView.setOnClickListener(this);
 		mNextView.setOnClickListener(this);
 		
-		mGallery = (Gallery) findViewById(R.id.image_view_gallery);
+		initImageList();
 		
-		new Thread() {
-			public void run() {
-				for(int i = 0;i < mImageListMaxSize;i ++) {
-					mBitmapList.add(createImageBitmap(i));
-					mBackgroudList.add(R.drawable.photo_big);
-					mRotateAngleList.add(IMAGE_ROTATE_ANGLE_DEFAULT);
+		ArrayList<View> list = new ArrayList<View>();
+		for(int i = 0;i < mBitmapList.size();i ++) {
+			View view = getLayoutInflater().inflate(R.layout.local_media_image_view_item, null);
+			list.add(view);
+		}
+		
+		mViewPager = (ViewPager) findViewById(R.id.image_view_pager);
+		mViewPagerAdapter = new ViewPagerAdapter(list);
+		mViewPager.setAdapter(mViewPagerAdapter);
+		mViewPager.setCurrentItem(mImageCurrentIndex);
+		mViewPager.setOnPageChangeListener(new OnPageChangeListener() {
+			
+			@Override
+			public void onPageSelected(int arg0) {
+				mImageCurrentIndex = arg0;
+				setImageName(arg0);
+				if(mImageCurrentIndex == 0) {
+					Toast.makeText(ImageViewActivity.this, R.string.image_first_message, Toast.LENGTH_SHORT).show();
 				}
-				mHandler.sendEmptyMessage(IMAGE_BITMAP_CREATED);
-			};
-		}.start();
+				else if(mImageCurrentIndex == mImageListMaxSize - 1) {
+					Toast.makeText(ImageViewActivity.this, R.string.image_last_message, Toast.LENGTH_SHORT).show();
+				}
+				postPlay(sImageItemList.get(mImageCurrentIndex).getItemUri(), IMAGE_TYPE);
+			}
+			
+			@Override
+			public void onPageScrolled(int arg0, float arg1, int arg2) {
+				
+			}
+			
+			@Override
+			public void onPageScrollStateChanged(int arg0) {
+				
+			}
+		});
 		
 	}
 	
-	Handler mHandler = new Handler() {
-		public void handleMessage(Message msg) {
-			switch(msg.what) {
-				case IMAGE_BITMAP_CREATED:
-					mImageAdapter = new ImageAdapter(ImageViewActivity.this, mBitmapList, mBackgroudList);
-					mGallery.setAdapter(mImageAdapter);
-					mGallery.setSelection(mImageCurrentIndex);
-					mGallery.setOnItemSelectedListener(new OnItemSelectedListener() {
-
-						@Override
-						public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-							mImageCurrentIndex = position;
-							mImageRotateAngle = 0;
-							setImageName(position);
-						}
-
-						@Override
-						public void onNothingSelected(AdapterView<?> arg0) {
-							// nothing to do
-						}
-						
-					});
-					mGallery.setOnItemClickListener(new OnItemClickListener() {
-
-						@Override
-						public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-							if(mTopLayout.getVisibility() == View.VISIBLE) {
-								mTopLayout.setVisibility(View.GONE);
-								mBottomLayout.setVisibility(View.GONE);
-							}
-							else {
-								mTopLayout.setVisibility(View.VISIBLE);
-								mBottomLayout.setVisibility(View.VISIBLE);
-							}
-						}
-					});
-					break;
-			}
-		};
-	};
+	private void initImageList() {
+		for(int i = 0;i < mImageListMaxSize;i ++) {
+			mBitmapList.add(null);
+			mZoomRatioList.add(IMAGE_ZOOM_RATIO_DEFAULT);
+			mRotateList.add(IMAGE_ROTATE_ANGLE_DEFAULT);
+		}
+	}
 	
 	private float getMinScale(float scaleWidth, float scaleHeight) {
 		return scaleWidth < scaleHeight ? scaleWidth : scaleHeight;
@@ -178,68 +175,64 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 		mNameView.setText(sImageItemList.get(index).getTitle());
 	}
 	
-	private void rotateImageBitmap(int rotateValue) {
-		
-//		Bitmap bitmap = mBitmapList.get(mImageCurrentIndex);
-		Bitmap bitmap = BitmapFactory.decodeFile(sImageItemList.get(mImageCurrentIndex).getFilePath());
-		int width = bitmap.getWidth();
-		int height = bitmap.getHeight();
-		
-		Matrix matrix = new Matrix();
-		mImageRotateAngle = mRotateAngleList.get(mImageCurrentIndex) + rotateValue;
-		matrix.setRotate(mImageRotateAngle);
-		Bitmap bm = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
-		mBitmapList.set(mImageCurrentIndex, bm);
-		mBackgroudList.set(mImageCurrentIndex, R.drawable.photo_big);
-		mImageAdapter.notifyDataSetChanged();
-		
-		mRotateAngleList.set(mImageCurrentIndex, mImageRotateAngle);
-	}
-	
 	private Bitmap createImageBitmap(int index) {
-		
-		Bitmap bitmap = BitmapFactory.decodeFile(sImageItemList.get(index).getFilePath());
-		int width = bitmap.getWidth();
-		int height = bitmap.getHeight();
-		
-		Matrix matrix = new Matrix();
-		
-		float scaleWidth;
-		float scaleHeight;
-		
-		scaleWidth = ((float) mScreenWidth) / width;
-		scaleHeight = ((float) mScreenHeight) / height;
-		
-		float scale = getMinScale(scaleWidth, scaleHeight);
-		matrix.setScale(scale, scale);
-		
-		Bitmap bm = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
-		return bm;
+		File file = new File(sImageItemList.get(index).getFilePath());
+		try {
+			// Decode image size
+			BitmapFactory.Options o = new BitmapFactory.Options();
+			o.inJustDecodeBounds = true;
+			BitmapFactory.decodeStream(new FileInputStream(file), null, o);
+			
+			// The new size we want to scale to
+			// final int REQUIRED_SIZE=getScreenWidthAndHeight();
+			// Find the correct scale value. It should be the power of 2.
+			int scale = 1;
+			while (o.outWidth / scale / 2 >= mScreenWidth && o.outHeight / scale / 2 >= mScreenHeight)
+				scale *= 2;
+			o.inJustDecodeBounds = false;
+			// Decode with inSampleSize
+			BitmapFactory.Options o2 = new BitmapFactory.Options();
+			o2.inSampleSize = scale;
+			return BitmapFactory.decodeStream(new FileInputStream(file), null, o2);
+		}
+		catch (FileNotFoundException e) {
+		}
+		return null;
+//		int width = resizeBmp.getWidth();
+//		int height = resizeBmp.getHeight();
+//		
+//		Matrix matrix = new Matrix();
+//		float scaleWidth = ((float) mScreenWidth) / width;
+//		float scaleHeight = ((float) mScreenHeight) / height;
+//		float scale = getMinScale(scaleWidth, scaleHeight);
+//		matrix.postScale(scale, scale);
+//		Bitmap bm = Bitmap.createBitmap(resizeBmp, 0, 0, width, height, matrix, true);
+//		return bm;
 	}
 	
 	private void prevImage() {
 		if (mImageCurrentIndex == 0) {
-			Toast.makeText(this, R.string.image_gallery_first_message, Toast.LENGTH_SHORT).show();
+			Toast.makeText(this, R.string.image_first_message, Toast.LENGTH_SHORT).show();
 		}
 		else {
 			mImageCurrentIndex--;
-			postPrevious(sImageItemList.get(mImageCurrentIndex).getItemUri(), "images");
-			mGallery.setSelection(mImageCurrentIndex);
-			mImageAdapter.notifyDataSetChanged();
 			setImageName(mImageCurrentIndex);
+			postPrevious(sImageItemList.get(mImageCurrentIndex).getItemUri(), IMAGE_TYPE);
+			mViewPager.setCurrentItem(mImageCurrentIndex);
+			mViewPagerAdapter.notifyDataSetChanged();
 		}
 	}
 	
 	private void nextImage() {
 		if (mImageCurrentIndex == mImageListMaxSize - 1) {
-			Toast.makeText(this, R.string.image_gallery_last_message, Toast.LENGTH_SHORT).show();
+			Toast.makeText(this, R.string.image_last_message, Toast.LENGTH_SHORT).show();
 		}
 		else {
 			mImageCurrentIndex++;
-			postNext(sImageItemList.get(mImageCurrentIndex).getItemUri(), "images");
-			mGallery.setSelection(mImageCurrentIndex);
-			mImageAdapter.notifyDataSetChanged();
 			setImageName(mImageCurrentIndex);
+			postNext(sImageItemList.get(mImageCurrentIndex).getItemUri(), IMAGE_TYPE);
+			mViewPager.setCurrentItem(mImageCurrentIndex);
+			mViewPagerAdapter.notifyDataSetChanged();
 		}
 	}
 	
@@ -253,14 +246,16 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 				prevImage();
 				break;
 			case R.id.image_view_rotate_left:
-				rotateImageBitmap(IMAGE_ROTATE_LEFT_VALUE);
+				postFlipImage(mRotateList.get(mImageCurrentIndex) + IMAGE_ROTATE_LEFT_VALUE + "");
 				break;
 			case R.id.image_view_rotate_right:
-				rotateImageBitmap(IMAGE_ROTATE_RIGHT_VALUE);
+				postFlipImage(mRotateList.get(mImageCurrentIndex) + IMAGE_ROTATE_RIGHT_VALUE + "");
 				break;
 			case R.id.image_view_zoom_in:
+				postScalingImage(mZoomRatioList.get(mImageCurrentIndex) * IMAGE_ZOOM_IN_VALUE + "");
 				break;
 			case R.id.image_view_zoom_out:
+				postScalingImage(mZoomRatioList.get(mImageCurrentIndex) * IMAGE_ZOOM_OUT_VALUE + "");
 				break;
 			case R.id.image_view_next:
 				nextImage();
@@ -268,52 +263,64 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 		}
 	}
 	
-	private class ImageAdapter extends BaseAdapter {
-
-		private Context mContext;
-		private ArrayList<Bitmap> mBitmaps = new ArrayList<Bitmap>();
-		private ArrayList<Integer> mBackgrounds = new ArrayList<Integer>();
+	private class ViewPagerAdapter extends PagerAdapter {
 		
-		public ImageAdapter(Context context, ArrayList<Bitmap> bitmaps,
-					ArrayList<Integer> backgrounds) {
-			mContext = context;
-			mBitmaps = bitmaps;
-			mBackgrounds = backgrounds;
+		private ArrayList<View> list = new ArrayList<View>();
+		
+		public ViewPagerAdapter(ArrayList<View> list) {
+			this.list = list;
+		}
+		
+		@Override
+		public int getItemPosition(Object object) {
+			return POSITION_NONE;
 		}
 		
 		@Override
 		public int getCount() {
-			return mBitmaps.size();
+			return list.size();
 		}
-
+		
 		@Override
-		public Object getItem(int position) {
-			return position;
+		public boolean isViewFromObject(View arg0, Object arg1) {
+			return arg0 == arg1;
 		}
-
+		
 		@Override
-		public long getItemId(int position) {
-			return position;
+		public void destroyItem(ViewGroup container, int position, Object object) {
+			((ViewPager) container).removeView(list.get(position));
 		}
-
+		
 		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
-			View view;
+		public Object instantiateItem(ViewGroup container, int position) {
 			
-//			if(convertView == null) {
-				view = getLayoutInflater().inflate(R.layout.local_media_image_view_item, null);
-//			}
-//			else {
-//				view = convertView;
-//			}
-			
-			LinearLayout imageViewBg = (LinearLayout) view.findViewById(R.id.image_view_show_bg);
-			imageViewBg.setBackgroundResource(mBackgrounds.get(position));
-			
+			View view = list.get(position);
 			ImageView imageView = (ImageView) view.findViewById(R.id.image_view_show);
-			imageView.setImageBitmap(mBitmaps.get(position));
 			
-			return view;
+			if(mBitmapList.get(position) != null) {
+				imageView.setImageBitmap(mBitmapList.get(position));
+			}
+			else {
+				imageView.setImageBitmap(createImageBitmap(position));
+			}
+			
+			imageView.setOnClickListener(new OnClickListener() {
+				
+				@Override
+				public void onClick(View v) {
+					if(mTopLayout.getVisibility() == View.VISIBLE) {
+						mTopLayout.setVisibility(View.GONE);
+						mBottomLayout.setVisibility(View.GONE);
+					}
+					else {
+						mTopLayout.setVisibility(View.VISIBLE);
+						mBottomLayout.setVisibility(View.VISIBLE);
+					}
+				}
+			});
+			
+			((ViewPager) container).addView(list.get(position), 0);
+			return list.get(position);
 		}
 		
 	}

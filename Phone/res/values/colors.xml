@@ -27,4 +27,8 @@
     <color name="viewfinder_laser">#ffff0000</color>
     <color name="viewfinder_mask">#60000000</color>
     <!-- end by wenyan -->
+    
+    <!-- add by bin.yang -->
+    <color name="app_main_bg">#FFEBEFF3</color>
+    <!-- add by bin.yang -->
 </resources>

@@ -67,6 +67,7 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 	private final static int MSG_START_RENDERER = 0;
 	private final static int MSG_STOP_RENDERER = 1;
 	private final static int MSG_STOP_PROCESS = 2;
+	private int mMediaType = TypeDefs.MEDIA_TYPE_INVALID;
 	private MediaRenderer mRenderer;
 	private Handler mHandler;
 	private Handler mUIHandler;
@@ -144,20 +145,20 @@ public class RendererProcess extends HandlerThread implements ActionListener {
     }
     
     public int getMediatype(String mediatype) { 
-    	int ret = TypeDefs.MEDIA_TYPE_INVALID;
-    	if(mediatype.equals("videos"))
+    	mMediaType = TypeDefs.MEDIA_TYPE_INVALID;
+    	if(mediatype.equals("VIDEO"))
     	{
-    		ret = TypeDefs.MEDIA_TYPE_DLNA_VIDEO;
+    		mMediaType = TypeDefs.MEDIA_TYPE_DLNA_VIDEO;
     	}
-    	else if(mediatype.equals("Audio"))
+    	else if(mediatype.equals("MUSIC"))
     	{
-    		ret = TypeDefs.MEDIA_TYPE_DLNA_AUDIO;
+    		mMediaType = TypeDefs.MEDIA_TYPE_DLNA_AUDIO;
     	}
-    	else if(mediatype.equals("Image"))
+    	else if(mediatype.equals("IMAGE"))
     	{
-    		ret = TypeDefs.MEDIA_TYPE_DLNA_IMAGE;
+    		mMediaType = TypeDefs.MEDIA_TYPE_DLNA_IMAGE;
     	}
-    	return ret;
+    	return mMediaType;
     }
 
 	@Override
@@ -191,10 +192,12 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 	    		return true;
 			}
 		} else if(actionName.equals(AVTransport.SETNEXTAVTRANSPORTURI)) {
-			Argument arg = action.getArgument(AVTransport.NEXTAVTRANSPORTURI);
+			Argument arg = action.getArgument(AVTransport.NEXTURI);
+			Argument mediatype = action.getArgument(AVTransport.NEXTURIMETADATA);
 			Message msg = new Message();
 			msg.what = TypeDefs.MSG_DMR_AV_TRANS_SET_NEXT_URI;
 			msg.obj = arg.getValue();
+			msg.arg1 = getMediatype(mediatype.getValue());
 			Log.d(TAG, "Next URI:" + arg.getValue());
 			if(null != mUIHandler)
 			{
@@ -233,18 +236,43 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 			    return true;
 			}
 		} else if(actionName.equals(AVTransport.SEEK)) {
-			if(DLNAPlayer.mIsPlayCompletion)
-	    		return false;
-			Argument unit = action.getArgument(AVTransport.UNIT);
-			Argument target = action.getArgument(AVTransport.TARGET);
-			Message msg = new Message();
-			msg.what = TypeDefs.MSG_DMR_AV_TRANS_SEEK;
-			msg.arg1 = (int)DLNAPlayer.fromDateStringToInt(target.getValue());
-			Log.d(TAG, "Seek uint:" + unit.getValue() + ", target:" + target.getValue());
-			if(null != mUIHandler)
+			if(mMediaType == TypeDefs.MEDIA_TYPE_DLNA_IMAGE)
 			{
-	    		mUIHandler.sendMessage(msg);
-	    		return true;
+				Argument unit = action.getArgument(AVTransport.UNIT);
+			    Argument target = action.getArgument(AVTransport.TARGET);
+			    Message msg = new Message();
+			    msg.what = TypeDefs.MSG_DMR_AV_TRANS_SEEK;
+			    if(unit.getValue().equals(TypeDefs.KEY_IMAGE_CONTROL_FLIP))
+			    {
+			    	msg.arg1 = TypeDefs.IMAGE_CONTROL_FLIP;
+			    }
+			    else if(unit.getValue().equals(TypeDefs.KEY_IMAGE_CONTROL_SCALING))
+			    {
+			        msg.arg1 = TypeDefs.IMAGE_CONTROL_SCALING;
+			    }
+			    msg.arg2 = TypeDefs.MEDIA_TYPE_DLNA_IMAGE;
+			    msg.obj = target.getValue();
+			    if(null != mUIHandler)
+			    {
+	    		    mUIHandler.sendMessage(msg);
+	    		    return true;
+			    }
+			}
+			else
+			{
+			    if(DLNAPlayer.mIsPlayCompletion)
+	    		    return false;
+			    Argument unit = action.getArgument(AVTransport.UNIT);
+			    Argument target = action.getArgument(AVTransport.TARGET);
+			    Message msg = new Message();
+			    msg.what = TypeDefs.MSG_DMR_AV_TRANS_SEEK;
+			    msg.arg1 = (int)DLNAPlayer.fromDateStringToInt(target.getValue());
+			    Log.d(TAG, "Seek uint:" + unit.getValue() + ", target:" + target.getValue());
+			    if(null != mUIHandler)
+			    {
+	    		    mUIHandler.sendMessage(msg);
+	    		    return true;
+			    }
 			}
 		} else if(actionName.equals(AVTransport.GETPOSITIONINFO)) {			
 			if(null != mUIHandler)
@@ -275,9 +303,10 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 			Message msg = new Message();
 			msg.what = TypeDefs.MSG_DMR_AV_TRANS_SET_VOLUME;
 			Log.d(TAG, "volume:" + volume.getValue());
-		    msg.arg1 = Integer.parseInt(volume.getValue());
+		    msg.obj = volume.getValue();
 			if(null != mUIHandler)
 			{
+								
 	    		mUIHandler.sendMessage(msg);
 	    		return true;
 			}
@@ -289,7 +318,7 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 			Message msg = new Message();
 			msg.what = TypeDefs.MSG_DMR_AV_TRANS_SET_MUTE;
 			Log.d(TAG, "volume:" + mute.getValue());
-		    msg.arg1 = Integer.parseInt(mute.getValue());
+		    msg.obj = mute.getValue();
 			if(null != mUIHandler)
 			{
 	    		mUIHandler.sendMessage(msg);
@@ -300,7 +329,7 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 			if(null != mUIHandler)
 			{
 	    		mUIHandler.sendEmptyMessage(TypeDefs.MSG_DMR_RENDERER_UPDATEDATA);
-	    		action.setArgumentValue(RenderingControl.DESIREDMUTE, String.valueOf(DLNAPlayer.mVolume));
+	    		action.setArgumentValue(RenderingControl.CURRENTVOLUME, String.valueOf(DLNAPlayer.mVolume));
 	    		return true;
 			}
 		}
@@ -312,6 +341,6 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 	    		return true;
 			}
 		}
-		return false;
+		return true;
 	}
 }

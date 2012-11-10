@@ -30,6 +30,7 @@ extern int start_client_1(char *ip);
 int g_surface_ready;
 
 int g_angle; //ratation, 0, 90, 180, 270
+
 /* This is a trivial JNI example where we use a native method
  * to return a new VM String. See the corresponding Java source
  * file located at:
@@ -70,6 +71,8 @@ void JNIDEFINE(stopShare)(JNIEnv *env, jobject obj)
 	LOGD("IN %s\n", __func__);
 
 	stop_server();
+
+	LOGD("OUT %s\n", __func__);
 	return;
 }
 
@@ -77,7 +80,7 @@ void JNIDEFINE(setRotate)(JNIEnv *env, jobject obj, jint rotate)
 {
 	env = env;
 	obj = obj;
-	LOGD("IN %s\n", __func__);
+	LOGD("IN %s, rotation is %d\n", __func__, rotate);
 
 	g_angle = rotate;
 	//In fact, g_angle should be projected and synchronized with LOCK machise
@@ -87,6 +90,8 @@ void JNIDEFINE(setRotate)(JNIEnv *env, jobject obj, jint rotate)
 void _callback_notify_status(int connected)
 {
 	JNIEnv *env;
+
+	LOGD("IN %s, status is %d\n", __func__, connected);
 
 	(*g_javavm_phone)->AttachCurrentThread(g_javavm_phone, &env, NULL);
 	jclass cb_class = (*env)->GetObjectClass(env, g_object_cb_phone);
@@ -117,7 +122,7 @@ void JNIDEFINE(deinitAShareService)(JNIEnv *env, jobject obj)
 {
 	env = env; obj = obj;
 	LOGD("IN %s\n", __func__);
-	stop_client();
+	//TODO
 	return;
 }
 void JNIDEFINE(startDisplay)(JNIEnv *env, jobject obj, jobject jsurface)
@@ -128,16 +133,10 @@ void JNIDEFINE(startDisplay)(JNIEnv *env, jobject obj, jobject jsurface)
 	g_surface_ready = 1;
 	return;
 }
-void JNIDEFINE(stopDisplay)(JNIEnv *env, jobject obj)
-{
-	env = env; obj = obj;
-	//TODO
-	return;
-}
 
 void _callback_notify_status_client(int connected)
 {
-	LOGD("IN %s\n", __func__);
+	LOGD("IN %s, status is %d, line = %d\n", __func__, connected, __LINE__);
 	JNIEnv *env;
 	(*g_javavm_stb)->AttachCurrentThread(g_javavm_stb, &env, NULL);
 	jclass cb_class = (*env)->GetObjectClass(env, g_object_cb_stb);
@@ -145,5 +144,13 @@ void _callback_notify_status_client(int connected)
 	(*env)->CallVoidMethod(env, g_object_cb_stb, m_id_callback, connected);
 	(*g_javavm_stb)->DetachCurrentThread(g_javavm_stb);
 
+	return;
+}
+
+void JNIDEFINE(stopDisplay)(JNIEnv *env, jobject obj)
+{
+	env = env; obj = obj;
+	stop_client();
+	deinit_surface();
 	return;
 }

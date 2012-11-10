@@ -13,6 +13,12 @@ public class TypeDefs {
 	public final static String KEY_MEDIA_TYPE = "media-type";
 	public final static String KEY_MEDIA_URI = "media-uri";
 	public final static String KEY_AIRPLAY_IMAGE_DATA = "airplay-image-data";
+	//image 缩放
+	public final static String KEY_IMAGE_CONTROL_SCALING="SCALING";
+	//image 翻转
+	public final static String KEY_IMAGE_CONTROL_FLIP="FLIP";
+	public final static int IMAGE_CONTROL_SCALING = 0;
+	public final static int IMAGE_CONTROL_FLIP = 1;
 
 	// /////////////////////////////////////////////////////////////
 	// Message Definitions for DMR thread
@@ -39,4 +45,5 @@ public class TypeDefs {
 	public final static int MSG_DMR_AV_TRANS_SET_VOLUME = 219;
 	public final static int MSG_DMR_AV_TRANS_SET_MUTE = 220;
 	public final static int MSG_DMR_RENDERER_UPDATEDATA = 221;
+	
 }

@@ -1,51 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:background="#EBEFF3"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/app_main_bg" >
 
     <ListView
         android:id="@+id/devices_listView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:layout_below="@+id/title_bar"
+        android:cacheColorHint="@android:color/transparent" />
 
-    <RelativeLayout
-        android:id="@+id/progressBar_layout"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:gravity="center_horizontal">
+    <include
+        android:id="@+id/title_bar"
+        layout="@layout/more_options_title" />
 
-        <TextView
-            android:id="@+id/scanText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="24.0px"
-            android:layout_centerInParent="true"
-            android:paddingLeft="10.0dip"
-            android:gravity="center_horizontal"
-            android:textColor="#000000"
-            android:text="@string/scanning_devices"
-            android:singleLine="true"/>
+    <include 
+        android:id="@+id/progress_bar_container"
+        layout="@layout/progress_bar_layout" />
 
-        <ProgressBar
-            android:id="@+id/scan_progressBar"
-            android:layout_above="@id/scanText"
-            android:layout_width="fill_parent"
-            android:layout_marginBottom="36px"
-            android:layout_height="90px"
-            android:gravity="center_horizontal"
-            android:indeterminateDrawable="@drawable/progressbar"/>
-
-        <TextView
-            android:id="@+id/toastText"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:textSize="18.0px"
-            android:gravity="center_horizontal"
-            android:textColor="#2684E2"
-            android:layout_alignParentBottom="true"
-            android:layout_marginBottom="30px"
-            android:text="@string/taost_text"/>
-    </RelativeLayout>
-
-</FrameLayout>
+</RelativeLayout>

@@ -96,7 +96,7 @@ int __check_event(EVENT_t *ev, MUTEX_t *lock, int *cond, int timeout)
 		ret = pthread_cond_timedwait(ev, lock, &outtime);
 		if (0 != ret)
 		{
-			LOGD("%s: failed return %d, cond = %d\n", __func__, ret, *cond);
+			//LOGD("%s: failed return %d, cond = %d\n", __func__, ret, *cond);
 			MUTEX_UNLOCK(lock);
 			return EFailed;
 		}

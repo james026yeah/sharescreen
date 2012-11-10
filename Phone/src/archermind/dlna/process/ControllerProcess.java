@@ -2,8 +2,7 @@ package archermind.dlna.process;
 
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Vector;
-import org.cybergarage.upnp.Action;
+
 import org.cybergarage.upnp.Device;
 import org.cybergarage.upnp.DeviceList;
 import org.cybergarage.upnp.Service;
@@ -14,16 +13,9 @@ import org.cybergarage.upnp.device.SearchResponseListener;
 import org.cybergarage.upnp.event.EventListener;
 import org.cybergarage.upnp.ssdp.SSDPPacket;
 import org.cybergarage.upnp.std.av.controller.MediaController;
-import org.cybergarage.upnp.std.av.renderer.AVTransport;
-import org.cybergarage.upnp.std.av.server.MediaServer;
 import org.cybergarage.upnp.std.av.server.object.ContentNode;
 import org.cybergarage.upnp.std.av.server.object.container.ContainerNode;
-import org.cybergarage.upnp.std.av.server.object.item.ItemNode;
-import org.cybergarage.upnp.std.av.server.object.item.ResourceNode;
-import org.cybergarage.xml.Attribute;
-import org.cybergarage.xml.Node;
 
-import android.os.Binder;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -32,13 +24,13 @@ import android.util.Log;
 import archermind.dlna.control.ControlVidio;
 import archermind.dlna.media.Album;
 import archermind.dlna.media.Artist;
-import archermind.dlna.media.MeidaDataLoadUtil;
-import archermind.dlna.media.MusicCategoryInfo;
 import archermind.dlna.media.MusicItem;
 import archermind.dlna.media.PhotoAlbum;
 import archermind.dlna.media.VideoCategory;
 import archermind.dlna.mobile.MessageDefs;
-import archermind.dlna.mobile.DLNAService;
+
+import com.archermind.dlna.localmedia.MediaCache;
+import com.archermind.dlna.localmedia.MusicCategoryInfo;
 
 public class ControllerProcess extends HandlerThread 
 	implements SearchResponseListener, NotifyListener, DeviceChangeListener, EventListener {
@@ -59,6 +51,10 @@ public class ControllerProcess extends HandlerThread
 				break;
 			case MessageDefs.MSG_MDMC_STOP_DMC:
 				mMediaCtrl.stop();
+				Log.v(TAG, "-------------------->stop controller actually!");
+				if(null != mUIHandler)
+					mUIHandler.sendMessage(Message.obtain(null, 
+							MessageDefs.MSG_SERVICE_ON_DMC_STOPPED));
 				ret = true;
 				break;
 			case MessageDefs.MSG_MDMC_SEARCH_DEVICE:
@@ -113,7 +109,7 @@ public class ControllerProcess extends HandlerThread
 				//mRenderer = findDevByURI(data.getString(DLNAService.KEY_DEV_URI));				
 				break;
 			case MessageDefs.MSG_MDMC_GET_MUSIC_CATEGORY_DATA:
-				ArrayList<MusicCategoryInfo> musicCategory  = MeidaDataLoadUtil.loadMusicCategory(mMediaCtrl, (Device)msg.obj);
+				ArrayList<MusicCategoryInfo> musicCategory = MediaCache.instance().getMusicCategory();
 				Message musicCategoryMsg = new Message();
 				musicCategoryMsg.what = MessageDefs.MSG_MDMC_ON_GET_MUSIC_CATEGORY_DATA;
 				musicCategoryMsg.obj = musicCategory;
@@ -121,7 +117,7 @@ public class ControllerProcess extends HandlerThread
 					mUIHandler.sendMessage(musicCategoryMsg);
 				break;
 			case MessageDefs.MSG_MDMC_GET_MUSIC_ARTISTS_DATA:
-				ArrayList<Artist> artists  = MeidaDataLoadUtil.loadArtists(mMediaCtrl, (Device)msg.obj);
+				ArrayList<Artist> artists  = MediaCache.instance().getArtistList();
 				Message artistsMsg = new Message();
 				artistsMsg.what = MessageDefs.MSG_MDMC_ON_GET_MUSIC_ARTISTS_DATA;
 				artistsMsg.obj = artists;
@@ -129,7 +125,7 @@ public class ControllerProcess extends HandlerThread
 					mUIHandler.sendMessage(artistsMsg);
 				break;
 			case MessageDefs.MSG_MDMC_GET_MUSIC_ALBUMS_DATA:
-				ArrayList<Album> musicAlbums  = MeidaDataLoadUtil.loadAlbums(mMediaCtrl, (Device)msg.obj);
+				ArrayList<Album> musicAlbums  = MediaCache.instance().getAlbumList();
 				Message albumsMsg = new Message();
 				albumsMsg.what = MessageDefs.MSG_MDMC_ON_GET_MUSIC_ALBUMS_DATA;
 				albumsMsg.obj = musicAlbums;
@@ -137,7 +133,7 @@ public class ControllerProcess extends HandlerThread
 					mUIHandler.sendMessage(albumsMsg);
 				break;
 			case MessageDefs.MSG_MDMC_GET_MUSIC_ALL_DATA:
-				ArrayList<MusicItem> musics  = MeidaDataLoadUtil.loadAllMusics(mMediaCtrl, (Device)msg.obj);
+				ArrayList<MusicItem> musics  = MediaCache.instance().getAllMusicData();
 				Message allMusicMsg = new Message();
 				allMusicMsg.what = MessageDefs.MSG_MDMC_ON_GET_MUSIC_ALL_DATA;
 				allMusicMsg.obj = musics;
@@ -145,7 +141,7 @@ public class ControllerProcess extends HandlerThread
 					mUIHandler.sendMessage(allMusicMsg);
 				break;
 			case MessageDefs.MSG_MDMC_GET_VIDEOS_DATA:
-				ArrayList<VideoCategory> videos  = MeidaDataLoadUtil.loadVideoCategories(mMediaCtrl, (Device)msg.obj);
+				ArrayList<VideoCategory> videos  = MediaCache.instance().getVideoList();
 				Message videosMsg = new Message();
 				videosMsg.what = MessageDefs.MSG_MDMC_ON_GET_VIDEOS_DATA;
 				videosMsg.obj = videos;
@@ -153,7 +149,7 @@ public class ControllerProcess extends HandlerThread
 					mUIHandler.sendMessage(videosMsg);
 				break;
 			case MessageDefs.MSG_MDMC_GET_PHOTOS_DATA:
-				ArrayList<PhotoAlbum> pa  = MeidaDataLoadUtil.loadPhotoCategory(mMediaCtrl, (Device)msg.obj);
+				ArrayList<PhotoAlbum> pa = MediaCache.instance().getPhotoAlbums();
 				Message paMsg = new Message();
 				paMsg.what = MessageDefs.MSG_MDMC_ON_GET_PTOTOS_DATA;
 				paMsg.obj = pa;
@@ -265,7 +261,7 @@ public class ControllerProcess extends HandlerThread
 					Boolean setcolumecheck = control.setVolume(
 							findDevByURI(datasetVolume
 									.getString(MessageDefs.KEY_DEV_URI)),
-							datasetVolume.getInt("DesiredVolume"));
+							datasetVolume.getFloat("DesiredVolume"));
 					Message setcolumeMsg = new Message();
 					setcolumeMsg.what =MessageDefs.MSG_MDMC_ON_GET_SETVOLUME;
 					setcolumeMsg.obj = setcolumecheck;
@@ -292,7 +288,7 @@ public class ControllerProcess extends HandlerThread
 				if (datasetMute != null) {
 					Boolean setmutecheck=control.setMute(findDevByURI(datasetMute
 							.getString(MessageDefs.KEY_DEV_URI)), datasetMute
-							.getInt("DesiredVolume"));
+							.getFloat("DesiredVolume"));
 					Message setmuteMsg = new Message();
 					setmuteMsg.what =MessageDefs.MSG_MDMC_ON_GET_SETMUTE;
 					setmuteMsg.obj = setmutecheck;
@@ -306,6 +302,7 @@ public class ControllerProcess extends HandlerThread
 				if (datagetMute != null) {
 					String getmutecheck=control.getMute(findDevByURI(datagetMute
 							.getString(MessageDefs.KEY_DEV_URI)));
+					Log.d("yexiaoyan", "control getmutecheck="+getmutecheck);
 					Message getmuteMsg = new Message();
 					getmuteMsg.what =MessageDefs.MSG_MDMC_ON_GET_GETMUTE;
 					getmuteMsg.obj = getmutecheck;

@@ -32,6 +32,8 @@ int sensor_control(int sensor, int on)
 {
 	if(on)
 		sensor_grab_enable(sensor);
+	else
+		sensor_grab_disable(sensor);
 	return RETURN_NORMAL;
 }
 
@@ -47,8 +49,8 @@ static void gyro_to_mouse(struct sensor_event *event)
 	x = event->data[0];
 	y = event->data[1];
 	z = event->data[2];
-	y = -x * 10;
-	x = -z * 10;
+	y = -x * 12;
+	x = -z * 25;
 	send_mouse_move((int)x, (int)y);
 }
 
@@ -108,10 +110,25 @@ void deinit_wiremote(void)
 	deinit_client_sock(handle);
 }
 
+int send_multi_touch_event(int *x, int *y, int *press)
+{
+	LOGD("touch press1 = %d, press2 = %d\n", press[0], press[1]);
+	if(press[0] || press[1])
+	{
+		LOGD("%s start at %d line\n", __func__, __LINE__);
+		touch_client_send_data_udp(handle, 2, x, y, press);
+	}
+	else{
+		LOGD("%s start at %d line\n", __func__, __LINE__);
+		touch_client_send_data(handle, 2, x, y, press);
+	}
+	return 0;
+}
+
 int send_touch_event(int x, int y, int press)
 {
-	LOGD("touch press = %d\n", press);
-	if(press)
+	LOGD("touch press = %d\n", press & 0x1);
+	if(press & 0x1)
 		touch_client_send_data_udp(handle, 1, &x, &y, &press);
 	else
 		touch_client_send_data(handle, 1, &x, &y, &press);
@@ -144,8 +161,9 @@ int gyro_mouse_cotrol(int enable)
 		sensor_control(SENSOR_TYPE_GYROSCOPE, 1);
 		sensor_delay(SENSOR_TYPE_GYROSCOPE, 10);
 	}
-	else
+	else{
 		gyro_mouse_enable = 0;
+		sensor_control(SENSOR_TYPE_GYROSCOPE, 0);
+	}
 	return 0;
 }
-

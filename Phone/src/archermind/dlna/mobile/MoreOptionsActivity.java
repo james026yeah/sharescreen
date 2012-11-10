@@ -1,15 +1,13 @@
 package archermind.dlna.mobile;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.RelativeLayout;
 
-public class MoreOptionsActivity extends Activity {
+public class MoreOptionsActivity extends BaseActivity {
 
 	private RelativeLayout mItemSetting;
-	
 	private View.OnClickListener mClickListener = new View.OnClickListener() {
 		@Override
 		public void onClick(View v) {
@@ -31,7 +29,9 @@ public class MoreOptionsActivity extends Activity {
 				sendIntent = new Intent(MoreOptionsActivity.this, AboutActivity.class);
 				startActivity(sendIntent);
 				break;
-
+			case R.id.more_option_btn_exit:
+				onClickBtnExit();
+				break;
 			default:
 				break;
 			}
@@ -49,6 +49,17 @@ public class MoreOptionsActivity extends Activity {
 		findViewById(R.id.item_gesture).setOnClickListener(mClickListener);
 		findViewById(R.id.item_feedback).setOnClickListener(mClickListener);
 		findViewById(R.id.item_about).setOnClickListener(mClickListener);
-
+		findViewById(R.id.more_option_btn_exit).setOnClickListener(mClickListener);
+	}
+	
+	private void onClickBtnExit() {
+		quit();
+		((MobileApplication)getApplication()).unbindDLNAService();
+		System.exit(0);
+	}
+	
+	@Override
+	protected void onServiceQuited() {
+		finish();
 	}
 }

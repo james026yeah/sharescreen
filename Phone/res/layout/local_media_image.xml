@@ -38,7 +38,7 @@
             android:layout_centerHorizontal="true"
             android:layout_gravity="center"
             android:paddingTop="5dip"
-            android:text="@string/image_gallery_no_image_text"
+            android:text="@string/image_no_image_text"
             android:textColor="#FFBEBEBE"
             android:textSize="18dip" />
     </RelativeLayout>

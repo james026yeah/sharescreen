@@ -1,12 +1,15 @@
 # Copyright 2012 Archermind
 #
 
+LOCAL_PATH := $(call my-dir)
+LOCAL_PATH_SAVE := $(LOCAL_PATH)
+HW_ENCODE_PATH := $(LOCAL_PATH)/hw_encode/Android.mk
+include $(HW_ENCODE_PATH)
 # ---------------------------------------------------------------------------------
 #  #           Libjpeg-turbo android 1.1.9 sw encode
 # ---------------------------------------------------------------------------------
 #
-LOCAL_PATH := $(call my-dir)
-LOCAL_PATH_SAVE := $(LOCAL_PATH)
+LOCAL_PATH := $(LOCAL_PATH_SAVE)
 include $(CLEAR_VARS)
 
 LIB_PATH := sw_encode
@@ -64,8 +67,6 @@ LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/display/skia/include \
 	$(LOCAL_PATH)/sw_encode/inc \
 	$(LOCAL_PATH)/sw_encode \
-	sw_encode/inc \
-	sw_encode \
 	$(LOCAL_PATH)/utils \
 	$(LOCAL_PATH)/service \
 	$(LOCAL_PATH)/protocol \

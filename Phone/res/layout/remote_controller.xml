@@ -84,13 +84,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:visibility="gone"
-            android:background="@drawable/remote_icon_touch_point" />
+            android:background="@drawable/touch_point" />
         <TextView
             android:id="@+id/touch_point2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:visibility="gone"
-            android:background="@drawable/remote_icon_touch_point" />
+            android:background="@drawable/touch_point" />
     </AbsoluteLayout>
 
     <!--

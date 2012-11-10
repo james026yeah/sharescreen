@@ -29,6 +29,8 @@ public class ScrollLayout extends ViewGroup {
 	private float mLastMotionX;
 	@SuppressWarnings("unused")
 	private float mLastMotionY;
+	
+	private PageChangeListener mPageChangeListener;
 
 	public ScrollLayout(Context context, AttributeSet attrs) {
 		this(context, attrs, 0);
@@ -110,6 +112,9 @@ public class ScrollLayout extends ViewGroup {
     				delta, 0, Math.abs(delta)*2);
     		mCurScreen = whichScreen;
     		invalidate();		// Redraw the layout
+    		if (mPageChangeListener != null) {
+    			mPageChangeListener.onPageChange(mCurScreen);
+			}
     	}
     }
     
@@ -235,6 +240,14 @@ public class ScrollLayout extends ViewGroup {
 		}
 		
 		return mTouchState != TOUCH_STATE_REST;
+	}
+	
+	public void setOnPageChangeListener(PageChangeListener listener){
+		mPageChangeListener = listener;
+	}
+	
+	public interface PageChangeListener {
+		public void onPageChange(int view);
 	}
 	
 }

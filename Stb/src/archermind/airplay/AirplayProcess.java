@@ -169,13 +169,14 @@ public class AirplayProcess extends HandlerThread {
 		msg.arg1 = volume;
 		if(null != mUIHandler)
 	    	mUIHandler.sendMessage(msg);  
+		
     }
     
     public int getVolume()
     {
     	Log.v("EagleTag","Callback java function:"+Thread.currentThread().getStackTrace()[2].getMethodName());
     	mUIHandler.sendEmptyMessage(MSG_AIRPLAY_UPDATEDATA);
-    	return DLNAPlayer.mVolume;
+    	return (int) DLNAPlayer.mVolume;
     }
     
     public void playVideo(String url,int length,float startPositon)

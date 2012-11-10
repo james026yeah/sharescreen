@@ -28,6 +28,8 @@ static uint8_t *out_buf = NULL;
 static uint8_t *dummy_buf = NULL;
 
 int support_qcom = 0;
+int g_clear_screen = 0;
+int g_frame_nums = 0;
 
 unsigned long long _get_system_mstime(void)
 {
@@ -291,22 +293,87 @@ int sw_encode (struct hw_enc_param *param)
 	 * Ha, nothing qualcomm phone is available, so addition later...
 	 */
 	/* Ratation image from A * B to B * A */
+
 	char * pSrc = p_in_buf;
 	char * pDest = (char *)in_buf_rotation;
 	int i2,j2;
 	int _height = cinfo.image_height;
 	int _width = cinfo.image_width;
 	int cube = param->bytes_per_pixel;
-	for (i2 = 0; i2 < _height; i2++)
-		for (j2 = 0; j2 < _width; j2++)
-			memcpy((pDest + j2 * _height * cube + (_height - i2) * cube),
-				   (pSrc + j2 * cube + i2 * _width * cube), cube);
 
-	cinfo.image_height = _width;
-	cinfo.image_width = _height;
-	p_in_buf = (char *)in_buf_rotation;
+	/*Debug ratation*/
+#if 0
+	param->angle = 270;
+#endif
+
+/* 0 -> 90
+ * */
+	static int pre_angle = 0;
+	//if (pre_angle != param->angle) g_clear_screen = 1;
+	LOGD("pre_angle = %d, param->angle = %d, g_clear_screen = %d",
+			pre_angle, param->angle, g_clear_screen);
+
+	switch (param->angle)
+	{
+	case 0:
+	case 180:
+		for (i2 = 0; i2 < _height; i2++)
+			for (j2 = 0; j2 < _width; j2++)
+				memcpy((pDest + j2 * _height * cube + (_height - i2) * cube),
+					   (pSrc + j2 * cube + i2 * _width * cube), cube);
+
+		cinfo.image_height = _width;
+		cinfo.image_width = _height;
+		p_in_buf = (char *)in_buf_rotation;
+		break;
+	case 90:
+		break;
+	case 270:
+		for (i2 = 0; i2 < _height; i2++)
+		{
+			for (j2 = 0; j2 < _width; j2++)
+			{
+				memcpy((pDest + (_height - i2) * _width * cube + (_width - j2) * cube),
+					   (pSrc + j2 * cube + i2 * _width * cube), cube);
+				if (j2 < 2)
+				{
+					LOGD("(%d,%d) -> (%d,%d)\n",
+							j2, j2, (_height - j2), (_width - j2));
+				}
+			}
+		}
+
+		cinfo.image_height = _height;
+		cinfo.image_width = _width;
+		p_in_buf = (char *)in_buf_rotation;
+		break;
+	default:
+		LOGE("ERROR: angle = %d, VOID value\n", param->angle);
+		break;
+	}
 
 	cinfo.input_components = param->bytes_per_pixel;
+
+#if 0
+	/* check if should clear screen */
+	LOGD("g_clear_screen = %d, g_frame_nums = %d\n",
+			g_clear_screen, g_frame_nums);
+	if (g_clear_screen || g_frame_nums)
+	{
+		LOGD("clear screen! deeply blank, Oh, My God! somebody shut down lights!");
+		long _height = cinfo.image_height;
+		long _width = cinfo.image_width;
+		long unit = param->bytes_per_pixel;
+		long go_to_cinema = _height * _width * unit;
+		memset(p_in_buf, 0, go_to_cinema);
+		if(g_clear_screen == 1)
+			memset(p_in_buf, 0xFF, 0xF);
+		if (g_clear_screen)
+			g_frame_nums = 1;
+		else
+			g_frame_nums--;
+	}
+#endif
 	switch (param->in_format)
 	{
 	case SW_RGBX:
@@ -342,18 +409,13 @@ int sw_encode (struct hw_enc_param *param)
 	LOGD("O o O o O o O o O o O o O o");
 	LOGD("cinfo.image_height = %d, cinfo.image_width = %d\n",
 			cinfo.image_height, cinfo.image_width);
-	//stamp = _get_system_mstime();
+	stamp = _get_system_mstime();
 	int count = 0;
 	for (i = 0; i < cinfo.image_height; ++i)
 	{
 		++count;
 		if (is_scaled)
 		{
-			LOG_D("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
-			LOG_D("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
-			LOG_D("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
-			LOG_D("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
-			LOG_D("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 			LOG_D("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 			rowPointer[0] = (out_buf + cinfo.input_components * i * cinfo.image_width);
 		}
@@ -366,8 +428,8 @@ int sw_encode (struct hw_enc_param *param)
 		}
 			jpeg_write_scanlines(&cinfo, rowPointer, 1);
 	}
-	//stamp2 = _get_system_mstime();
-	//LOG_D("\t\t sw encode time: %lldms, jpeg size is %d\n", stamp2 - stamp, dest_size);
+	stamp2 = _get_system_mstime();
+	LOG_D("\t\t sw encode time: %lldms, jpeg size is %d\n", stamp2 - stamp, (int)dest_size);
 
 	if (started == 0)
 	jpeg_finish_compress(&cinfo);
@@ -381,10 +443,11 @@ int sw_encode (struct hw_enc_param *param)
 		  (unsigned int)param->out_buf, param->outdata_size);
 
 	static int firstIn = 0;
-	if(firstIn == 0)
+	//if(firstIn == 0)
+	if (g_clear_screen == 1)
 	{
 		firstIn = 1;
-		FILE *pfile = fopen("/data/jpeg/out.jpg", "w");
+		FILE *pfile = fopen("/sdcard/clear_screen.jpg", "w");
 		if (pfile == NULL)
 		{
 			LOG_D("open file error!\n");
@@ -405,6 +468,7 @@ AAAA:
 	if (started2 == 0)
 		started2 = 0;
 
+	pre_angle = param->angle;
 	return 0;
 }
 

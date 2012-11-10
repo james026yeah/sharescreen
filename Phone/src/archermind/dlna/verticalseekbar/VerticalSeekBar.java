@@ -24,8 +24,8 @@ import android.widget.AbsSeekBar;
  */
 public class VerticalSeekBar extends AbsSeekBar {
 	private Drawable mThumb;
-	private int height;
 	private int width;
+	private int height;
 
 	public VerticalSeekBar(Context context) {
 		this(context, null);
@@ -82,8 +82,8 @@ public class VerticalSeekBar extends AbsSeekBar {
 
 	protected synchronized void onMeasure(int widthMeasureSpec,
 			int heightMeasureSpec) {
-		height = View.MeasureSpec.getSize(heightMeasureSpec);
-		width = View.MeasureSpec.getSize(widthMeasureSpec);
+		 height = View.MeasureSpec.getSize(heightMeasureSpec);
+		 width = View.MeasureSpec.getSize(widthMeasureSpec);
 		this.setMeasuredDimension(width, height);
 
 	}

@@ -7,16 +7,18 @@ public class PhotoItem  implements Parcelable {
 	public String thumbFilePath;
 	public String title;
 	public String itemUri;
+	public String metaData;
+	public String mime_type;
+	public String bucket_display_name;
+	public int itemId;
 	public String getFilePath() {
 		return filePath;
 	}
 
 
-
 	public void setFilePath(String filePath) {
 		this.filePath = filePath;
 	}
-
 
 
 	public String getThumbFilePath() {
@@ -56,22 +58,27 @@ public class PhotoItem  implements Parcelable {
 
 	
 	
-	public PhotoItem(String thumbFilePath,String filePath,String title,String itemUri) {
+	public PhotoItem(String thumbFilePath,String filePath,String title,String itemUri,String metaData) {
 		this.filePath=filePath;
 		this.itemUri=itemUri;
 		this.title=title;
 		this.thumbFilePath=thumbFilePath;
-
+		this.metaData = metaData;
 	}
 
-
+	public PhotoItem() {
+		
+	}
 
 	public PhotoItem(Parcel source) {
 		thumbFilePath = source.readString();
 		filePath = source.readString();
 		title = source.readString();
-		itemUri=source.readString();
-
+		itemUri = source.readString();
+		metaData = source.readString();
+		mime_type = source.readString();
+		bucket_display_name = source.readString();
+		itemId = source.readInt();
 	}
 
 	@Override
@@ -87,7 +94,10 @@ public class PhotoItem  implements Parcelable {
 		dest.writeString(filePath);
 		dest.writeString(title);
 		dest.writeString(itemUri);
-
+		dest.writeString(metaData);
+		dest.writeString(mime_type);
+		dest.writeString(bucket_display_name);
+		dest.writeInt(itemId);
 	}
 
 	// 实例化静态内部对象CREATOR实现接口Parcelable.Creator

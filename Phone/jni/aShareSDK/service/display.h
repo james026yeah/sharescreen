@@ -25,6 +25,7 @@
 struct display_info {
 	int fd;
 	int machine;
+	int angle;
 	unsigned char *frame_base;
 	struct fb_fix_screeninfo fi;
 	struct fb_var_screeninfo vi;

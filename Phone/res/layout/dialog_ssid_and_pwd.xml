@@ -6,41 +6,38 @@
 
     <TextView
         android:layout_width="240dp"
-        android:layout_height="32dp"
+        android:layout_height="28dp"
+        android:layout_marginLeft="20dp"
         android:gravity="left|center_vertical"
-        android:text="Select Control Pages"
-        android:textColor="@android:color/white" />
+        android:text="@string/device_config_dlg_ssid_and_pwd_title"
+        android:textAppearance="@style/DialogTextAppearanceTitle" />
 
     <TextView
         android:id="@+id/item_ssid"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:clickable="true"
-        android:drawableRight="@drawable/list_btn_arrow_sel"
+        android:layout_height="40dp"
+        android:layout_marginLeft="20dp"
         android:gravity="left|center_vertical"
-        android:text="SSID" />
-
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/pop_line" />
+        android:textAppearance="@style/DialogTextAppearanceContent" />
 
     <EditText
         android:id="@+id/item_pwd"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:clickable="true"
-        android:drawableBottom="@drawable/pop_line"
-        android:drawableRight="@drawable/list_btn_arrow_sel"
         android:gravity="left|center_vertical"
-        android:text="Password" />
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:background="@drawable/input_box" />
 
     <TextView
         android:id="@+id/item_ok"
-        android:layout_width="240dp"
-        android:layout_height="32dp"
+        android:layout_width="220dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
         android:gravity="center"
-        android:text="OK"
+        android:background="@drawable/more_options_btn_sel"
+        android:text="@string/device_config_dlg_ok"
         android:textAppearance="@style/MoreOptionsTextAppearanceFirst" />
 
 </LinearLayout>

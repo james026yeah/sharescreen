@@ -11,7 +11,8 @@ LOCAL_SRC_FILES:= \
 	jni_register.c \
 	sensor_grab.c \
 	wi_remote.c \
-	tp2all.c
+	tp2all.c \
+	touch_handle.c
 
 LOCAL_CFLAGS += -O2 -Wall -DNDK
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/AmtRemote

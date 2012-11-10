@@ -1,10 +1,7 @@
 package archermind.dlna.process;
 
 import java.io.File;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -30,13 +27,13 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
-import archermind.dlna.directory.ArtistDirectory;
-import archermind.dlna.directory.ImagesDirectory;
-import archermind.dlna.directory.MusicItemsDirectory;
-import archermind.dlna.directory.MediaUtil;
-import archermind.dlna.directory.VideoDirectory;
-import archermind.dlna.directory.VideoItemsDirectory;
 import archermind.dlna.mobile.MessageDefs;
+
+import com.archermind.dlna.localmedia.ImageAlbumsDirectory;
+import com.archermind.dlna.localmedia.LocalMediaDbHelper;
+import com.archermind.dlna.localmedia.MediaCache;
+import com.archermind.dlna.localmedia.MusicAlbumArtistDirectory;
+import com.archermind.dlna.localmedia.VideoClollectionDirectory;
 
 public class ServerProcess extends HandlerThread implements ActionListener {
 	private final static String TAG = "ServerProcess";
@@ -84,27 +81,30 @@ public class ServerProcess extends HandlerThread implements ActionListener {
 			boolean ret = false;
 			switch (msg.what) {
 			case MessageDefs.MSG_MDMS_START_DMS:
+				Log.v(TAG, "-------------->MessageDefs.MSG_MDMS_START_DMS");
 				if (!mMediaServer.isRunning()) {
+					Log.v(TAG, "first time -------------->MessageDefs.MSG_MDMS_START_DMS");
 					mMediaServer.addPlugIn(new ID3Format());
 					mMediaServer.addPlugIn(new GIFFormat());
 					mMediaServer.addPlugIn(new JPEGFormat());
 					mMediaServer.addPlugIn(new PNGFormat());
 					mMediaServer.addPlugIn(new MPEGFormat());
-					MediaUtil mutil = new MediaUtil(mContext);
-					ImagesDirectory imageDir = new ImagesDirectory("images",
-							mutil.initImages());
+					//MediaUtil mutil = new MediaUtil(mContext);
+					MediaCache.instance().init(new LocalMediaDbHelper(mContext));
+					//ImagesDirectory imageDir = new ImagesDirectory("images",
+							//mutil.initImages());
+					//mMediaServer.getContentDirectory().addDirectory(imageDir);
+					ImageAlbumsDirectory imageDir = new ImageAlbumsDirectory("images");
 					mMediaServer.getContentDirectory().addDirectory(imageDir);
-					ArtistDirectory ad = new ArtistDirectory("musics",
-							mutil.getAudioArtist(), mutil.getAudioAlbum(),
-							mutil.getAudioList(null, null));
-					mMediaServer.getContentDirectory().addDirectory(ad);
-					VideoDirectory videoDir = new VideoDirectory("Videos",
-							mutil.initVideo());
+					MusicAlbumArtistDirectory musicDir = new MusicAlbumArtistDirectory("musics");
+					mMediaServer.getContentDirectory().addDirectory(musicDir);
+					VideoClollectionDirectory videoDir = new VideoClollectionDirectory("Videos");
 					mMediaServer.getContentDirectory().addDirectory(videoDir);
 					UUID uuid = UUID.randomUUID();
 					Log.v(TAG, "start MDMS -----------------> with UDN:" + uuid.toString());
 					mMediaServer.setUDN("uuid:" + uuid.toString());
 					mMediaServer.start();
+					Log.v(TAG, "before start server -------------->MessageDefs.MSG_MDMS_START_DMS");
 				}
 				break;
 			case MessageDefs.MSG_MDMS_STOP_DMS:
@@ -242,7 +242,7 @@ public class ServerProcess extends HandlerThread implements ActionListener {
 
 	public void startMediaServer() {
 		if (null != mHandler) {
-			Log.d("xiaoye", "123");
+			Log.d(TAG, "Server proc------------------------------> startMediaServer");
 			mHandler.sendEmptyMessage(MessageDefs.MSG_MDMS_START_DMS);
 		}
 	}

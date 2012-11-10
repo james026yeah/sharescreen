@@ -1,0 +1,16 @@
+Phone/.classpath
+Phone/project.properties
+Stb/.classpath
+CyberLink/bin/
+CyberLink/gen/
+Phone/bin/
+Phone/gen/
+Phone/lint.xml
+Stb/bin/
+Stb/gen/
+SwitchButton/.classpath
+SwitchButton/.project
+SwitchButton/bin/
+SwitchButton/gen/
+SwitchButton/lint.xml
+SwitchButton/project.properties

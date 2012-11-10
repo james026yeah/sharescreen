@@ -71,6 +71,8 @@ static char *pBuf888, *pBuf8888;
 //static char *outBuf;
 //static char *outBuf2;
 
+int g_clear_screen_client;
+
 unsigned long long _get__system_mstime(void)
 {
 	unsigned long long mstime = 0;
@@ -220,12 +222,17 @@ initBitmap(SkBitmap& bitmap, AndroidSurfaceInfo* info) {
     if (info->format == ANDROID_PIXEL_FORMAT_RGBX_8888) {
         bitmap.setIsOpaque(true);
     }
+#if 1
     if (info->w > 0 && info->h > 0) {
         bitmap.setPixels(info->bits);
     } else {
         // be safe with an empty bitmap.
         bitmap.setPixels(NULL);
     }
+#else
+        bitmap.setPixels(NULL);
+        bitmap.setPixels(info->bits);
+#endif
 }
 
 int ASurface_decode(SkBitmap* bitmap, const void* src, size_t size, int *width, int *height) {
@@ -306,6 +313,10 @@ void ASurface_scaleToFullScreen_skia(ASurface* aSurface, AndroidSurfaceInfo* src
 	void *pixel = NULL;
 	int swidth = 0;
 	int sheight = 0;
+	int i, width, height, buf_size;
+
+	width = 0;
+	height = 0;
 
 	struct jpeg_ext *ext = (struct jpeg_ext *)src->bits;
 	char *real_jpeg = (char *)src->bits + sizeof(struct jpeg_ext);
@@ -322,9 +333,9 @@ void ASurface_scaleToFullScreen_skia(ASurface* aSurface, AndroidSurfaceInfo* src
 	}
 	else
 	{
-		int i, width, height, buf_size;
 		SkBitmap sktemp[6];
-		width = height = 0;
+		width = 0;
+		height = 0;
 		for(i = 0; i < ext->fragment_num; i++)
 		{
 			if (ASurface_decode(&sktemp[i], real_jpeg + ext->fragment[i].offset, ext->fragment[i].size, &swidth, &sheight)) {
@@ -387,22 +398,37 @@ void ASurface_scaleToFullScreen_skia(ASurface* aSurface, AndroidSurfaceInfo* src
 #endif
 
 		initBitmap(dstBitmap, dst);
-#if 0 //original
+#if 0 /*original*/
+		LOGD("Jerry catch Tom: SKIA : g_clear_screen_client = %d\n", g_clear_screen_client);
 		matrix.setRectToRect(SkRect::MakeWH(srcBitmap.width(), srcBitmap.height()),
 			                 SkRect::MakeWH(dstBitmap.width(), dstBitmap.height()),
 			                 SkMatrix::kFill_ScaleToFit);
 #else
-	//TODO
-	/* for landscope .... Scale to fit fill
-	 * for ....scope .... Scale to fil center KCenter_ScaleToFit
-	 */
+
+	/* clear screen */
+	//memset(srcBitmap.getPixels(), 0, width * height * 2);
+	LOGD("Hi, Tom, I'm Jerry!\n");
+	LOGD("dst->w = %d, dst->h = %d", dst->w, dst->h);
+	memset(dst->bits, 0, dst->w * dst->h * 2);
+
+if (g_clear_screen_client)
+{
+		matrix.setRectToRect(SkRect::MakeWH(srcBitmap.width(), srcBitmap.height()),
+			                 SkRect::MakeWH(dstBitmap.width(), dstBitmap.height()),
+			                 SkMatrix::kFill_ScaleToFit);
+		aSurface->canvas->setBitmapDevice(dstBitmap);
+		aSurface->canvas->drawBitmapMatrix(srcBitmap, matrix);
+}
+else
+{
 		matrix.setRectToRect(SkRect::MakeWH(srcBitmap.width(), srcBitmap.height()),
 			                 SkRect::MakeWH(dstBitmap.width(), dstBitmap.height()),
 			                 SkMatrix::kCenter_ScaleToFit);
-#endif
-
 		aSurface->canvas->setBitmapDevice(dstBitmap);
 		aSurface->canvas->drawBitmapMatrix(srcBitmap, matrix);
+}
+#endif
+
 	}
 	if(ext->fragment_num > 1)
 	{

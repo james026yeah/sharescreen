@@ -3,22 +3,24 @@
     android:id="@+id/gallery_item_root"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:layout_gravity="center"
     android:background="#ebeff3"
     android:gravity="center" >
 
     <LinearLayout
         android:id="@+id/image_view_show_bg"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
         android:background="@drawable/photo_big"
-        android:contentDescription="@string/app_name"
-        android:gravity="center_vertical" >
+        android:contentDescription="@string/app_name" >
 
         <ImageView
             android:id="@+id/image_view_show"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:contentDescription="@string/app_name" />
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_margin="5dp"
+            android:contentDescription="@string/app_name"
+            android:scaleType="fitXY" />
     </LinearLayout>
 
 </LinearLayout>

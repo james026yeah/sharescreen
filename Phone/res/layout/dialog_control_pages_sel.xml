@@ -15,9 +15,9 @@
         android:id="@+id/touch_or_mouse"
         android:layout_width="match_parent"
         android:layout_height="48dp"
+        android:clickable="true"
         android:drawableRight="@drawable/list_btn_arrow_sel"
         android:gravity="left|center_vertical"
-        android:clickable="true"
         android:text="Touch Mode" />
 
     <ImageView
@@ -26,12 +26,13 @@
         android:background="@drawable/pop_line" />
 
     <TextView
+        android:id="@+id/game_controller"
         android:layout_width="match_parent"
         android:layout_height="48dp"
+        android:clickable="true"
         android:drawableBottom="@drawable/pop_line"
         android:drawableRight="@drawable/list_btn_arrow_sel"
-        android:clickable="true"
         android:gravity="left|center_vertical"
-        android:text="Video Control Mode" />
+        android:text="Game Controller" />
 
 </LinearLayout>

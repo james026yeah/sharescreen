@@ -2,7 +2,7 @@
 <resources>
 
     <string name="hello">Hello World, HomeActivity!</string>
-    <string name="app_name">MobileDLNA</string>
+    <string name="app_name">三屏互动</string>
     <string name="current_renderer">Choose A Renderer</string>
     <string name="tab_local_media_indicator">Local Media</string>
     <string name="tab_online_media_indicator">Online Media</string>
@@ -33,6 +33,7 @@
     <string name="more_option_multiscreen_second">Play on multi devices</string>
     <!-- More option layout -->
 
+
     <!-- Setting layout -->
     <string name="setting_title">Setting</string>
     <string name="setting_use_notification_key">settingUseNotification</string>
@@ -42,17 +43,24 @@
     <string name="setting_find_local_service">settingFindLocalService</string>
     <string name="setting_local_service_name">settingLocalServiceName</string>
     <!-- Setting layout -->
-		
-	<!-- Local media layout -->
+
+
+    <!-- Local media layout -->
     <string name="tab_image">Image</string>
     <string name="tab_music">Music</string>
     <string name="tab_video">Video</string>
-    <string name="image_gallery_first_message">Already is the first photo</string>
-    <string name="image_gallery_last_message">Already is the last photo</string>
-    <string name="local_media_progress_dialog_title">Please wait...</string>
-    <string name="local_media_progress_dialog_message">Getting data...</string>
-    <string name="image_gallery_no_image_text">Not found any media file</string>
+    <string name="image_first_message">Already is the first photo</string>
+    <string name="image_last_message">Already is the last photo</string>
+    <string name="image_no_image_text">Not found any media file</string>
+    <string name="local_media_progress_dialog_message">Please wait , Getting data...</string>
+    <string name="video_first_message">Already is the first video</string>
+    <string name="video_last_message">Already is the last video</string>
+    <string name="video_prompt_prev_message">is</string>
+    <string name="video_prompt_next_message">played on</string>
+    <string name="video_play_end_prompt_message">Over</string>
+    <string name="video_time_seekbar_text">00:00:00</string>
     <!-- Local media layout -->
+
 
     <!-- add by wenyan -->
     <string name="button_ok">OK</string>
@@ -62,7 +70,6 @@
     <string name="msg_share_subject_line">Here are the contents of a barcode I scanned</string>
     <string name="result_text">Found plain text</string>
     <string name="msg_default_status">If the scan is not successful, go back into the list of devices manual pairing</string>
-
     <string name="msg_scan_result_title">Scan information:</string>
     <string name="msg_ssid_label">SSID: </string>
     <string name="msg_code_label">Code: </string>
@@ -84,4 +91,32 @@
     <!-- End by yuanhong.dai -->
 
 
+    <!-- Software Update -->
+    <string name="soft_update_no">No Update</string>
+    <string name="soft_update_title">Software Update</string>
+    <string name="soft_update_info">Update Now?</string>
+    <string name="soft_update_updatebtn">Update</string>
+    <string name="soft_update_later">Cancel</string>
+    <string name="soft_updating">Updating</string>
+    <string name="soft_update_cancel">Cancel</string>
+    <string name="soft_update_ignore">Ignore this version</string>
+    <!-- Software Update -->
+    
+    <!-- add by dongyu -->
+    <string name="music_data_not_init">Music Data not initial</string>
+    <string name="no_music_playing">No Songs Are Playing</string>
+    <string name="lable_all_music">All Music</string>
+    <string name="lable_album">Album</string>
+    <string name="lable_artist">Artist</string>
+    <string name="music_num">Songs</string>
+    <string name="playing_list">Playing Lists</string>
+    <string name="list_cycle">List Recycle</string>
+     <string name="single_cycle">Single Recycle</string>
+     <string name="list_normal">List Normal</string>
+     <string name="shuffle_open">Open Shuffle</string>
+     <string name="shuffle_close">Close Shuffle</string>
+    <!-- end of music string define -->
+    
+    <!-- Notification Text -->
+    <string name="notification_content_txt">AShare is Running</string>
 </resources>

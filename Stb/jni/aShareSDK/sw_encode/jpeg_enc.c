@@ -321,6 +321,7 @@ int sw_jpeg(struct display_info *di)
 
 	LOGD("IN [%s:%d]\n", __func__, __LINE__);
 
+	g_param.angle = di->angle;
 	ret = sw_encode(&g_param);
 
 	if (ret)

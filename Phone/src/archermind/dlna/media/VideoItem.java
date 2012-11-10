@@ -3,13 +3,17 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class VideoItem implements Parcelable {
-	public VideoItem(String duration,String thumbFilePath,String filePath,String title,String itemUri) {
+	public VideoItem(String duration,String thumbFilePath,String filePath,String title,String itemUri,String metaData) {
 		this.duration=duration;
 		this.thumbFilePath=thumbFilePath;
 		this.filePath=filePath;
 		this.itemUri=itemUri;
 		this.title=title;
-
+		this.metaData=metaData;
+	}
+	
+	public VideoItem() {
+		
 	}
 
 	public String duration;
@@ -17,7 +21,19 @@ public class VideoItem implements Parcelable {
 	public String filePath;
 	public String title;
 	public String itemUri;
+	public String metaData;
+	public String mime_type;
+	public String date_taken;
+	public int item_id;
 	
+	public String getMetaData() {
+		return metaData;
+	}
+
+	public void setMetaData(String metaData) {
+		this.metaData = metaData;
+	}
+
 	public String getDuration() {
 		return duration;
 	}
@@ -64,7 +80,10 @@ public class VideoItem implements Parcelable {
 		filePath = source.readString();
 		title = source.readString();
 		itemUri=source.readString();
-
+		metaData=source.readString();
+		mime_type = source.readString();
+		date_taken = source.readString();
+		item_id = source.readInt();
 	}
 
 	@Override
@@ -81,7 +100,10 @@ public class VideoItem implements Parcelable {
 		dest.writeString(filePath);
 		dest.writeString(title);
 		dest.writeString(itemUri);
-
+		dest.writeString(metaData);
+		dest.writeString(mime_type);
+		dest.writeString(date_taken);
+		dest.writeInt(item_id);
 	}
 
 	// 实例化静态内部对象CREATOR实现接口Parcelable.Creator

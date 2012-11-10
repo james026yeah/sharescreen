@@ -1,6 +1,7 @@
 package archermind.dlna.mobile;
 
 public class MessageDefs {
+	public final static int MSG_NULL = -1;
 	// /////////////////////////////////////////////////////////////
 	// Message Definitions for DLNA Service
 	// /////////////////////////////////////////////////////////////
@@ -31,7 +32,18 @@ public class MessageDefs {
 	public final static int MSG_SERVICE_CONNECT_DEVICE = 11;
 	
 	public final static int MSG_SERVICE_ON_DEVICE_CONNECTED = 12;
+	
+	public final static int MSG_SERVICE_GET_IP_OF_CURRENT_RENDERER = 13;
+	
+	public final static int MSG_SERVICE_ON_GET_IP_OF_CURRENT_RENDERER = 14;
 
+	public final static int MSG_SERVICE_QUIT = 15;
+	
+	public final static int MSG_SERVICE_ON_QUITED = 16;
+	
+	public final static int MSG_SERVICE_ON_DMC_STOPPED = 17;
+	
+	public final static int MSG_SERVICE_RENDERER_DISCONNECT_WIFI = 18;
 	// /////////////////////////////////////////////////////////////
 	// Message Definitions for M-DMC thread
 	// /////////////////////////////////////////////////////////////

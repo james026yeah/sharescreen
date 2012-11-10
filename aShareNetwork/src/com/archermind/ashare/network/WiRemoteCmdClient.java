@@ -53,6 +53,10 @@ public final class WiRemoteCmdClient {
 		public void onServerConnectError(int errorId);
 	}
 	
+	public void sendWifiDisconnectedCmd() {
+		sendMessage(WiRemoteCmdComposer.obtainDisconnectWifiCmd());
+	}
+
 	private void onMessageArrived(String message) {
 		WiRemoteCmdParser cmdParser = new WiRemoteCmdParser(message);
 		Log.v(TAG, "on received message:" + message);
@@ -105,7 +109,7 @@ public final class WiRemoteCmdClient {
 		return sInstance;
 	}
 	
-	public boolean sendMessage(String message) {
+	protected boolean sendMessage(String message) {
 		boolean bSend = false;
 		if(mThread != null) {			
 			bSend = mThread.sendMessage(message);
@@ -123,7 +127,7 @@ public final class WiRemoteCmdClient {
 			mServerIP = serverIP;			
 		}
 		
-		public boolean sendMessage(String message) {			
+		public boolean sendMessage(String message) {
 			boolean bSend = false;
 			if (mWriter != null) {
 				mWriter.println(message);

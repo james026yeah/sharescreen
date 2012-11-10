@@ -11,6 +11,7 @@
 #define DEBUG_PERFORMANCE
 static struct server_protocol g_protocol;
 static struct ishare_service g_service;
+int g_abort_tiger;
 
 static int alloc_client_id(void)
 {
@@ -54,6 +55,7 @@ static int init_server(void)
 	int ret;
 
 	LOGD("%s: %d\n", __func__, __LINE__);
+	g_abort_tiger = 0;
 	g_service.flag = SRV_TYPE_IMAGE_AUDIO;
 	g_service.status = STATUS_STOP;
 	g_service.client_num = 0;
@@ -87,12 +89,17 @@ static int init_server(void)
 static int stop_server(void);
 static int deinit_server(void)
 {
+	LOGD("IN %s.", __func__);
 	if(g_service.status != STATUS_STOP)
 		stop_server();
 	close(g_service.epoll_send);
 	hal_send_control(g_service.flag, GRAB_STOP);
+	LOGD("deinit_hal_socket start");
 	deinit_hal_socket(&g_service);
+	LOGD("deinit_hal_socket end");
+	LOGD("deinit_protocol start");
 	g_protocol.deinit_protocol();
+	LOGD("deinit_protocol end");
 	return 1;
 }
 
@@ -415,11 +422,12 @@ static int stop_server(void)
 	if(real_stop)
 	{	//send_thread need service_mutex
 		LOGD("wait g_service.send_id start");
-		pthread_join(g_service.send_tid, NULL);
+		if (g_abort_tiger == 0)
+			pthread_join(g_service.send_tid, NULL);
 		LOGD("wait g_service.send_id end");
 	}
 
-	LOGD("stop_server end\n");
+	LOGD("OUT: %s\n", __func__);
 	return 1;
 }
 
@@ -653,6 +661,8 @@ void *sync_send_thread(void *arg)
 			__sync_send();
 	} while(g_service.status == STATUS_START);
 
+	LOGD("sync_send exit");
+	g_abort_tiger = 1;
 	pthread_exit("sync_send exit");
 	return NULL;
 }

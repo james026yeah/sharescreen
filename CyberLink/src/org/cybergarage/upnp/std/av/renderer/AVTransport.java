@@ -762,8 +762,12 @@ public class AVTransport implements ActionListener, QueryListener
 
 		if (actionName == null)
 			return false;
-		
-		isActionSuccess = false;
+		/**********************************
+		 * update action return result
+		 */
+		//isActionSuccess = false;
+		isActionSuccess = true;
+		/**********************************/
 		
 		if (actionName.equals(SETAVTRANSPORTURI) == true) {
 			AVTransportInfo avTransInfo = new AVTransportInfo();

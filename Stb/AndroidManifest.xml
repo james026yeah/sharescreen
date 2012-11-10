@@ -23,7 +23,9 @@
             android:windowSoftInputMode="stateAlwaysHidden" />
         <activity
             android:name="archermind.dlna.household.RendererActivity"
-            android:label="@string/app_name" >
+            android:label="@string/app_name"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            android:screenOrientation="landscape" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -32,11 +34,13 @@
         </activity>
         <activity 
             android:name="archermind.dlna.household.DLNAPlayer"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            android:screenOrientation="landscape"/>
         <activity 
             android:name="archermind.dlna.household.ImageShow"
             android:launchMode="singleTask"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            android:screenOrientation="landscape" />
  		<activity
             android:name="archermind.ashare.ScreenDisplayActivity"
             android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen"

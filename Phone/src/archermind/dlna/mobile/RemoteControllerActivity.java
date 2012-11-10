@@ -6,6 +6,7 @@ import java.util.List;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.Bundle;
@@ -18,10 +19,12 @@ import android.widget.AbsoluteLayout;
 import android.widget.AbsoluteLayout.LayoutParams;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+import archermind.dlna.miscellaneous.DeviceInfo;
 import archermind.dlna.natives.WiRemoteAgent;
 
 @SuppressWarnings("deprecation")
-public class RemoteControllerActivity extends Activity {
+public class RemoteControllerActivity extends BaseActivity {
 
 	private static final String TAG = "RemoteControllerActivity";
 
@@ -42,6 +45,8 @@ public class RemoteControllerActivity extends Activity {
 	private TextView mHomeBtn;
 	private TextView mBackBtn;
 	private TextView mSleepBtn;
+	
+	private boolean mHasTarget = false;
 
 	private static final int TOUCH_DLG_ID = 0;
 	private static final int MOUSE_DLG_ID = 1;
@@ -231,21 +236,49 @@ public class RemoteControllerActivity extends Activity {
 		mTouchPoint2 = (TextView) findViewById(R.id.touch_point2);
 		mPoints.add(mTouchPoint1);
 		mPoints.add(mTouchPoint2);
-
-		WiRemoteAgent.init();
-		if (mTouchArea.getVisibility() == View.VISIBLE) {
-			mTouchArea.setVisibility(View.GONE);
-			WiRemoteAgent.gyroMouseControl(1);
-		} else {
-			mTouchArea.setVisibility(View.VISIBLE);
-			WiRemoteAgent.gyroMouseControl(0);
-		}
+		
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
-
+		
+	}
+	
+	@Override
+	protected void onServiceConnected() {
+		super.onServiceConnected();
+		getIPAddrOfCurrentRenderer();
+	}
+	
+	protected void onDeviceConnected(DeviceInfo info) {
+		super.onDeviceConnected(info);
+		Log.d(TAG, "onDeviceConnected: ");
+	}
+	
+	@Override
+	protected void onGetIPAddrOfCurrentRenderer(String ipAddr) {
+		super.onGetIPAddrOfCurrentRenderer(ipAddr);
+		Log.d(TAG, "onGetIPAddrOfCurrentRenderer: ipAddr = " + ipAddr);
+		if (ipAddr == null) {
+			Toast.makeText(getApplicationContext(), "未选中设备", Toast.LENGTH_SHORT).show();
+			finish();
+			return;
+		}
+		
+		mHasTarget = true;
+		
+		int width = getWindowManager().getDefaultDisplay().getWidth();
+		int height = getWindowManager().getDefaultDisplay().getHeight();
+		Log.d(TAG, "onGetIPAddrOfCurrentRenderer: width = " + width + " height = " + height);
+		WiRemoteAgent.init(width, height);
+		WiRemoteAgent.connectServer(ipAddr);
+		if (mTouchArea.getVisibility() == View.VISIBLE) {
+			WiRemoteAgent.gyroMouseControl(0);
+		} else {
+			WiRemoteAgent.gyroMouseControl(1);
+		}
+		
 	}
 
 	public void checkSensor() {
@@ -270,33 +303,6 @@ public class RemoteControllerActivity extends Activity {
 
 	@Override
 	protected Dialog onCreateDialog(int id) {
-		// AlertDialog.Builder builder = new AlertDialog.Builder(new
-		// ContextThemeWrapper(this, R.style.CustomListDialog));
-		// switch (id) {
-		// case TOUCH_DLG_ID:
-		// mControlPages = new String[] {"AirMouse"};
-		// break;
-		// case MOUSE_DLG_ID:
-		// mControlPages = new String[] {"Touch"};
-		// break;
-		// default:
-		// break;
-		// }
-		//
-		// builder.setTitle("Select Pages").setItems(mControlPages,
-		// new DialogInterface.OnClickListener() {
-		// public void onClick(DialogInterface dialog, int which) {
-		// if (mTouchArea.getVisibility() == View.VISIBLE) {
-		// mTouchArea.setVisibility(View.GONE);
-		// WiRemoteAgent.gyroMouseControl(1);
-		// } else {
-		// mTouchArea.setVisibility(View.VISIBLE);
-		// WiRemoteAgent.gyroMouseControl(0);
-		// }
-		//
-		// }
-		// });
-		// return builder.create();
 
 		final Dialog dialog = new Dialog(this, R.style.Theme_DeleteImageDialog);
 		// Get the layout inflater
@@ -321,6 +327,15 @@ public class RemoteControllerActivity extends Activity {
 				dialog.dismiss();
 			}
 		});
+		TextView gameController = (TextView) dlgContent.findViewById(R.id.game_controller);
+		gameController.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				startActivity(new Intent(RemoteControllerActivity.this, GameControllerActivity.class));
+				dialog.dismiss();
+			}
+		});
+		
 		dialog.setContentView(dlgContent);
 
 		// Add action buttons;

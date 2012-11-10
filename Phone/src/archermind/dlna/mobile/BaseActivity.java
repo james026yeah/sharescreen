@@ -42,12 +42,16 @@ public class BaseActivity extends Activity {
 	private boolean mIsBound = false;
 	private Messenger mService = null;
 	final Messenger mMessenger = new Messenger(new IncomingHandler());
+	public final String IMAGE_TYPE="IMAGE";
+	public final String VIDEO_TYPE="VIDEO";
+	public final String MUSIC_TYPE="MUSIC";
 
 	/* Add by yuanhong.dai*/
 	private Button mLeftBtn;
 	private TextView mTitleText;
 	private ImageButton mRightBtn;
 	private LinearLayout mContentLayout;
+	public int getmute;
 	/* End by yuanhong.dai */
 
     class IncomingHandler extends Handler {
@@ -141,7 +145,7 @@ public class BaseActivity extends Activity {
 				break;
 				
 			case MessageDefs.MSG_MDMC_ON_GET_IMAGESEEK:
-				onGetImageSeekresult((Boolean)msg.obj);
+				onGetImageresult((Boolean)msg.obj);
 				break;
 			case MessageDefs.MSG_MDMC_ON_GET_SETPLAYMODE:
 				onGetSetplayModeresult((Boolean)msg.obj);
@@ -152,11 +156,31 @@ public class BaseActivity extends Activity {
 			case MessageDefs.MSG_SERVICE_ON_DEVICE_CONNECTED:
 				onDeviceConnected((DeviceInfo)msg.obj);
 				break;
+			case MessageDefs.MSG_SERVICE_ON_GET_IP_OF_CURRENT_RENDERER:
+				onGetIPAddrOfCurrentRenderer((String)msg.obj);
+				break;
+			case MessageDefs.MSG_SERVICE_ON_QUITED:
+				onServiceQuited();
+				break;
 			default:
 			    super.handleMessage(msg);
             }
         }
     }
+    protected void onServiceQuited() {
+    }
+    
+	protected void quit() {
+		if(null != mService) {
+			try {
+			    Message msg = Message.obtain(null,
+			    		MessageDefs.MSG_SERVICE_QUIT);
+			    msg.replyTo = mMessenger;
+			    mService.send(msg);
+			} catch (RemoteException e) {
+			}
+		}
+	}
     /**
      * 
      * @param obj
@@ -169,11 +193,11 @@ public class BaseActivity extends Activity {
 	 * map.put("relCount", relCount);
 	 * map.put("absCount", absCount);
      */
-    protected void onGetPositioninforesult(Map obj) {
+    public void onGetPositioninforesult(Map obj) {
 		// TODO Auto-generated method stub
 		
 	}
-    public void onGetImageSeekresult(Boolean obj) {
+    public void onGetImageresult(Boolean obj) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -205,10 +229,13 @@ public class BaseActivity extends Activity {
 	}
 	public void onGetGetvolumeresult(String obj) {
 		// TODO Auto-generated method stub
-		
+		if(obj!=null){
+		  postSetVolume(Float.parseFloat(obj));
+		}
 	}
 	public void onGetSetvolumeresult(Boolean obj) {
 		// TODO Auto-generated method stub
+		Log.d("yexiaoyan", "onGetSetvolumeresult "+obj);
 		
 	}
 	public void onGetSetAVtransresult(Boolean obj) {
@@ -355,7 +382,7 @@ public class BaseActivity extends Activity {
 			    mService.send(msg);
 			} catch (RemoteException e) {
 			} 
-			subscribeDeviceList();
+			//subscribeDeviceList();
 			BaseActivity.this.onServiceConnected();
 		}
 		@Override
@@ -536,9 +563,21 @@ public class BaseActivity extends Activity {
 			    mService.send(msg);
 			} catch (RemoteException e) {
 			}
-		}		
+		}
 	}
-	
+
+	protected void getIPAddrOfCurrentRenderer() {
+		if(null != mService) {
+			try {
+				Message msg = Message.obtain(null,
+						MessageDefs.MSG_SERVICE_GET_IP_OF_CURRENT_RENDERER);
+				msg.replyTo = mMessenger;
+				mService.send(msg);
+			} catch (RemoteException e) {
+			}
+		}
+	}
+/*	
 	protected void subscribeDeviceList() {
 		if(null != mService) {
 			try {
@@ -562,10 +601,10 @@ public class BaseActivity extends Activity {
 			}
 		}		
 	}
-	
+*/	
 	private void unbind2RendererService() {		
 		if (mIsBound && (mService != null)) {
-			unsubscribeDeviceList();
+			//unsubscribeDeviceList();
 			try {
 			    Message msg = Message.obtain(null,
 			    		MessageDefs.MSG_SERVICE_UNREGISTER_CLIENT);
@@ -614,7 +653,7 @@ public class BaseActivity extends Activity {
 		List<DeviceInfo> devices = ((List<DeviceInfo>)msg.obj);
 		for(DeviceInfo devInfo : devices) {
 			Log.d(TAG, "on DeviceChanged Device name:" + devInfo.mDevName + 
-					", Dev type:" + devInfo.mDevType);
+					", Dev udn:" + devInfo.mUDN);
 		}		
 		
 		Log.d(TAG, "Query local DMS status-------------------------------->");
@@ -640,6 +679,10 @@ public class BaseActivity extends Activity {
 	
 	protected void onDeviceConnected(DeviceInfo info) {
 		
+	}
+	
+	protected void onGetIPAddrOfCurrentRenderer(String ipAddr) {
+		Log.v(TAG, "onGetIPAddrOfCurrentRenderer --------------------------------> ipAddr:" + ipAddr);
 	}
 protected void postPlay(String uri,String type){
 		if(null != mService) {
@@ -802,13 +845,13 @@ protected void postPlay(String uri,String type){
 			}
 		}
 	}
-	protected void postSetVolume(int DesiredVolume){
+	protected void postSetVolume(Float DesiredVolume){
 		if(null != mService) {
 			try {
 			    Message msg = Message.obtain(null,
 			    		MessageDefs.MSG_MDMC_AV_TRANS_SETVOLUME);
 			    Bundle data = new Bundle();
-			    data.putInt("DesiredVolume", DesiredVolume);
+			    data.putFloat("DesiredVolume", DesiredVolume);
 			    // Location is unique for devices
 			    msg.replyTo = mMessenger;
 			    msg.setData(data);
@@ -830,13 +873,13 @@ protected void postPlay(String uri,String type){
 			}
 		}
 	}
-	protected void postSetMute(int DesiredVolume){
+	protected void postSetMute(Float DesiredVolume){
 		if(null != mService) {
 			try {
 			    Message msg = Message.obtain(null,
 			    		MessageDefs.MSG_MDMC_AV_TRANS_SETMUTE);
 			    Bundle data = new Bundle();
-			    data.putInt("DesiredVolume", DesiredVolume);
+			    data.putFloat("DesiredVolume", DesiredVolume);
 			    // Location is unique for devices
 			    msg.replyTo = mMessenger;
 			    msg.setData(data);
@@ -852,6 +895,7 @@ protected void postPlay(String uri,String type){
 			    		MessageDefs.MSG_MDMC_AV_TRANS_GETMUTE);
 			    // Location is unique for devices
 			    msg.replyTo = mMessenger;
+			   
 			    mService.send(msg);
 			} catch (RemoteException e) {
 			}
@@ -893,6 +937,18 @@ protected void postPlay(String uri,String type){
 			    msg.replyTo = mMessenger;
 			    msg.setData(data);
 			    mService.send(msg);
+			} catch (RemoteException e) {
+			}
+		}
+	}
+	
+	protected void stbDisconnectWifi() {
+		if(null != mService) {
+			try {
+				Message msg = Message.obtain(null,
+						MessageDefs.MSG_SERVICE_RENDERER_DISCONNECT_WIFI);
+				msg.replyTo = mMessenger;
+				mService.send(msg);
 			} catch (RemoteException e) {
 			}
 		}
