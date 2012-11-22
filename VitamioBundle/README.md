@@ -1,4 +1,0 @@
-Vitamio
-=======
-
-Vitamio for Android
