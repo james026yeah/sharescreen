@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="hello">Hello World, HomeActivity!</string>
+    <string name="app_name">三屏互动</string>
+    <string name="current_renderer">Choose A Renderer</string>
+    <string name="tab_local_media_indicator">Local Media</string>
+    <string name="tab_online_media_indicator">Online Media</string>
+    <string name="tab_remote_controller_indicator">Remote Controller</string>
+    <string name="tab_device_management_indicator">Devices</string>
+    <string name="tab_more_indicator">More</string>
+    <string name="scan_two_dimension_code">Scan two-dimension code</string>
+    <string name="devices_list">Devices list</string>
+    <string name="scanning_devices">Scanning devices, waitting...</string>
+    <string name="taost_text">"Click scan two-dimension code button\n
+                                    to adapte TV automatic"</string>
+    <string name="not_link">No link</string>
+    <string name="link_service_faith">Scan faith</string>
+
+    <!-- login title -->
+    <string name="login_title">Enter account and password</string>
+    <string name="login_dialog_secondary_title">Warning:Please view???????</string>
+    <string name="login_ssid">SSID</string>
+    <string name="login_code">Code</string>
+    <string name="link">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="password_error_title">Enter error</string>
+    <string name="password_error_toast">"SSID or Code error"</string>
+    <string name="re_link">Relink</string>
+
+    <!-- More option layout -->
+    <string name="more_option_multiscreen_first">MultiScreen Share</string>
+    <string name="more_option_multiscreen_second">Play on multi devices</string>
+    <!-- More option layout -->
+
+
+    <!-- Setting layout -->
+    <string name="setting_title">Setting</string>
+    <string name="setting_use_notification_key">settingUseNotification</string>
+    <string name="setting_use_update_key">settingUseUpdate</string>
+    <string name="setting_stop_when_call">settingStopWhenCall</string>
+    <string name="setting_use_local_service">settingUseLocalService</string>
+    <string name="setting_find_local_service">settingFindLocalService</string>
+    <string name="setting_local_service_name">settingLocalServiceName</string>
+    <!-- Setting layout -->
+
+
+    <!-- About layout -->
+    <string name="about_title">About</string>
+    <string name="about_label_version">Version</string>
+    <string name="about_label_channel">Channel Code</string>
+    <string name="about_label_web">Our Website</string>
+    <!-- About layout -->
+
+
+    <!-- Local media layout -->
+    <string name="tab_image">Image</string>
+    <string name="tab_music">Music</string>
+    <string name="tab_video">Video</string>
+    <string name="image_first_message">Already is the first photo</string>
+    <string name="image_last_message">Already is the last photo</string>
+    <string name="image_no_image_text">Not found any media file</string>
+    <string name="local_media_image_progress_dialog_message">Getting the picture data, please wait...</string>
+    <string name="local_media_music_progress_dialog_message">Getting the music data, please wait...</string>
+    <string name="local_media_video_progress_dialog_message">Getting the video data, please wait...</string>
+    <string name="video_first_message">Already is the first video</string>
+    <string name="video_last_message">Already is the last video</string>
+    <string name="video_prompt_prev_message">is</string>
+    <string name="video_prompt_next_message">played on</string>
+    <string name="video_play_end_prompt_message">Over Play</string>
+    <string name="video_stop_prompt_message">Stop Play</string>
+    <string name="video_time_seekbar_text">00:00:00</string>
+    <string name="video_push_progress_dialog_message">Please wait , Share the local video...</string>
+    <!-- Local media layout -->
+
+
+    <!-- add by wenyan -->
+    <string name="button_ok">OK</string>
+    <string name="msg_camera_framework_bug">Sorry, the Android camera encountered a problem. You may need to restart the device.</string>
+    <string name="msg_default_mms_subject">Hi</string>
+    <string name="msg_intent_failed">Sorry, the requested application could not be launched. The barcode contents may be invalid.</string>
+    <string name="msg_share_subject_line">Here are the contents of a barcode I scanned</string>
+    <string name="result_text">Found plain text</string>
+    <string name="msg_default_status">If the scan is not successful, go back into the list of devices manual pairing</string>
+    <string name="msg_scan_result_title">Scan information:</string>
+    <string name="msg_ssid_label">SSID: </string>
+    <string name="msg_code_label">Code: </string>
+    <string name="msg_scan_result_text">AP network user name and password information</string>
+    <string name="description_wifi_connect">2dCode</string>
+    <string name="description_goback">Go back</string>
+    <string name="description_2dcode">2dCode</string>
+    <string name="btn_wifi_connect">Connect</string>
+    <string name="btn_wifi_rescan">Rescan</string>
+    <!-- end by wenyan -->
+
+
+    <!-- Modify by yuanhong.dai -->
+    <string name="wifi_title">WIFI List</string>
+    <string name="wifi_connect_status_1">Without access to the Internet</string>
+    <string name="wifi_connect_status_2">Connected, cannot access the Internet</string>
+    <string name="wifi_scanning">Scanning</string>
+    <string name="wifi_scan_result">Scan results：%1$d article</string>
+    <!-- End by yuanhong.dai -->
+
+
+    <!-- Software Update -->
+    <string name="soft_update_no">No Update</string>
+    <string name="soft_update_title">Software Update</string>
+    <string name="soft_update_info">Update Now?</string>
+    <string name="soft_update_updatebtn">Update</string>
+    <string name="soft_update_later">Cancel</string>
+    <string name="soft_updating">Updating</string>
+    <string name="soft_update_cancel">Cancel</string>
+    <string name="soft_update_ignore">Ignore this version</string>
+    <!-- Software Update -->
+
+
+    <!-- add by dongyu -->
+    <string name="music_data_not_init">Music Data not initial</string>
+    <string name="no_music_playing">No Songs Are Playing</string>
+    <string name="lable_all_music">All Music</string>
+    <string name="lable_album">Album</string>
+    <string name="lable_artist">Artist</string>
+    <string name="music_num">Songs</string>
+    <string name="playing_list">Playing Lists</string>
+    <string name="list_cycle">List Recycle</string>
+    <string name="single_cycle">Single Recycle</string>
+    <string name="list_normal">List Normal</string>
+    <string name="shuffle_open">Open Shuffle</string>
+    <string name="shuffle_close">Close Shuffle</string>
+    <string name="defaule_time">00:00</string>
+    <string name="no_song_playing">No Songs Playing</string>
+    <string name="no_artist_playing">No Artist Playing</string>
+    <string name="soft_copy_right">"©2012 诚迈科技，版权所有"</string>
+    <!-- end of music string define -->
+
+
+    <!-- Notification Text -->
+    <string name="notification_content_txt">AShare is Running</string>
+
+</resources>

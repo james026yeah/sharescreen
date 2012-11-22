@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <ImageView
+        android:id="@+id/image"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/app_name" />
+
+    <RelativeLayout
+        android:id="@+id/local_media_music"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+        <LinearLayout
+            android:id="@+id/play_info"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="15dip"
+            android:background="@drawable/music_nowplaying_bg"
+            android:clickable="true"
+            android:onClick="doClick"
+            android:orientation="horizontal" >
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingRight="10dip" >
+
+                <TextView
+                    android:id="@+id/music_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="8dip"
+                    android:text="@string/no_song_playing"
+                    android:textColor="#545658"
+                    android:textSize="20dip" />
+
+                <TextView
+                    android:id="@+id/music_artist"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="8dip"
+                    android:text="@string/no_artist_playing"
+                    android:textColor="#4E93D9" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/play_status_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="8dip"
+                android:background="@drawable/music_play"
+                android:contentDescription="@string/app_name"
+                android:onClick="doClick" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="200dip"
+            android:layout_marginTop="80dip"
+            android:layout_marginLeft="10dip"
+            android:layout_marginRight="10dip"
+            android:layout_below="@+id/play_info"
+            android:orientation="vertical" >
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="100dip" >
+
+                <LinearLayout
+                    android:id="@+id/allsongs_btn"
+                    android:layout_width="140dip"
+                    android:layout_height="90dip"
+                    android:layout_margin="5dip"
+                    android:background="@drawable/btn_music"
+                    android:gravity="center"
+                    android:onClick="doClick"
+                    android:orientation="vertical" >
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/music_bth_music"
+                        android:contentDescription="@string/app_name" />
+
+                    <TextView
+                        android:id="@+id/allmusiccount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lable_all_music" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/album_btn"
+                    android:layout_width="140dip"
+                    android:layout_height="90dip"
+                    android:layout_margin="5dip"
+                    android:background="@drawable/btn_music"
+                    android:gravity="center"
+                    android:onClick="doClick"
+                    android:orientation="vertical" >
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/music_bth_album_select"
+                        android:contentDescription="@string/app_name" />
+
+                    <TextView
+                        android:id="@+id/albumcount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/lable_album" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/artist_btn"
+                android:layout_width="140dip"
+                android:layout_height="90dip"
+                android:layout_margin="5dip"
+                android:background="@drawable/btn_music"
+                android:gravity="center"
+                android:onClick="doClick"
+                android:orientation="vertical" >
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/music_bth_singer_select"
+                    android:contentDescription="@string/app_name" />
+
+                <TextView
+                    android:id="@+id/artistcount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/lable_artist" />
+            </LinearLayout>
+        </LinearLayout>
+    </RelativeLayout>
+
+</FrameLayout>
