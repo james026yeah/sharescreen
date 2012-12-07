@@ -2,13 +2,13 @@ package archermind.dlna.mobile;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -18,16 +18,12 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.drawable.BitmapDrawable;
-import android.media.ThumbnailUtils;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
-import android.provider.MediaStore.Video.Thumbnails;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
@@ -40,8 +36,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.view.animation.Interpolator;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -53,6 +51,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
+import android.widget.Scroller;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -111,11 +110,13 @@ public class LocalMediaActivity extends BaseActivity {
 	private LinearLayout mProgressBar;
 	private ImageView mProgressIcon;
 	private TextView mProgressText;
+	private FixedSpeedScroller mScroller;
 
 	private ListView mMusicList;
 
-	private int mCurrentTabIndex = 0;
+	private int mCurrentTabIndex;
 	private int mScreenWidth;
+	private int mScreenHeight;
 	private boolean mIsImageThumbnail = false;
 	private boolean mIsMusicList = false;
 	private boolean mOnGetVideoFinished = false;
@@ -136,6 +137,7 @@ public class LocalMediaActivity extends BaseActivity {
 	private static ArrayList<Artist> sMusicArtistItem;
 	private static ArrayList<Album> sMusicAlbumItem;
 	private static ArrayList<String> sAllMusicList = new ArrayList<String>();
+	public MusicData mMusicData;
 	private boolean mOnGetMusicFinished = false;
 	private boolean mOnGetMusicCateInfoFinished = false;
 	private boolean mOnGetMusicArtistFinished = false;
@@ -147,6 +149,7 @@ public class LocalMediaActivity extends BaseActivity {
 	private TextView mMusicListTitle;
 	private TextView mArtistTextView;
 	private TextView mMusicTitleTextView;
+	
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -156,22 +159,28 @@ public class LocalMediaActivity extends BaseActivity {
 		setContentView(R.layout.local_media);
 		this.getApplicationContext().bindService(new Intent(IMusicPlayService.class.getName()),
 				mMusicSerConn, Context.BIND_AUTO_CREATE);
-
 		getScreenWidth();
 		initMainUI();
 		initTab();
 		initViewPager();
 		initCurrentTabImage(TAB_IMAGE);
+		try {             
+			   Field mField = ViewPager.class.getDeclaredField("mScroller");             
+			   mField.setAccessible(true);   
+			   mScroller = new FixedSpeedScroller(mViewPager.getContext(), new AccelerateInterpolator());        
+			   mField.set(mViewPager, mScroller);         
+			   } catch (Exception e) {         
+			    e.printStackTrace();
+			   }
 
 	}
 
 	Handler mHandler = new Handler() {
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
-			case PROGRESS_BAR_DISMISS: {
-				dismissProgressBar();
-				break;
-			}
+				case PROGRESS_BAR_DISMISS:
+					dismissProgressBar();
+					break;
 			}
 		};
 	};
@@ -179,7 +188,7 @@ public class LocalMediaActivity extends BaseActivity {
 	@Override
 	protected void onGetMusicCategoryData(ArrayList<MusicCategoryInfo> musicCategory) {
 		mOnGetMusicCateInfoFinished = true;
-		if (musicCategory == null) {
+		if (musicCategory == null || musicCategory.size() == 0) {
 			log("no musicCategory");
 		} else {
 			sMusicCateInfoItem = musicCategory;
@@ -190,37 +199,38 @@ public class LocalMediaActivity extends BaseActivity {
 	@Override
 	protected void onGetMusicArtistsData(ArrayList<Artist> artists) {
 		mOnGetMusicArtistFinished = true;
-		if (artists == null) {
-			log("no artists exists");
+		if (artists == null || artists.size() == 0) {
+//			log("no artists exists");
 		} else {
-			sMusicArtistItem = artists;
-			log("artists number = " + sMusicArtistItem.size());
+			mMusicData.setMusicArtist(artists);
+//			sMusicArtistItem = artists;
+//			log("artists number = " + sMusicArtistItem.size());
 			initMusicArtistList();
 			mAritistNum = (TextView) findViewById(R.id.artistcount);
-			mAritistNum.setText(getResources().getString(R.string.lable_artist) + "（"
-					+ sMusicArtistItem.size() + "）");
+			mAritistNum.setText(getResources().getString(R.string.lable_artist) + "("
+					+ artists.size() + ")");
 		}
 	}
 
 	@Override
 	protected void onGetMusicAlbumsData(ArrayList<Album> albums) {
 		mOnGetMusicAlbumFinished = true;
-		if (albums == null) {
-			sMusicAlbumItem = null;
+		if (albums == null || albums.size() == 0) {
+			log("no albums");
 		} else {
 			sMusicAlbumItem = albums;
 			log("albums number = " + sMusicAlbumItem.size());
 			initMusicAlbumList();
 			mAlbumNum = (TextView) findViewById(R.id.albumcount);
-			mAlbumNum.setText(getResources().getString(R.string.lable_album) + "（" + sMusicAlbumItem.size()
-					+ "）");
+			mAlbumNum.setText(getResources().getString(R.string.lable_album) + "(" + sMusicAlbumItem.size()
+					+ ")");
 		}
 	}
 
 	@Override
 	protected void onGetMusicAllData(ArrayList<MusicItem> musics) {
 		mOnGetMusicFinished = true;
-		if (musics == null) {
+		if (musics == null || musics.size() == 0) {
 			log("no musics");
 		} else {
 			sAllMusicItem = musics;
@@ -230,35 +240,26 @@ public class LocalMediaActivity extends BaseActivity {
 			log("musics number = " + sAllMusicItem.size());
 			initMusicList();
 			mAllMusicNum = (TextView) findViewById(R.id.allmusiccount);
-			mAllMusicNum.setText(getResources().getString(R.string.lable_all_music) + "（"
-					+ sAllMusicItem.size() + "）");
+			mAllMusicNum.setText(getResources().getString(R.string.lable_all_music) + "("
+					+ sAllMusicItem.size() + ")");
 		}
 	}
 
 	@Override
 	protected void onGetVideoCategory(ArrayList<VideoCategory> videoCategory) {
-		if (videoCategory == null) {
-			log("video categroy is null");
-		} else {
-			mOnGetVideoFinished = true;
-			sVideoCategoryList = videoCategory;
-			log("video categroy size = " + sVideoCategoryList.size());
-			dismissProgressBar();
-			initVideoGridView();
-		}
+		mOnGetVideoFinished = true;
+		sVideoCategoryList = videoCategory;
+		log("video categroy size = " + sVideoCategoryList.size());
+		initVideoGridView();
 	}
 
 	@Override
 	protected void onGetPhotos(ArrayList<PhotoAlbum> photoAlbum) {
-		if (photoAlbum == null) {
-			log("photo album is null");
-		} else {
-			mOnGetPhotoFinished = true;
-			sPhotoAlbumList = photoAlbum;
-			log("photo album size = " + sPhotoAlbumList.size());
-			dismissProgressBar();
-			initImageFrameGridView();
-		}
+		mOnGetPhotoFinished = true;
+		sPhotoAlbumList = photoAlbum;
+		log("photo album size = " + sPhotoAlbumList.size());
+		dismissProgressBar();
+		initImageFrameGridView();
 	}
 
 	@Override
@@ -298,9 +299,6 @@ public class LocalMediaActivity extends BaseActivity {
 		if (index == TAB_IMAGE) {
 			mProgressText.setText(getResources()
 					.getString(R.string.local_media_image_progress_dialog_message));
-		} else if (index == TAB_MUSIC) {
-			mProgressText.setText(getResources()
-					.getString(R.string.local_media_music_progress_dialog_message));
 		} else if (index == TAB_VIDEO) {
 			mProgressText.setText(getResources()
 					.getString(R.string.local_media_video_progress_dialog_message));
@@ -318,6 +316,7 @@ public class LocalMediaActivity extends BaseActivity {
 		DisplayMetrics dm = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(dm);
 		mScreenWidth = dm.widthPixels;
+		mScreenHeight = dm.heightPixels;
 	}
 
 	private void initMainUI() {
@@ -351,8 +350,10 @@ public class LocalMediaActivity extends BaseActivity {
 
 		View musicView = inflater.inflate(R.layout.local_media_music, null);
 		sViewAdapters.add(musicView);
+		mMusicData = new MusicData();
 		mMusicTitleTextView = (TextView) findViewById(R.id.music_name);
 		mArtistTextView = (TextView) findViewById(R.id.music_artist);
+		
 		IntentFilter filter = new IntentFilter();
 		filter.addAction("statuschanged");
 		registerReceiver(mReceiver, filter);
@@ -374,19 +375,34 @@ public class LocalMediaActivity extends BaseActivity {
 			public void onPageSelected(int position) {
 				mCurrentTabIndex = position;
 				initCurrentTabImage(position);
-				if(position == TAB_IMAGE && !mOnGetPhotoFinished) {
-					showProgressBar(TAB_IMAGE);
-				}
-				if(position == TAB_MUSIC) {
-					if (mOnGetMusicFinished && mOnGetMusicCateInfoFinished && mOnGetMusicArtistFinished
-							&& mOnGetMusicAlbumFinished) {
+				if(position == TAB_IMAGE) {
+					if(mOnGetPhotoFinished) {
 						dismissProgressBar();
 					} else {
-						showProgressBar(TAB_MUSIC);
+						showProgressBar(TAB_IMAGE);
 					}
 				}
-				if(position == TAB_VIDEO && !mOnGetVideoFinished) {
-					showProgressBar(TAB_VIDEO);
+				if(position == TAB_MUSIC) {
+					mMusicTitleTextView = (TextView) findViewById(R.id.music_name);
+					mArtistTextView = (TextView) findViewById(R.id.music_artist);
+						try {
+							if (mMusicPlaySer.getInitialed()) {
+								mArtistTextView.setText(mMusicPlaySer.getNowPlayItem().getArtist());
+								mMusicTitleTextView.setText(mMusicPlaySer.getNowPlayItem().getTitle());
+							} else {
+								mArtistTextView.setText(getResources().getString(R.string.no_artist_playing));
+								mMusicTitleTextView.setText(getResources().getString(R.string.no_music_playing));
+							}
+						} catch (RemoteException e) {
+							e.printStackTrace();
+						}
+				}
+				if(position == TAB_VIDEO) {
+					if(mOnGetVideoFinished) {
+						dismissProgressBar();
+					} else {
+						showProgressBar(TAB_VIDEO);
+					}
 				}
 			}
 
@@ -421,8 +437,8 @@ public class LocalMediaActivity extends BaseActivity {
 
 		// get the data from the service
 		if (mOnGetPhotoFinished) {
-			// the data is null
-			if (sPhotoAlbumList.size() == 0) {
+			// no data
+			if (sPhotoAlbumList == null || sPhotoAlbumList.size() == 0) {
 				mImageFrameGridView.setVisibility(View.GONE);
 				mNoImagesView.setVisibility(View.VISIBLE);
 			}
@@ -441,7 +457,12 @@ public class LocalMediaActivity extends BaseActivity {
 						String folderName = album.getName();
 						ArrayList<PhotoItem> list = album.getImageList();
 						int size = list.size();
-						initImageGridView(folderName, size, list);
+						try {
+							Thread.sleep(300);
+							initImageGridView(folderName, size, list);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
 					}
 				});
 			}
@@ -453,6 +474,12 @@ public class LocalMediaActivity extends BaseActivity {
 
 		mIsImageThumbnail = true;
 		
+		Animation mTransAniHid = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.pull_left_out);
+		Animation mTransAniSho = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.pull_right_in);
+		mTransAniHid.setDuration(500);
+		mTransAniSho.setDuration(500);
+		mImageThumbnailView.setAnimation(mTransAniSho);
+		mMainView.setAnimation(mTransAniHid);
 		mMainView.setVisibility(View.GONE);
 		mImageThumbnailView.setVisibility(View.VISIBLE);
 
@@ -462,6 +489,12 @@ public class LocalMediaActivity extends BaseActivity {
 			@Override
 			public void onClick(View v) {
 				mIsImageThumbnail = false;
+				Animation mTransAniHid = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.push_right_out);
+				Animation mTransAniSho = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.push_left_in);
+				mTransAniHid.setDuration(500);
+				mTransAniSho.setDuration(500);
+				mImageThumbnailView.setAnimation(mTransAniHid);
+				mMainView.setAnimation(mTransAniSho);
 				mImageThumbnailView.setVisibility(View.GONE);
 				mMainView.setVisibility(View.VISIBLE);
 			}
@@ -477,16 +510,12 @@ public class LocalMediaActivity extends BaseActivity {
 
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-
-				log("image uri = " + imageList.get(position).getItemUri());
-				postPlay(imageList.get(position).getItemUri(), IMAGE_TYPE);
-
 				Intent intent = new Intent(LocalMediaActivity.this, ImageViewActivity.class);
 				intent.setFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
 				intent.putExtra(ImageViewActivity.IMAGE_INDEX, position);
 				ImageViewActivity.sImageItemList = imageList;
 				startActivity(intent);
-
+				LocalMediaActivity.this.getParent().overridePendingTransition(R.anim.pull_right_in, R.anim.pull_left_out);
 			}
 		});
 	}
@@ -496,8 +525,8 @@ public class LocalMediaActivity extends BaseActivity {
 
 		// get the data from service
 		if (mOnGetVideoFinished) {
-			// the data is null
-			if (sVideoCategoryList.size() == 0) {
+			// no data
+			if (sVideoCategoryList == null || sVideoCategoryList.size() == 0) {
 				mExpandableListView.setVisibility(View.GONE);
 				mNoVideosView.setVisibility(View.VISIBLE);
 			}
@@ -556,12 +585,12 @@ public class LocalMediaActivity extends BaseActivity {
 		// get the data from the service
 		if (mOnGetMusicArtistFinished) {
 			// the data is null
-			if (sMusicArtistItem == null) {
+			if (mMusicData.getMusicArtistsData() == null) {
 				mArtistListAdapter = null;
 			}
 			// have the music artst list
 			else {
-				mArtistListAdapter = new ArtistListAdapter(sMusicArtistItem);
+				mArtistListAdapter = new ArtistListAdapter(mMusicData.getMusicArtistsData());
 			}
 		}
 	}
@@ -609,6 +638,22 @@ public class LocalMediaActivity extends BaseActivity {
 		public void onClick(View v) {
 			initCurrentTabImage(index);
 			mViewPager.setCurrentItem(index);
+//			mScroller.setmDuration(500);
+			if (index == 1) {
+				mMusicTitleTextView = (TextView) findViewById(R.id.music_name);
+				mArtistTextView = (TextView) findViewById(R.id.music_artist);
+					try {
+						if (mMusicPlaySer.getInitialed()) {
+							mArtistTextView.setText(mMusicPlaySer.getNowPlayItem().getArtist());
+							mMusicTitleTextView.setText(mMusicPlaySer.getNowPlayItem().getTitle());
+						} else {
+							mArtistTextView.setText(getResources().getString(R.string.no_artist_playing));
+							mMusicTitleTextView.setText(getResources().getString(R.string.no_music_playing));
+						}
+					} catch (RemoteException e) {
+						e.printStackTrace();
+					}
+			}
 		}
 	}
 
@@ -675,10 +720,6 @@ public class LocalMediaActivity extends BaseActivity {
 			TextView titlesec;
 			TextView detail;
 
-			Bitmap bm = null;
-
-			ContentResolver res = getApplicationContext().getContentResolver();
-			Uri uri = Uri.parse(mAllMusic.get(position).getAlbumArtURI());
 			if (convertView == null) {
 				view = getLayoutInflater().inflate(R.layout.music_list_item, null);
 			} else {
@@ -722,7 +763,6 @@ public class LocalMediaActivity extends BaseActivity {
 		public View getView(final int position, View convertView, ViewGroup parent) {
 
 			View view;
-			ImageView img;
 			TextView titlemain;
 			TextView titlesec;
 			TextView detail;
@@ -733,7 +773,6 @@ public class LocalMediaActivity extends BaseActivity {
 				view = convertView;
 			}
 
-			img = (ImageView) view.findViewById(R.id.img);
 			titlemain = (TextView) view.findViewById(R.id.title_main);
 			titlesec = (TextView) view.findViewById(R.id.title_sec);
 			detail = (TextView) view.findViewById(R.id.detail);
@@ -742,10 +781,6 @@ public class LocalMediaActivity extends BaseActivity {
 			titlesec.setText(mMusicAlbum.get(position).getMusicsList().size()
 					+ getResources().getString(R.string.music_num));
 			detail.setText("");
-			if (getMusicImg(mMusicAlbum.get(position).getMusicsList().get(0).getAlbumArtURI()) != null) {
-				img.setImageBitmap(getMusicImg(mMusicAlbum.get(position).getMusicsList().get(0)
-						.getAlbumArtURI()));
-			}
 
 			return view;
 		}
@@ -773,7 +808,6 @@ public class LocalMediaActivity extends BaseActivity {
 		public View getView(final int position, View convertView, ViewGroup parent) {
 
 			View view;
-			ImageView img;
 			TextView titlemain;
 			TextView titlesec;
 			TextView detail;
@@ -784,13 +818,12 @@ public class LocalMediaActivity extends BaseActivity {
 				view = convertView;
 			}
 
-			img = (ImageView) view.findViewById(R.id.img);
 			titlemain = (TextView) view.findViewById(R.id.title_main);
 			titlesec = (TextView) view.findViewById(R.id.title_sec);
 			detail = (TextView) view.findViewById(R.id.detail);
 
 			titlemain.setText(mMusicArtist.get(position).getName());
-			titlesec.setText(sMusicArtistItem.get(position).getMusicsList().size()
+			titlesec.setText(mMusicArtist.get(position).getMusicsList().size()
 					+ getResources().getString(R.string.music_num));
 			detail.setText("");
 
@@ -802,10 +835,12 @@ public class LocalMediaActivity extends BaseActivity {
 
 		private ArrayList<PhotoAlbum> mPhotoAlbums;
 		private ArrayList<PhotoItem> mPhotoItems;
+		private ImageLoadManager mImageLoadManager;
 
 		public MyImageAdapter(ArrayList<PhotoAlbum> photoAlbums, ArrayList<PhotoItem> photoItems) {
 			mPhotoAlbums = photoAlbums;
 			mPhotoItems = photoItems;
+			mImageLoadManager = new ImageLoadManager();
 		}
 
 		@Override
@@ -846,13 +881,21 @@ public class LocalMediaActivity extends BaseActivity {
 				mImageFrameGridView.setColumnWidth(width);
 
 				ImageFrameItem image = (ImageFrameItem) view.findViewById(R.id.frame_thumbnail);
-				image.setLayoutParams(new LinearLayout.LayoutParams(width - 20, height - 20));
+				image.setLayoutParams(new LinearLayout.LayoutParams(width, height));
+				image.setBackgroundDrawable(null);
 
-				if (mPhotoAlbums.get(position).getImageList().size() > 0) {
-					String path = mPhotoAlbums.get(position).getImageList().get(0).getFilePath();
-					image.setTag(path);
-					new ImageLoadManager().loadImage(image);
-				}
+				String filePath = mPhotoAlbums.get(position).getImageList().get(0).getFilePath();
+				String thumbnailPath = mPhotoAlbums.get(position).getImageList().get(0).getThumbFilePath();
+				
+				ImageTag tag = new ImageTag();
+				tag.setFilePath(filePath);
+				tag.setThumbnailPath(thumbnailPath);
+				tag.setType(ImageTag.IMAGE_THUMBNAIL);
+				tag.setScreenWidth(mScreenWidth);
+				tag.setScreenHeigh(mScreenHeight);
+				tag.setPosition(position);
+				image.setTag(tag);
+				mImageLoadManager.loadImage(image);
 
 				TextView count = (TextView) view.findViewById(R.id.frame_count);
 				TextView name = (TextView) view.findViewById(R.id.frame_name);
@@ -873,11 +916,21 @@ public class LocalMediaActivity extends BaseActivity {
 				mImageThumbnailGridView.setColumnWidth(width);
 
 				ImageThumbnailItem image = (ImageThumbnailItem) view.findViewById(R.id.image_thumbnail_item);
-				image.setLayoutParams(new LinearLayout.LayoutParams(width - 20, height - 20));
+				image.setLayoutParams(new LinearLayout.LayoutParams(width, height));
+				image.setBackgroundDrawable(null);
 
-				String path = mPhotoItems.get(position).getFilePath();
-				image.setTag(path);
-				new ImageLoadManager().loadImage(image);
+				String filePath = mPhotoItems.get(position).getFilePath();
+				String thumbnailPath = mPhotoItems.get(position).getThumbFilePath();
+				
+				ImageTag tag = new ImageTag();
+				tag.setFilePath(filePath);
+				tag.setThumbnailPath(thumbnailPath);
+				tag.setType(ImageTag.IMAGE_THUMBNAIL);
+				tag.setScreenWidth(mScreenWidth);
+				tag.setScreenHeigh(mScreenHeight);
+				tag.setPosition(position);
+				image.setTag(tag);
+				mImageLoadManager.loadImage(image);
 			}
 			return view;
 		}
@@ -1002,11 +1055,13 @@ public class LocalMediaActivity extends BaseActivity {
 		private VideoGridView mVideoGridView;
 		private ArrayList<VideoItem> mVideoItems;
 		private int mGroupPosition;
+		private ImageLoadManager mImageLoadManager;
 
 		public VideoGridViewAdapter(VideoGridView view, ArrayList<VideoItem> videoItems, int groupPosition) {
 			mGroupPosition = groupPosition;
 			mVideoGridView = view;
 			mVideoItems = videoItems;
+			mImageLoadManager = new ImageLoadManager();
 		}
 
 		@Override
@@ -1044,15 +1099,23 @@ public class LocalMediaActivity extends BaseActivity {
 			mVideoGridView.setColumnWidth(width);
 
 			ImageThumbnailItem image = (ImageThumbnailItem) view.findViewById(R.id.video_gridview_item_image);
-			image.setLayoutParams(new LinearLayout.LayoutParams(width - 10, height - 10));
+			image.setLayoutParams(new LinearLayout.LayoutParams(width - 5, height - 5));
+			image.setBackgroundDrawable(null);
 
 			VideoItem videoItem = mVideoItems.get(position);
 
-			String path = videoItem.getFilePath();
-			image.setTag(path);
-			new ImageLoadManager().loadVideoImage(image);
-//			image.setBackgroundDrawable(new BitmapDrawable(ThumbnailUtils.createVideoThumbnail(path,
-//					Thumbnails.MINI_KIND)));
+			String filePath = videoItem.getFilePath();
+			String thumbnailPath = videoItem.getThumbFilePath();
+			
+			ImageTag tag = new ImageTag();
+			tag.setFilePath(filePath);
+			tag.setThumbnailPath(thumbnailPath);
+			tag.setType(ImageTag.VIDEO_THUMBNAIL);
+			tag.setScreenWidth(mScreenWidth);
+			tag.setScreenHeigh(mScreenHeight);
+			tag.setPosition(position);
+			image.setTag(tag); 
+			mImageLoadManager.loadImage(image);
 
 			int duration = Integer.parseInt(videoItem.getDuration());
 			TextView time = (TextView) view.findViewById(R.id.video_gridview_item_time);
@@ -1088,12 +1151,24 @@ public class LocalMediaActivity extends BaseActivity {
 		case KeyEvent.KEYCODE_BACK:
 			if(mCurrentTabIndex == TAB_IMAGE && mIsImageThumbnail) {
 				mIsImageThumbnail = false;
+				Animation mTransAniHid = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.push_right_out);
+				Animation mTransAniSho = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.push_left_in);
+				mTransAniHid.setDuration(500);
+				mTransAniSho.setDuration(500);
+				mImageThumbnailView.setAnimation(mTransAniHid);
+				mMainView.setAnimation(mTransAniSho);
 				mImageThumbnailView.setVisibility(View.GONE);
 				mMainView.setVisibility(View.VISIBLE);
 				return true;
 			}
 			if (mCurrentTabIndex == TAB_MUSIC && mIsMusicList) {
 				mIsMusicList = false;
+				Animation mTransAniHid = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.push_right_out);
+				Animation mTransAniSho = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.push_left_in);
+				mTransAniHid.setDuration(500);
+				mTransAniSho.setDuration(500);
+				mMusicListView.setAnimation(mTransAniHid);
+				mMainView.setAnimation(mTransAniSho);
 				mMusicListView.setVisibility(View.GONE);
 				mMainView.setVisibility(View.VISIBLE);
 				mViewPagerAdapter.notifyDataSetChanged();
@@ -1107,47 +1182,29 @@ public class LocalMediaActivity extends BaseActivity {
 
 		switch (view.getId()) {
 		case R.id.play_info:
-			if (mMusicPlaySer.getPlayList() != null) {
+			if (mMusicPlaySer.getPlayList() != null && mMusicPlaySer.getInitialed()) {
 				Intent intent = new Intent();
 				intent.setClass(getApplicationContext(), MusicPlayActivity.class);
 				startActivity(intent);
+				LocalMediaActivity.this.getParent().overridePendingTransition(R.anim.pull_right_in, R.anim.pull_left_out);
 			} else {
 				Toast.makeText(getApplicationContext(), R.string.no_music_playing, Toast.LENGTH_SHORT).show();
 			}
 			break;
-		case R.id.play_status_button:
-			break;
 		case R.id.allsongs_btn:
 			if (mOnGetMusicFinished) {
 
-				mIsMusicList = true;
-				mMusicListTitle = (TextView) findViewById(R.id.list_title);
-				mMusicList = (ListView) findViewById(R.id.music_list);
-				mMusicListTitle.setText(getResources().getString(R.string.lable_all_music) + "（"
-						+ sAllMusicItem.size() + "）");
-				mMusicList.setAdapter(mAllMusicAdapter);
+				Intent intent = new Intent();
+				intent.putExtra("title", getResources().getString(R.string.lable_all_music));
+				ArrayList<MusicItem> music = sAllMusicItem;
 				try {
-					mMusicPlaySer.setPlayList(sAllMusicItem);
+					mMusicPlaySer.setMusicShowList(music);
 				} catch (RemoteException e) {
 					e.printStackTrace();
 				}
-				mMusicList.setOnItemClickListener(new OnItemClickListener() {
-
-					@Override
-					public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-						try {
-							mMusicPlaySer.playFrom(position);
-							mMusicPlaySer.play();
-						} catch (RemoteException e) {
-							e.printStackTrace();
-						}
-						Intent intent = new Intent(getApplicationContext(), MusicPlayActivity.class);
-						startActivityForResult(intent, 0);
-					}
-				});
-				mMainView.setVisibility(View.GONE);
-				mMusicListView.setVisibility(View.VISIBLE);
-				mViewPagerAdapter.notifyDataSetChanged();
+				intent.setClass(getApplicationContext(), MusicListActivity.class);
+				startActivity(intent);
+				LocalMediaActivity.this.getParent().overridePendingTransition(R.anim.pull_right_in, R.anim.pull_left_out);
 			} else {
 				Toast.makeText(getApplicationContext(), R.string.music_data_not_init, Toast.LENGTH_SHORT)
 						.show();
@@ -1155,31 +1212,43 @@ public class LocalMediaActivity extends BaseActivity {
 			break;
 		case R.id.album_btn:
 			if (mOnGetMusicAlbumFinished) {
-				mIsMusicList = true;
-				mMusicListTitle = (TextView) findViewById(R.id.list_title);
-				mMusicList = (ListView) findViewById(R.id.music_list);
-				mMusicList.setAdapter(mAlbumListAdapter);
-				mMusicListTitle.setText(getResources().getString(R.string.lable_album) + "（"
-						+ sMusicAlbumItem.size() + "）");
-				mMainView.setVisibility(View.GONE);
-				mMusicListView.setVisibility(View.VISIBLE);
-				mMusicList.setOnItemClickListener(new OnItemClickListener() {
-
-					@Override
-					public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
-						Intent intent = new Intent();
-						intent.putExtra("title", sMusicAlbumItem.get(position).getName());
-						ArrayList<MusicItem> music = sMusicAlbumItem.get(position).getMusicsList();
-						try {
-							mMusicPlaySer.setMusicShowList(music);
-						} catch (RemoteException e) {
-							e.printStackTrace();
+				if (sMusicAlbumItem != null){
+					mIsMusicList = true;
+					mMusicListTitle = (TextView) findViewById(R.id.list_title);
+					mMusicList = (ListView) findViewById(R.id.music_list);
+					mMusicList.setAdapter(mAlbumListAdapter);
+					mMusicListTitle.setText(getResources().getString(R.string.lable_album) + "（"
+							+ sMusicAlbumItem.size() + "）");
+					Animation mTransAniHid = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.pull_left_out);
+					Animation mTransAniSho = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.pull_right_in);
+					mTransAniHid.setDuration(500);
+					mTransAniSho.setDuration(500);
+					mMainView.setAnimation(mTransAniHid);
+					mMusicListView.setAnimation(mTransAniSho);
+					mMainView.setVisibility(View.GONE);
+					mMusicListView.setVisibility(View.VISIBLE);
+					mMusicList.setOnItemClickListener(new OnItemClickListener() {
+						
+						@Override
+						public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
+							Intent intent = new Intent();
+							intent.putExtra("title", sMusicAlbumItem.get(position).getName());
+							ArrayList<MusicItem> music = sMusicAlbumItem.get(position).getMusicsList();
+							try {
+								mMusicPlaySer.setMusicShowList(music);
+							} catch (RemoteException e) {
+								e.printStackTrace();
+							}
+							intent.setClass(getApplicationContext(), MusicListActivity.class);
+							startActivity(intent);
+							LocalMediaActivity.this.getParent().overridePendingTransition(R.anim.pull_right_in, R.anim.pull_left_out);
 						}
-						intent.setClass(getApplicationContext(), MusicListActivity.class);
-						startActivityForResult(intent, 0);
-					}
-				});
-				mViewPagerAdapter.notifyDataSetChanged();
+					});
+					mViewPagerAdapter.notifyDataSetChanged();
+				} else {
+					Toast.makeText(getApplicationContext(), "当前没有歌曲", Toast.LENGTH_SHORT)
+					.show();
+				}
 			} else {
 				Toast.makeText(getApplicationContext(), R.string.music_data_not_init, Toast.LENGTH_SHORT)
 						.show();
@@ -1187,31 +1256,54 @@ public class LocalMediaActivity extends BaseActivity {
 			break;
 		case R.id.artist_btn:
 			if (mOnGetMusicArtistFinished) {
-				mIsMusicList = true;
-				mMusicListTitle = (TextView) findViewById(R.id.list_title);
-				mMusicList = (ListView) findViewById(R.id.music_list);
-				mMusicList.setAdapter(mArtistListAdapter);
-				mMusicListTitle.setText(getResources().getString(R.string.lable_artist) + "（"
-						+ sMusicArtistItem.size() + "）");
-				mMainView.setVisibility(View.GONE);
-				mMusicListView.setVisibility(View.VISIBLE);
-				mMusicList.setOnItemClickListener(new OnItemClickListener() {
+				if (mMusicData.getMusicArtistsData() != null) {
+					mIsMusicList = true;
+					mMusicListTitle = (TextView) findViewById(R.id.list_title);
+					mMusicList = (ListView) findViewById(R.id.music_list);
+					mMusicList.setAdapter(mArtistListAdapter);
+					mMusicListTitle.setText(getResources().getString(
+							R.string.lable_artist)
+							+ "（" + mMusicData.getMusicArtistsData().size() + "）");
+					Animation mTransAniHid = AnimationUtils.loadAnimation(
+							getApplicationContext(), R.anim.pull_left_out);
+					Animation mTransAniSho = AnimationUtils.loadAnimation(
+							getApplicationContext(), R.anim.pull_right_in);
+					mTransAniHid.setDuration(500);
+					mTransAniSho.setDuration(500);
+					mMainView.setAnimation(mTransAniHid);
+					mMusicListView.setAnimation(mTransAniSho);
+					mMainView.setVisibility(View.GONE);
+					mMusicListView.setVisibility(View.VISIBLE);
+					mMusicList.setOnItemClickListener(new OnItemClickListener() {
 
-					@Override
-					public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
-						Intent intent = new Intent();
-						intent.putExtra("title", sMusicArtistItem.get(position).getName());
-						ArrayList<MusicItem> music = sMusicArtistItem.get(position).getMusicsList();
-						try {
-							mMusicPlaySer.setMusicShowList(music);
-						} catch (RemoteException e) {
-							e.printStackTrace();
-						}
-						intent.setClass(getApplicationContext(), MusicListActivity.class);
-						startActivityForResult(intent, 0);
-					}
-				});
-				mViewPagerAdapter.notifyDataSetChanged();
+								@Override
+								public void onItemClick(AdapterView<?> arg0,
+										View arg1, int position, long arg3) {
+									Intent intent = new Intent();
+									intent.putExtra("title", mMusicData.getMusicArtistsData()
+											.get(position).getName());
+									ArrayList<MusicItem> music = mMusicData.getMusicArtistsData()
+											.get(position).getMusicsList();
+									mMusicData.setMusicShowList(music);
+//									try {
+//										mMusicPlaySer.setMusicShowList(music);
+//									} catch (RemoteException e) {
+//										e.printStackTrace();
+//									}
+									intent.setClass(getApplicationContext(),
+											MusicListActivity.class);
+									startActivity(intent);
+									LocalMediaActivity.this.getParent()
+											.overridePendingTransition(
+													R.anim.pull_right_in,
+													R.anim.pull_left_out);
+								}
+							});
+					mViewPagerAdapter.notifyDataSetChanged();
+				} else {
+					Toast.makeText(getApplicationContext(), "当前没有歌曲", Toast.LENGTH_SHORT)
+					.show();
+				}
 			} else {
 				Toast.makeText(getApplicationContext(), R.string.music_data_not_init, Toast.LENGTH_SHORT)
 						.show();
@@ -1219,12 +1311,32 @@ public class LocalMediaActivity extends BaseActivity {
 			break;
 		case R.id.back_arrow:
 			mIsMusicList = false;
+			Animation mTransAniHid = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.push_right_out);
+			Animation mTransAniSho = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.push_left_in);
+			mTransAniHid.setDuration(500);
+			mTransAniSho.setDuration(500);
+			mMusicListView.setAnimation(mTransAniHid);
+			mMainView.setAnimation(mTransAniSho);
 			mMusicListView.setVisibility(View.GONE);
 			mMainView.setVisibility(View.VISIBLE);
 			mViewPagerAdapter.notifyDataSetChanged();
 		}
 	}
 
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		// TODO Auto-generated method stub
+		switch (requestCode) {
+		case 0:
+			mMainView.setVisibility(View.VISIBLE);
+			mMusicListView.setVisibility(View.GONE);
+			break;
+
+		default:
+			super.onActivityResult(requestCode, resultCode, data);
+		}
+	}
 
 	public Bitmap getMusicImg(String mAlbumArtURI) {
 		File file = new File(mAlbumArtURI);
@@ -1261,7 +1373,7 @@ public class LocalMediaActivity extends BaseActivity {
 			mMusicTitleTextView = (TextView) findViewById(R.id.music_name);
 			mArtistTextView = (TextView) findViewById(R.id.music_artist);
 				try {
-					if (mMusicPlaySer.isPlaying()) {
+					if (mMusicPlaySer.getInitialed()) {
 						Log.d(TAG, "received from" + intent.getStringExtra("title"));
 						mArtistTextView.setText(mMusicPlaySer.getNowPlayItem().getArtist());
 						mMusicTitleTextView.setText(mMusicPlaySer.getNowPlayItem().getTitle());
@@ -1274,6 +1386,43 @@ public class LocalMediaActivity extends BaseActivity {
 				}
 			}
 	};
+	
+
+
+	public class FixedSpeedScroller extends Scroller {
+		private int mDuration = 500;
+
+		public FixedSpeedScroller(Context context) {
+			super(context);
+		}
+
+		public FixedSpeedScroller(Context context, Interpolator interpolator) {
+			super(context, interpolator);
+		}
+
+		@Override
+		public void startScroll(int startX, int startY, int dx, int dy,
+				int duration) {
+			// Ignore received duration, use fixed one instead
+			super.startScroll(startX, startY, dx, dy, mDuration);
+		}
+
+		@Override
+		public void startScroll(int startX, int startY, int dx, int dy) {
+			// Ignore received duration, use fixed one instead
+			super.startScroll(startX, startY, dx, dy, mDuration);
+		}
+
+		public void setmDuration(int time) {
+			mDuration = time;
+		}
+
+		public int getmDuration() {
+			return mDuration;
+		}
+
+	}
+
 }
 
 class VideoGridView extends GridView {

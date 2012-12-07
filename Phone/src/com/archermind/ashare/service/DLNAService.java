@@ -23,6 +23,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.net.NetworkInfo;
 import android.net.NetworkInfo.DetailedState;
 import android.net.wifi.SupplicantState;
@@ -36,7 +37,9 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+import archermind.dlna.mobile.LocalMediaActivity;
 import archermind.dlna.mobile.MessageDefs;
+import archermind.dlna.mobile.MobileDLNAActivity;
 import archermind.dlna.mobile.R;
 
 import com.archermind.ashare.dlna.ControllerProcess;
@@ -52,6 +55,8 @@ public class DLNAService extends Service {
 	private final static String STANDARD_MDMS_MODEL_NAME = "aShare Media Server";
 	private final static String STANDARD_DMR_MODEL_NAME = "aShare Media Renderer";
 	
+	private final static String SHARED_PREFERENCES_NAME = "DLNAService Shared Preferences";
+	private final static String SP_KEY_UDN = "UDN";
 	//private final static int TIME_INTERVAL_SEARCH_DLNA_DEV = 60000; // 60secs
 	
 	private WifiManager mWifiMgr = null;
@@ -316,7 +321,7 @@ public class DLNAService extends Service {
             	Bundle datasetImage= msg.getData();
             	if(datasetImage!=null && mCurrentRenderer != null){
             		datasetImage.putString(MessageDefs.KEY_DEV_URI, mCurrentRenderer.getLocation());
-        		    mMDMCProc.control(datasetImage,MessageDefs.MSG_MDMC_AV_TRANS_SETPLAYMODE);
+        		    mMDMCProc.control(datasetImage,MessageDefs.MSG_MDMC_AV_TRANS_IMAGESEEK);
             	}
         		break;
             case MessageDefs.MSG_SERVICE_GET_DEVICE_LIST:
@@ -337,6 +342,19 @@ public class DLNAService extends Service {
 					}
 				}
             	break;
+            case MessageDefs.MSG_SERVICE_GET_NAME_OF_CURRENT_RENDERER:
+                String friendlyName = (mCurrentRenderer != null) ?
+                        mCurrentRenderer.getFriendlyName() : null;
+                for(Messenger messenger : mClients) {
+                    try {
+                        messenger.send(Message.obtain(
+                                null, MessageDefs.MSG_SERVICE_ON_GET_NAME_OF_CURRENT_RENDERER,
+                                friendlyName));
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+                break;
             case MessageDefs.MSG_SERVICE_QUIT:
             	mLastMessage = MessageDefs.MSG_SERVICE_QUIT;
             	stopDevices();
@@ -391,9 +409,9 @@ public class DLNAService extends Service {
 		DeviceList sticks = new DeviceList();
 		for(int pos = 0; pos < dl.size(); ++pos) {
 			Device dev = dl.getDevice(pos);
-			Log.d(TAG, "onSearchResponse--> Dev name:" + dev.getFriendlyName());
+			Log.d(TAG, "onSearchResponse--> Dev name:" + dev.getFriendlyName() + "(" + dev.getUDN() + ")");
 			if(isStickMDMR(dev)) {
-				Log.d(TAG, "onSearchResponse--> : found stick M-DMR");		
+				Log.d(TAG, "onSearchResponse--> : found stick M-DMR");
 				sticks.add(dev);
 			}
 			
@@ -409,12 +427,12 @@ public class DLNAService extends Service {
 		DeviceList tmpSticks = new DeviceList();
 		for(int pos = 0; pos < mRendererList.size(); ++pos) {
 			Device dev = mRendererList.getDevice(pos);
-			Log.d(TAG, "onSearchResponse--> : old MDR name:" + dev.getLocation());
+			Log.d(TAG, "onSearchResponse--> : old MDR name:" + dev.getUDN());
 			if(isContain(sticks, dev)) {
-				Log.d(TAG, "onSearchResponse--> : old MDR name:" + dev.getLocation() + " still there");
+				Log.d(TAG, "onSearchResponse--> : old MDR name:" + dev.getUDN() + " still there");
 				tmpSticks.add(dev);
 			} else {
-				Log.d(TAG, "onSearchResponse--> : old MDR name:" + dev.getLocation() + " disapeared!!");
+				Log.d(TAG, "onSearchResponse--> : old MDR name:" + dev.getUDN() + " disapeared!!");
 				isStickListChanged = true;
 			}
 		}
@@ -422,7 +440,7 @@ public class DLNAService extends Service {
 		for(int pos = 0; pos < sticks.size(); ++pos) {
 			Device dev = sticks.getDevice(pos);
 			if(!isContain(mRendererList, dev)) {
-				Log.d(TAG, "onSearchResponse--> : new added MDR name:" + dev.getLocation());
+				Log.d(TAG, "onSearchResponse--> : new added MDR name:" + dev.getUDN());
 				tmpSticks.add(dev);
 				isStickListChanged = true;
 			} 
@@ -430,9 +448,18 @@ public class DLNAService extends Service {
 		
 		if(isStickListChanged) {
 			mRendererList = tmpSticks;
+			
+			SharedPreferences sp = this.getSharedPreferences(SHARED_PREFERENCES_NAME, MODE_PRIVATE);
+			String savedUDN = sp.getString(SP_KEY_UDN, null);
+			Log.v(TAG, "onSearchResponse--> saved udn:" + savedUDN);
+			
 			for(int pos = 0; pos < mRendererList.size(); ++pos) {
-				Log.d(TAG, "After Merge:" + 
-						mRendererList.getDevice(pos).getLocation());
+			    Device dev = mRendererList.getDevice(pos);
+				Log.d(TAG, "After Merge:" + dev.getUDN());
+				if(this.mCurrentRenderer == null && dev.getUDN().equals(savedUDN)) {
+				    Log.v(TAG, "onSearchResponse--> auto connect device: " + dev.getUDN());
+				    mCurrentRenderer = dev;
+				}
 			}
 			sendDeviceChangedMessage();
 		}
@@ -448,34 +475,43 @@ public class DLNAService extends Service {
 		Log.v(TAG, "onDeviceAdd 0 --> : add new renderer friendName:" + dev.getFriendlyName());
 		if(isStickMDMR(dev) && !isContain(mRendererList, dev)) {
 			Log.d(TAG, "onDeviceAdd 1--> : add new renderer friendName:" + dev.getFriendlyName()
-					+ ", loc:" + dev.getLocation());
+					+ ", udn:" + dev.getUDN());
 			mRendererList.add(dev);
+			
+			SharedPreferences sp = this.getSharedPreferences(SHARED_PREFERENCES_NAME, MODE_PRIVATE);
+            String savedUDN = sp.getString(SP_KEY_UDN, null);
+            Log.v(TAG, "onDeviceAdd--> saved udn:" + savedUDN);
+            if(this.mCurrentRenderer == null && dev.getUDN().equals(savedUDN)) {
+                Log.v(TAG, "onDeviceAdd--> auto connect device: " + dev.getUDN());
+                mCurrentRenderer = dev;
+            }
 			sendDeviceChangedMessage();
 		}
 		
 		if(isLocalMDMS(dev)) {
 			Log.d(TAG, "onDeviceAdd--> : found local DMS !!!:" + dev.getFriendlyName()
-					+ ", loc:" + dev.getLocation());
+					+ ", udn:" + dev.getUDN());
 			mLocalMDMS = dev;
 			onLocalMDMSStatusChanged();
 		}		
 	}
 	
 	private void onDeviceRemoved(Device dev) {
+	    Log.v(TAG, "onDeviceRemoved 0 --> : remove:" + dev.getFriendlyName() + ", udn:" + dev.getUDN());
 		if(isStickMDMR(dev) && isContain(mRendererList, dev)) {
 			if(mCurrentRenderer != null && 
-					mCurrentRenderer.getLocation().equals(dev.getLocation())) {
+					mCurrentRenderer.getUDN().equals(dev.getUDN())) {
 				Log.v(TAG, "onDeviceRemoved--> current renderer removed");
 				mCurrentRenderer = null;
 				WiRemoteCmdClient.getInstance().stop();
 			}
-			Log.v(TAG, "onDeviceRemoved--> renderer removed loc:" + dev.getLocation());
+			Log.v(TAG, "onDeviceRemoved--> renderer removed udn:" + dev.getUDN());
 			removeFromDeviceList(mRendererList, dev);
 			sendDeviceChangedMessage();
 		}
 		
 		if(isLocalMDMS(dev)) {
-			Log.v(TAG, "onDeviceRemoved--> local DMS removed loc:" + dev.getLocation());
+			Log.v(TAG, "onDeviceRemoved--> local DMS removed udn:" + dev.getUDN());
 			mLocalMDMS = null;
 			onLocalMDMSStatusChanged();
 		}
@@ -487,9 +523,12 @@ public class DLNAService extends Service {
 	}
 	
 	private boolean isLocalMDMS(Device dev) {
+	    Log.v(TAG, "dev.getLocation():" + dev.getLocation());
+	    String localIPAddr = getLocalIpAddress();
+	    Log.v(TAG, "local IP():" + localIPAddr);
 		return (dev != null && dev.getDeviceType().equals(MediaServer.DEVICE_TYPE) && 
-				dev.getModelName().equals(STANDARD_MDMS_MODEL_NAME) && 
-				dev.getLocation().contains(getLocalIpAddress()));
+				dev.getModelName().equals(STANDARD_MDMS_MODEL_NAME) && localIPAddr != null &&
+				dev.getLocation().contains(localIPAddr));
 	}
 	
 	private boolean isContain(DeviceList dl, Device target) {
@@ -497,7 +536,7 @@ public class DLNAService extends Service {
 		if(dl != null && target != null) {
 			for(int pos = 0; pos < dl.size(); ++pos) {
 				Device dev = dl.getDevice(pos);
-				if(dev.getLocation().equals(target.getLocation())) {
+				if(dev.getUDN().equals(target.getUDN())) {
 					isContain = true;
 					break;
 				}
@@ -511,7 +550,7 @@ public class DLNAService extends Service {
     	if(dl == null || dev == null || dl.size() == 0) return;
     	for(int pos = 0; pos < dl.size(); ++pos) {
     		Device device = dl.getDevice(pos);
-    		if(device.getLocation().equals(dev.getLocation())) {
+    		if(device.getUDN().equals(dev.getUDN())) {
     			mRendererList.remove(device);
     			break;
     		}
@@ -580,14 +619,9 @@ public class DLNAService extends Service {
 			Log.v(TAG, "onCreate() start M-DMC process");
 		}
 		if(mMDMSProc == null) {
-			mMDMSProc = new ServerProcess(mHandler, getApplicationContext());
+			mMDMSProc = new ServerProcess(mHandler, mWifiMgr);
 			mMDMSProc.start();
 			Log.v(TAG, "onCreate() start M-DMS process");
-		}
-		if(mAshareProc == null) {
-			mAshareProc = new AshareProcess(mHandler, getApplicationContext());
-			mAshareProc.start();
-			Log.v(TAG, "onCreate() start ashare process");
 		}
 	}
 	
@@ -609,11 +643,6 @@ public class DLNAService extends Service {
 			mMDMSProc = null;
 			Log.v(TAG, "onDestroy() stop M-DMS process");
 		}
-		if(mAshareProc != null) {
-			mAshareProc.quit();
-			mAshareProc = null;
-			Log.v(TAG, "onDestroy() stop ashare process");
-		}
 	}
 
 	private void showNotification() {
@@ -624,14 +653,18 @@ public class DLNAService extends Service {
 		Notification notification = new Notification(R.drawable.app_icon, text,
 				System.currentTimeMillis());
 
-		// The PendingIntent to launch our activity if the user selects this notification
-		//PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-				//new Intent(this, MobileDLNAActivity.class), 0);
+		Intent intent = new Intent(Intent.ACTION_MAIN);
+		intent.addCategory(Intent.CATEGORY_LAUNCHER);
+		intent.setClass(this, MobileDLNAActivity.class);
+		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+		PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
+				intent, 0);
 		
-		PendingIntent stopAsharePI = PendingIntent.getBroadcast(this, 0, new Intent(AshareProcess.ACTION_STOP_ASHARE), 0);
+		/*PendingIntent stopAsharePI = PendingIntent.getBroadcast(this, 0, new Intent(AshareProcess.ACTION_STOP_ASHARE), 0);
+		 * */
 		// Set the info for the views that show in the notification panel.
 		notification.setLatestEventInfo(this, getText(R.string.notification_content_txt),
-				text, stopAsharePI);
+				text, contentIntent);
 
 		// Send the notification.
 		mNM.notify(R.string.notification_content_txt, notification);
@@ -750,6 +783,14 @@ public class DLNAService extends Service {
     			Log.v(TAG, "onConnectDeviceMessage---------------> found the dev location:" +
     					dev.getLocation());
     			mCurrentRenderer = dev;
+    			
+    			// save the renderer we connected
+    			SharedPreferences sp = DLNAService.this.getSharedPreferences(SHARED_PREFERENCES_NAME,
+    			        MODE_PRIVATE);
+    			SharedPreferences.Editor editor = sp.edit();
+    			editor.putString(SP_KEY_UDN, mCurrentRenderer.getUDN());
+    			editor.commit();
+    			
     			WiRemoteCmdClient.getInstance().start(getIPAddrOfCurrntRenderer());
     			info.mState = DeviceInfo.DEV_STATE_CONNECTED;
     			break;

@@ -5,13 +5,13 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.Random;
 
-import com.archermind.ashare.dlna.localmedia.MusicItem;
-
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioManager;
+import android.media.AudioManager.OnAudioFocusChangeListener;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
@@ -20,9 +20,10 @@ import android.media.MediaPlayer.OnSeekCompleteListener;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
-import archermind.dlna.mobile.R;
 
-public class MusicPlayService extends Service {
+import com.archermind.ashare.dlna.localmedia.MusicItem;
+
+public class MusicPlayService extends Service implements OnAudioFocusChangeListener {
 
 	String TAG = "MusicPlayService";
 	
@@ -40,6 +41,7 @@ public class MusicPlayService extends Service {
 	private static boolean mIsPrepared = false;
 	private static boolean mIsPlayOnPhone = true;
 	private boolean mServiceInUse = false;
+	private static boolean mIsInitialed = false;
 	
 	private boolean mIsShuffleMode = false;
 	private int mRepeatMode = 0;//0---->list
@@ -61,13 +63,17 @@ public class MusicPlayService extends Service {
 		mMusicPlayer.setOnCompletionListener(new OnCompletionListener() {
 			@Override
 			public void onCompletion(MediaPlayer mp) {
-				next();
-				if (mIsPlayOnPhone) {
-					mp.start();
+				if (mMusicPlayPosition != mMusicList.size() - 1) {
+					next();
+					if (mIsPlayOnPhone) {
+						mp.start();
+					}
+					Intent intent = new Intent("statuschanged");
+					intent.putExtra("title", "from playFrom" + mMusicPlayPosition);
+					sendBroadcast(intent);
+				} else {
+					pause();
 				}
-				Intent intent = new Intent("statuschanged");
-				intent.putExtra("title", "from playFrom" + mMusicPlayPosition);
-				sendBroadcast(intent);
 			}
 		});
 		mMusicPlayer.setOnSeekCompleteListener(new OnSeekCompleteListener() {
@@ -80,19 +86,21 @@ public class MusicPlayService extends Service {
 			@Override
 			public boolean onError(MediaPlayer mp, int what, int extra) {
 				// TODO Auto-generated method stub
-				mMusicPlayer.reset();
-				try {
-					mMusicPlayer.setDataSource(mMusicPlayingItem.getFilePath());
-					mMusicPlayer.prepare();
-				} catch (IllegalArgumentException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalStateException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				if (mIsInitialed) {
+					mMusicPlayer.reset();
+					try {
+						mMusicPlayer.setDataSource(mMusicPlayingItem.getFilePath());
+						mMusicPlayer.prepare();
+					} catch (IllegalArgumentException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IllegalStateException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 				return true;
 			}
@@ -112,6 +120,10 @@ public class MusicPlayService extends Service {
 	
 //****************************888888888888888888888888888888*************************8
 	public void play() {
+		AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+		int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC,
+		    AudioManager.AUDIOFOCUS_GAIN);
+		
 		mMusicPlayer.start();
 		mIsSupposedToBePlaying = true;
 	}
@@ -141,12 +153,19 @@ public class MusicPlayService extends Service {
 		sendBroadcast(intent);
 	}
 	
+	@Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_STICKY;
+    }
+	
 	private void stop() {
-			mMusicPlayer.stop();
-			mIsSupposedToBePlaying = false;
-			Intent intent = new Intent("statuschanged");
-			intent.putExtra("title", "from playFrom"+mMusicPlayPosition);
-			sendBroadcast(intent);
+		mIsInitialed = false;
+		mMusicPlayer.stop();
+		mIsSupposedToBePlaying = false;
+		
+		Intent intent = new Intent("statuschanged");
+		intent.putExtra("title", "from playFrom" + mMusicPlayPosition);
+		sendBroadcast(intent);
 	}
 	
 	private void seekTo(int position) {
@@ -164,6 +183,7 @@ public class MusicPlayService extends Service {
 	private void playFrom(int i) {
 		Log.d(TAG,"MusicPlayService playFrom:" + i);
 		if (i >= 0 && i < mMusicList.size()){
+			mIsInitialed = true;
 			mMusicPlayer.reset();
 			try {
 				mMusicPlayer.setDataSource(mMusicList.get(i).getFilePath());
@@ -187,9 +207,7 @@ public class MusicPlayService extends Service {
 				playFrom(mMusicList.size() - 1);
 			}
 		} else {
-			mIsPrepared = false;
-			pause();
-			seekTo(0);
+			playFrom(mMusicPlayPosition);
 		}
 	}
 	
@@ -384,6 +402,18 @@ public class MusicPlayService extends Service {
 			// TODO Auto-generated method stub
 			return mIsPlayOnPhone;
 		}
+
+		@Override
+		public boolean getInitialed() {
+			// TODO Auto-generated method stub
+			return mIsInitialed;
+		}
+
+		@Override
+		public void setInitialed(boolean ini){
+			// TODO Auto-generated method stub
+			mIsInitialed = ini;
+		}
 	}
 
 	private final IBinder mBinder = new ServiceStub(this);
@@ -397,4 +427,34 @@ public class MusicPlayService extends Service {
 			}
 		}
 	};
+
+
+	@Override
+	public void onAudioFocusChange(int focusChange) {
+		// TODO Auto-generated method stub
+		switch (focusChange) {
+		case AudioManager.AUDIOFOCUS_GAIN:
+			Log.e(TAG, "AUDIOFOCUS_GAIN");
+			break;
+		case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT:
+			Log.e(TAG, "UDIOFOCUS_GAIN_TRANSIENT");
+			break;
+		case AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK:
+			Log.e(TAG, "AUDIOFOCUS_LOSS_TRANSIENT");
+			break;
+		case AudioManager.AUDIOFOCUS_LOSS:
+			Log.e(TAG, "AUDIOFOCUS_LOSS_TRANSIENT");
+			pause();
+			break;
+		case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+			Log.e(TAG, "AUDIOFOCUS_LOSS_TRANSIENT");
+			break;
+		case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+			Log.e(TAG, "AUDIOFOCUS_LOSS_TRANSIENT");
+			break;
+		case AudioManager.AUDIOFOCUS_REQUEST_FAILED:
+			Log.e(TAG, "AUDIOFOCUS_REQUEST_FAILED");
+			break;
+		}
+	}
 }

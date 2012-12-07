@@ -19,6 +19,8 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -38,16 +40,26 @@ public class MusicListActivity extends Activity {
 	public static final int TIME_MINUTE = TIME_SECOND * 60;
 	public static final int TIME_HOUR = TIME_MINUTE * 60;
 	
+	private final int ALL_MUSIC = 0;
+	private final int ARTIST = 1;
+	private final int ALBUM = 2;
+	
+	private List<MusicItem> mMusicShowList;
+	private MusicData mMusicData;
+	
 	private IMusicPlayService mMusicPlaySer = null;
 	private MusicListAdapter adapter = null;
 	private ListView mMusicList;
 	private TextView mTitle;
+	private static List<MusicItem> mAllMusic;
+	
 	private ServiceConnection mMusicSerConn = new ServiceConnection() {
 
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
 			// TODO Auto-generated method stub
 			mMusicPlaySer = null;
+			
 		}
 
 		@Override
@@ -63,8 +75,8 @@ public class MusicListActivity extends Activity {
 		setContentView(R.layout.music_list_show);
 		mMusicList = (ListView) findViewById(R.id.music_show_list);
 		mTitle = (TextView) findViewById(R.id.list_title);
+		mMusicData = new MusicData();
 		Intent intent = getIntent();
-		Toast.makeText(getApplicationContext(), intent.getStringExtra("title"), Toast.LENGTH_LONG).show();
 		mTitle.setText(intent.getStringExtra("title"));
 		bindService(new Intent(IMusicPlayService.class.getName()),
 				mMusicSerConn, Context.BIND_AUTO_CREATE);
@@ -75,13 +87,16 @@ public class MusicListActivity extends Activity {
 	}
 
 	private Handler handler= new Handler(){
-		@Override
+		@Override 
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
 			case 0:
 				try {
-					adapter = new MusicListAdapter(mMusicPlaySer.getMusicShowList());
+					adapter = new MusicListAdapter(mMusicData.getMusicShowList());
 					mMusicList.setAdapter(adapter);
+					if (getIntent().getBooleanExtra("scrollto", false)) {
+						mMusicList.setSelection((int) mMusicPlaySer.getQueuePosition());
+					}
 					mMusicList.setOnItemClickListener(new OnItemClickListener() {
 
 						@Override
@@ -89,13 +104,15 @@ public class MusicListActivity extends Activity {
 								long arg3) {
 							// TODO Auto-generated method stub
 							try {
-								mMusicPlaySer.setPlayList(mMusicPlaySer.getMusicShowList());
-								mMusicPlaySer.playFrom(position);
-								mMusicPlaySer.play();
+								if (mMusicPlaySer.getPlayOnPhone()) {
+									mMusicPlaySer.setPlayList(mMusicData.getMusicShowList());
+									mMusicPlaySer.playFrom(position);
+									mMusicPlaySer.play();
+								}
 								Intent intent = new Intent();
 								intent.setClass(getApplicationContext(), MusicPlayActivity.class);
 								startActivity(intent);
-								finish();
+								overridePendingTransition(R.anim.pull_right_in, R.anim.pull_left_out);
 							} catch (RemoteException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -114,6 +131,12 @@ public class MusicListActivity extends Activity {
 		}
 	};
 
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (requestCode == 0) {
+			finish();
+		}
+	};
+	
 	class MusicListAdapter extends BaseAdapter {
 		private List<MusicItem> mAllMusic;
 		
@@ -171,6 +194,8 @@ public class MusicListActivity extends Activity {
 				view = convertView;
 			}
 			img = (ImageView) view.findViewById(R.id.img);
+			img.setImageBitmap(null);
+			img.setBackgroundDrawable(getResources().getDrawable(R.drawable.icon_music));
 			titlemain = (TextView) view.findViewById(R.id.title_main);
 			titlesec = (TextView) view.findViewById(R.id.title_sec);
 			detail = (TextView) view.findViewById(R.id.detail);
@@ -185,10 +210,27 @@ public class MusicListActivity extends Activity {
 		}
 	}
 	
+	@Override
+	protected void onDestroy() {
+	    // TODO Auto-generated method stub\
+	    unbindService(mMusicSerConn);
+	    super.onDestroy();
+	}
+	
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		if (keyCode == KeyEvent.KEYCODE_BACK) {
+			finish();
+			overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);
+		}
+		return super.onKeyDown(keyCode, event);
+	}
+	
 	public void doClick(View view) {
 		switch (view.getId()) {
 		case R.id.back_arrow:
 			finish();
+			overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);
 			break;
 
 		default:
@@ -225,4 +267,17 @@ public class MusicListActivity extends Activity {
 		}
 		return bt;
 	}
+	
+//	public List<MusicItem> getMusicShowItem() {
+//		int which = mMusicData.getShowList();
+//		switch (which) {
+//		case ALL_MUSIC:
+//			return mMusicData.getAllMusicData();
+//		case ARTIST:
+//			return mMusicData.getMusicArtistsData().get(getIntent().);
+//		case ALBUM:
+//			return mMusicData.getMusicAlbumData();
+//		}
+//		return null;
+//	}
 }

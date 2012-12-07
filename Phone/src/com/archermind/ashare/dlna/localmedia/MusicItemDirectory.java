@@ -16,11 +16,13 @@ import org.cybergarage.util.Debug;
 import org.cybergarage.xml.Attribute;
 import org.cybergarage.xml.AttributeList;
 
+import android.util.Log;
+
 
 public class MusicItemDirectory extends Directory {
 	
+	public static final String TAG = "MusicItemDirectory";
 	private ArrayList<MusicItem> mFileList;
-
 	
 	public MusicItemDirectory(String name, ArrayList<MusicItem> fileList) {
 		super(name);
@@ -30,9 +32,11 @@ public class MusicItemDirectory extends Directory {
 	@SuppressWarnings("unchecked")
 	private boolean updateItemNode(FileItemNode itemNode, File file,MusicItem info)
 	{
-		Format format = getContentDirectory().getFormat(file);
-		if (format == null)
+		Format format = getContentDirectory().getFormat(info.mime_type);
+		if (format == null) {
+			Log.d(TAG, "dms file format ==null filepath=" + info.filePath);
 			return false;
+		}
 		FormatObject formatObj = format.createObject(file);
 		
 		// File/TimeStamp
@@ -65,10 +69,11 @@ public class MusicItemDirectory extends Directory {
 		catch (Exception e) {
 			Debug.warning(e);
 		}
+		itemNode.setMimeType(format.getMimeType());
 		itemNode.addProperty(UPnP.ALBUM, info.album);
 		itemNode.addProperty(UPnP.ARITIST, info.artist);
 		itemNode.addProperty(UPnP.FILEPATH, info.filePath);
-		itemNode.setAlbumArtURI(info.albumArtURI);
+		itemNode.setAlbumArtURI(getContentDirectory().getContentExportArmArtURL(info.albumArtURI));
 		
 		// ProtocolInfo
 		String mimeType = format.getMimeType();
@@ -91,12 +96,12 @@ public class MusicItemDirectory extends Directory {
 	
 	private FileItemNode createCompareItemNode(File file)
 	{
-		Format format = getContentDirectory().getFormat(file);
+		/*Format format = getContentDirectory().getFormat(file);
 		if (format == null) {
 			if (file != null)
-				System.out.println("format == null ,filename=" + file.getAbsolutePath());
+				Log.d(TAG,"format == null ,filename=" + file.getAbsolutePath());
 			return null;
-		}
+		}*/
 		FileItemNode itemNode = new FileItemNode();
 		itemNode.setFile(file);
 		return itemNode;
@@ -209,7 +214,6 @@ public class MusicItemDirectory extends Directory {
 		
 		// Checking Added or Updated Items
 		FileItemNodeList itemNodeList = createItemNodeList();
-		
 		int itemNodeCnt = itemNodeList.size();
 		for (int n=0; n<itemNodeCnt; n++) {
 			FileItemNode itemNode = itemNodeList.getFileItemNode(n);
@@ -226,15 +230,16 @@ public class MusicItemDirectory extends Directory {
 			return null;
 		}
 		FileItemNodeList nodeList = new FileItemNodeList();
+		
 		for (MusicItem info : mFileList) {
 			File file=new File(info.filePath);
-			//when we detect file not exists,remove it
 			if (!file.exists()) {
-				System.out.println("dms file not exist path=" + info.filePath);
+				Log.d(TAG,"dms file not exist path=" + info.filePath);
 				continue;
 			}
 			FileItemNode itemNode = createCompareItemNode(file);
 			if (itemNode == null) {
+				Log.d(TAG,"dms create music Item node is null...." + info.filePath);
 				continue;
 			}
 			nodeList.add(itemNode);

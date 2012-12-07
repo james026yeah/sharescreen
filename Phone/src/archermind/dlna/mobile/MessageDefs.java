@@ -44,6 +44,10 @@ public class MessageDefs {
 	public final static int MSG_SERVICE_ON_DMC_STOPPED = 17;
 	
 	public final static int MSG_SERVICE_RENDERER_DISCONNECT_WIFI = 18;
+	
+    public final static int MSG_SERVICE_GET_NAME_OF_CURRENT_RENDERER = 19;
+    
+    public final static int MSG_SERVICE_ON_GET_NAME_OF_CURRENT_RENDERER = 20;
 	// /////////////////////////////////////////////////////////////
 	// Message Definitions for M-DMC thread
 	// /////////////////////////////////////////////////////////////

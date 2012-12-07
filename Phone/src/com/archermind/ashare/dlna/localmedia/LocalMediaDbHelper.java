@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
@@ -54,6 +53,12 @@ public class LocalMediaDbHelper {
 				thumbColumns, null, null, null);
 
 		do {
+			String filePath = cursor.getString(cursor.getColumnIndexOrThrow(
+					MediaStore.Video.Media.DATA));
+			String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(
+					MediaStore.Video.Media.MIME_TYPE));
+			if (!MediaCache.supportedMediaItem(mimeType, filePath)) continue;
+			
 			PhotoItem info = new PhotoItem();
 			info.filePath = cursor.getString(cursor.getColumnIndexOrThrow(
 					MediaStore.Video.Media.DATA));
@@ -195,6 +200,12 @@ public class LocalMediaDbHelper {
 
 		ArrayList<MusicItem> fileList = new ArrayList<MusicItem>();
 		do {
+			String filePath = cursor.getString(cursor.getColumnIndexOrThrow(
+					MediaStore.Video.Media.DATA));
+			String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(
+					MediaStore.Video.Media.MIME_TYPE));
+			if (!MediaCache.supportedMediaItem(mimeType, filePath)) continue;
+			
 			MusicItem info = new MusicItem();
 			info.artist = cursor.getString(cursor.getColumnIndex(
 					MediaStore.Audio.Media.ARTIST));
@@ -220,7 +231,7 @@ public class LocalMediaDbHelper {
 			}
 			if (null == info.albumArtURI
 					|| info.albumArtURI.equals("<unknown>")) {
-				info.albumArtURI = "unknown";
+				info.albumArtURI = "";
 			}
 			if (null == info.album || info.album.equals("<unknown>")) {
 				info.album = "unknown";
@@ -277,6 +288,12 @@ public class LocalMediaDbHelper {
 		ArrayList<VideoItem> videoList = new ArrayList<VideoItem>();
 		HashSet<String> set = new HashSet<String>();
 		do {
+			String filePath = cursor.getString(cursor.getColumnIndexOrThrow(
+					MediaStore.Video.Media.DATA));
+			String mimeType = cursor.getString(cursor.getColumnIndexOrThrow(
+					MediaStore.Video.Media.MIME_TYPE));
+			if (!MediaCache.supportedMediaItem(mimeType, filePath)) continue;
+			
 			VideoItem info = new VideoItem();
 			info.filePath = cursor.getString(cursor.getColumnIndexOrThrow(
 					MediaStore.Video.Media.DATA));

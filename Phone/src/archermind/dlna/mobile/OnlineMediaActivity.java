@@ -5,9 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.archermind.ashare.ui.control.ScrollLayout;
-import com.archermind.ashare.ui.control.ScrollLayout.PageChangeListener;
-
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
@@ -29,7 +26,9 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
 import android.widget.Toast;
-import archermind.dlna.mobile.R.layout;
+
+import com.archermind.ashare.ui.control.ScrollLayout;
+import com.archermind.ashare.ui.control.ScrollLayout.PageChangeListener;
 
 public class OnlineMediaActivity extends Activity {
 
@@ -143,7 +142,7 @@ public class OnlineMediaActivity extends Activity {
 					.getItemAtPosition(position);
 
 			if (appInfo.resolvePackageName != null) {
-				Toast.makeText(mContext, "Package not found!",
+				Toast.makeText(mContext, "无法找到文件",
 						Toast.LENGTH_SHORT).show();
 				UpdateManager manager = new UpdateManager(OnlineMediaActivity.this);
 				manager.checkUpdate();
@@ -158,9 +157,11 @@ public class OnlineMediaActivity extends Activity {
 			try {
 				// launcher the package
 				mContext.startActivity(mainIntent);
+				// Toast.makeText(getApplicationContext(), "onclick",
+				// Toast.LENGTH_LONG).show();
+				getParent().overridePendingTransition(R.anim.bottom_in, R.anim.top_out);
 			} catch (ActivityNotFoundException noFound) {
-				Toast.makeText(mContext, "Package not found!",
-						Toast.LENGTH_SHORT).show();
+				Toast.makeText(mContext, "无法找到文件", Toast.LENGTH_SHORT).show();
 			}
 		}
 
@@ -169,8 +170,7 @@ public class OnlineMediaActivity extends Activity {
 	public static final Map<String, String[]> appInfos = new HashMap<String, String[]>();
 
 	static {
-		appInfos.put("com.sohu.sohuvideo", 
-				new String[]{"搜狐视频", "url"});
+		appInfos.put("com.sohu.sohuvideo", new String[]{"搜狐视频", "url"});
 		appInfos.put("com.pplive.androidphone", new String[]{"PPTV"});
 		appInfos.put("com.tencent.qqlive", new String[]{"腾讯视频"});
 		appInfos.put("com.togic.mediacenter", new String[]{"泰捷视频"});

@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageView;
 import android.widget.TabHost;
+import android.widget.TextView;
 import android.widget.TabHost.OnTabChangeListener;
 
 public class MobileDLNAActivity extends TabActivity implements OnTabChangeListener {
@@ -31,7 +32,7 @@ public class MobileDLNAActivity extends TabActivity implements OnTabChangeListen
 
 //	private int mTabIndex;
 	
-	private ImageView mRemoteControlCover;
+	private TextView mRemoteControlCover;
 
 	private SharedPreferences mSharedPreferences;
 	private SharedPreferences.Editor mEditor;
@@ -43,7 +44,7 @@ public class MobileDLNAActivity extends TabActivity implements OnTabChangeListen
 		mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
 		mEditor = mSharedPreferences.edit();
 		
-		mRemoteControlCover = (ImageView) findViewById(R.id.remoteControlCover);
+		mRemoteControlCover = (TextView) findViewById(R.id.remoteControlCover);
 		mRemoteControlCover.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {

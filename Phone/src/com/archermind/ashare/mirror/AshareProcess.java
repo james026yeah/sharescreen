@@ -1,112 +1,142 @@
 package com.archermind.ashare.mirror;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import com.archermind.ashare.mirror.AShareJniCallBack.AShareJniCallBackListener;
-
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Message;
 import android.util.Log;
 import android.view.Display;
 import android.view.OrientationEventListener;
-import android.content.BroadcastReceiver;
+import android.view.Surface;
+import android.widget.Toast;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
+import archermind.dlna.mobile.R;
 
 
-public class AshareProcess extends HandlerThread implements AShareJniCallBackListener {
+public class AshareProcess implements AShareJniCallBackListener {
 	private final static String TAG = "AshareProcess";
-	
-	private Handler mHandler;
-	private Handler mUIHandler;
-	private Context mContext;
-	private AShareJniCallBack mJniCallBack;
-	//private MyOrientationEventListener mOrentationListener;
+	private Activity mActivity;
+	private AShareJniCallBack mJniCallback;
 	private Display mDisplay;
-	private static final int MSG_CONNECT_REQUEST = 1001;
-	public static final String ACTION_STOP_ASHARE = "stop_ashare";
-	private Handler.Callback mCb = new Handler.Callback() {
-		@Override
-		public boolean handleMessage(Message msg) {
-			boolean ret = false;
-			switch(msg.what) {
-			/*case MSG_START_AIRPLAY:
-				Log.d(TAG, "start airplay!");
-				if(NativeAirplay.startService()) {
-					startBonjour();
-				}
-				ret = true;
-				break;
-			case MSG_STOP_AIRPLAY:
-				Log.d(TAG, "stop airplay!");
-				NativeAirplay.stopService();
-				mBAR.unRegisterBonjourService();
-				ret = true;
-				break;
-			case MSG_STOP_PROCESS:
-				AshareProcess.this.quit();
-				ret = true;
-				break;*/
-			}
-			return ret;
-		}		
-	};
+	private String mCurrentSTBIp;
+	private boolean running = false;
+	private static AshareProcess sAshareProcess;
+	private MyOrientationEventListener mOrentationListener;
 	
-	public AshareProcess(Handler uiHandler, Context context) {
-		super(TAG);
-		mUIHandler = uiHandler;
-		mContext = context;
-		IntentFilter intentFilter = new IntentFilter();
-		intentFilter.addAction(ACTION_STOP_ASHARE);
-		mContext.registerReceiver(mStopAshareReceiver, intentFilter);
-		Log.d(TAG,"registerReceiver  mStopAshareReceiver................");
+	private AshareProcess(Activity activity) {
+		mActivity = activity;
+		mJniCallback = AShareJniCallBack.getInstance();
+		mJniCallback.addCallBackListener(this);
 	}
 	
-	BroadcastReceiver mStopAshareReceiver = new BroadcastReceiver() {
-		
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			
-			if (intent.getAction().equals(ACTION_STOP_ASHARE)) {
-				Log.d(TAG,"mStopAshareReceiver  onReceive................");
-				NativeAshare.stopShare();
-			}
+	public static AshareProcess newInstance(Activity activity){
+		if (sAshareProcess == null) {
+			sAshareProcess = new AshareProcess(activity);
 		}
-	};
+		return sAshareProcess;
+	}
 	
-    @Override
-    protected void onLooperPrepared() {
-    	mHandler = new Handler(getLooper(), mCb);
-    	mJniCallBack = AShareJniCallBack.getInstance();
-    	mJniCallBack.addCallBackListener(this);
-    	//NativeAshare.shareScreen(mJniCallBack, "");
+    public boolean isRunning() {
+    	return running;
+    }
+    
+    public void stopAshareMirror() {
+    	NativeAshare.stopShare();
     }
 
+	public void startAshareMirror(String ip) {
+		mCurrentSTBIp = ip;
+		if (makeFbReadable() && mCurrentSTBIp != null) {
+			mDisplay = mActivity.getWindowManager().getDefaultDisplay();
+			mOrentationListener = new MyOrientationEventListener(mActivity);
+			mOrentationListener.enable();
+			NativeAshare.setRotate(mDisplay.getRotation());
+			// stb ip
+			NativeAshare.shareScreen(mJniCallback, mCurrentSTBIp);
+			Intent intent = new Intent(Intent.ACTION_MAIN);
+			intent.addCategory(Intent.CATEGORY_HOME);
+			mActivity.startActivity(intent);
+		} else {
+			Log.d(TAG,"fb open failure!!! or ip == null");
+			Toast.makeText(mActivity, R.string.ashare_need_root, Toast.LENGTH_LONG).show();
+		}
+	}
+	
 	@Override
 	public void onAShareClientConnected() {
-		Log.d("jni_debug","jni_debug onAShareClientConnected...phone....");
+		Log.d(TAG,"jni_debug onAShareClientConnected...phone....");
+		running = true;
 	}
 
 	@Override
 	public void onAShareClientDisconnected() {
-		Log.d("jni_debug","jni_debug onAShareClientDisconnected...phone....");
+		Log.d(TAG,"jni_debug onAShareClientDisconnected...phone....");
+		running = false;
+		mOrentationListener.disable();
 	}
 	
-	/*@Override
-	public void onPrepareSurfaceRequest() {
-		if (mHandler != null) {
-			mHandler.sendEmptyMessage(MSG_CONNECT_REQUEST);
+	private boolean makeFbReadable() {
+		Log.d(TAG, "makeFbReadable: ......");
+		boolean success = false;
+		Process process = null;
+		DataOutputStream os = null;
+		int exitValue = 0;
+		try {
+			if (isRooted()) {
+				process = Runtime.getRuntime().exec("su");
+				os = new DataOutputStream(process.getOutputStream());
+				os.writeBytes("chmod 666 /dev/graphics/fb0 \n");
+				os.writeBytes("exit\n");
+				os.flush();
+				exitValue = process.waitFor();
+				Log.d(TAG, "@@@@@@@@@@@@@@@@@@@@ exitValue::" + exitValue);
+
+				if (exitValue == 0) {
+					success = true;
+				}
+			}
+		} catch (Exception e) {
+		} finally {
+			//mIsRoot = true;
 		}
-	}*/
-    
-   /* public void stopVideo()
-    {
-    	if(DLNAPlayer.mIsPlayCompletion)
-    		return;
-    	Log.v("EagleTag","Callback java function:"+Thread.currentThread().getStackTrace()[2].getMethodName());
-    	mUIHandler.sendEmptyMessage(MSG_AIRPLAY_STOP);
-    }*/
-	/*private class MyOrientationEventListener extends OrientationEventListener {
+		return success;
+	}
+	
+	public boolean isRooted() {
+		DataInputStream stream;
+		boolean flag = false;
+		try {
+			stream = terminal("ls /data/");
+			if (stream.readLine() != null)
+				flag = true;
+			Log.d(TAG, "Root flag: " + flag);
+		} catch (Exception e1) {
+			e1.printStackTrace();
+
+		}
+
+		return flag;
+	}
+	
+	public DataInputStream terminal(String command) throws Exception {
+		Process process = Runtime.getRuntime().exec("su");
+		OutputStream outstream = process.getOutputStream();
+		DataOutputStream DOPS = new DataOutputStream(outstream);
+		InputStream instream = process.getInputStream();
+		DataInputStream DIPS = new DataInputStream(instream);
+		String temp = command + "\n";
+		DOPS.writeBytes(temp);
+		DOPS.flush();
+		DOPS.writeBytes("exit\n");
+		DOPS.flush();
+		process.waitFor();
+		return DIPS;
+	}
+	
+	private class MyOrientationEventListener extends OrientationEventListener {
 		
 		private int mOrientation = 0;
 		private int mRotationSent2Server = 0;
@@ -141,10 +171,9 @@ public class AshareProcess extends HandlerThread implements AShareJniCallBackLis
 					}
 					Log.d(TAG,"onOrientationChanged=" + orientation + " mDisplay.getRotation=" + mDisplay.getRotation());
 					mOrientation = mDisplay.getRotation();
-					NativeAgent.commandSetRotation(mRotationSent2Server);
+					NativeAshare.setRotate(mRotationSent2Server);
 				}
 			}
-			
 		}
-	}*/
+	}
 }

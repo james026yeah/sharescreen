@@ -31,10 +31,11 @@ public class SettingActivity extends PreferenceActivity implements
 		addPreferencesFromResource(R.xml.preferences);
 		setContentView(R.layout.set_preference_main);
 
-		findViewById(R.id.btn_left_top).setOnClickListener(new OnClickListener() {
+		findViewById(R.id.image_left_top).setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				finish();
+				overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);
 			}
 		});
 		
@@ -88,6 +89,10 @@ public class SettingActivity extends PreferenceActivity implements
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		Log.d("MoreOptionsActivity", "keyCode: " + keyCode);
+		if (keyCode == KeyEvent.KEYCODE_BACK) {
+			finish();
+			overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);
+		}
 		return super.onKeyDown(keyCode, event);
 	}
 	

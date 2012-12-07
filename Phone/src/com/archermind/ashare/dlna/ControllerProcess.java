@@ -359,11 +359,13 @@ public class ControllerProcess extends HandlerThread
 	public ControllerProcess(Handler uiHandler) {
 		super(TAG);
 		mUIHandler = uiHandler;
+		/*
 		mMediaCtrl = new MediaController();
 		mMediaCtrl.addSearchResponseListener(this);
 		mMediaCtrl.addNotifyListener(this);
 		mMediaCtrl.addDeviceChangeListener(this);
 		mMediaCtrl.addEventListener(this);
+		*/
 		Log.d(TAG, "in Constructor of class ControllerProcess");
 	}
 	
@@ -376,21 +378,26 @@ public class ControllerProcess extends HandlerThread
 	}
 	
 	public void startMediaController() {
-		if(mMediaCtrl != null && mHandler != null) {
+		if(mHandler != null) {
 			mHandler.post(new Runnable() {
 				@Override
 				public void run() {
-					if(mMediaCtrl != null) {
-						Log.v(TAG, ">>>>>>>>>> Start media controller <<<<<<<<<<");
-						mMediaCtrl.start();
-					}
+				    if(mMediaCtrl == null) {
+				        mMediaCtrl = new MediaController();
+				        mMediaCtrl.addSearchResponseListener(ControllerProcess.this);
+				        mMediaCtrl.addNotifyListener(ControllerProcess.this);
+				        mMediaCtrl.addDeviceChangeListener(ControllerProcess.this);
+				        mMediaCtrl.addEventListener(ControllerProcess.this);
+				    }
+					Log.v(TAG, ">>>>>>>>>> Start media controller <<<<<<<<<<");
+					mMediaCtrl.start();
 				}
 			});
 		}
 	}
 	
 	public void stopMediaController() {
-		if(mMediaCtrl != null && mHandler != null) {
+		if(mHandler != null) {
 			mHandler.removeCallbacksAndMessages(null);	// remove all callbacks and messages
 			mHandler.post(new Runnable() {
 				@Override
@@ -398,6 +405,7 @@ public class ControllerProcess extends HandlerThread
 					if(mMediaCtrl != null) {
 						Log.v(TAG, ">>>>>>>>>> stop media controller <<<<<<<<<<");
 						mMediaCtrl.stop();
+						mMediaCtrl = null;
 					}
 					if(mUIHandler != null) {
 						mUIHandler.sendMessage(
@@ -405,14 +413,22 @@ public class ControllerProcess extends HandlerThread
 					}
 				}
 			});
+		} else {
+		    if(mUIHandler != null) {
+                mUIHandler.sendMessage(
+                        Message.obtain(null, MessageDefs.MSG_SERVICE_ON_DMC_STOPPED));
+            }
 		}
 	}
 	
 	public void searchDevices() {
-		if(mMediaCtrl != null && mHandler != null) {
+	    Log.v(TAG, ">>>>>>>>>> in search devices <<<<<<<<<<");
+		if(mHandler != null) {
+		    Log.v(TAG, ">>>>>>>>>> in 1 search devices <<<<<<<<<<");
 			mHandler.post(new Runnable() {
 				@Override
 				public void run() {
+				    Log.v(TAG, ">>>>>>>>>>2 in search devices <<<<<<<<<<");
 					if(mMediaCtrl != null) {
 						Log.v(TAG, ">>>>>>>>>> search devices <<<<<<<<<<");
 						mMediaCtrl.search();
@@ -522,25 +538,30 @@ public class ControllerProcess extends HandlerThread
 	public void deviceSearchResponseReceived(SSDPPacket arg0) {
 		Log.d(TAG, "deviceSearchResponseReceived:");
 		Log.d(TAG, "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
-		DeviceList dl = mMediaCtrl.getDeviceList();
-		for(int index = 0; index < dl.size(); ++index) {
-			Device dev = dl.getDevice(index);
-			Log.d(TAG, dev.getFriendlyName());
+		DeviceList dl = null;
+		if(mMediaCtrl != null) {
+    		dl = mMediaCtrl.getDeviceList();
+    		for(int index = 0; index < dl.size(); ++index) {
+    			Device dev = dl.getDevice(index);
+    			Log.d(TAG, dev.getFriendlyName());
+    		}
 		}
 		Log.d(TAG, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n");
 		Message msg = new Message();
 		msg.what = MessageDefs.MSG_MDMC_ON_SEARCH_RESPONSE;
-		msg.obj = dl;
+		msg.obj = (dl == null) ? (new DeviceList()) : dl;
 		mUIHandler.sendMessage(msg);
 	}
 
 	@Override
 	public void deviceAdded(Device dev) {
 		Log.d(TAG, "Add device:" + dev.getFriendlyName());
-		ServiceList sl = dev.getServiceList();
-		for(int index = 0; index < sl.size(); ++index) {
-			Service service = sl.getService(index);
-			mMediaCtrl.subscribe(service);
+		if(mMediaCtrl != null) {
+    		ServiceList sl = dev.getServiceList();
+    		for(int index = 0; index < sl.size(); ++index) {
+    			Service service = sl.getService(index);
+    			mMediaCtrl.subscribe(service);
+    		}
 		}
 		Message msg = new Message();
 		msg.what = MessageDefs.MSG_MDMC_ON_DEV_ADDED;
@@ -550,8 +571,10 @@ public class ControllerProcess extends HandlerThread
 
 	@Override
 	public void deviceRemoved(Device dev) {		
-		Log.d(TAG, "Remove device:" + dev.getFriendlyName());		
-		mMediaCtrl.unsubscribe(dev);
+		Log.d(TAG, "Remove device:" + dev.getFriendlyName());
+		if(mMediaCtrl != null) {
+		    mMediaCtrl.unsubscribe(dev);
+		}
 		Message msg = new Message();
 		msg.what = MessageDefs.MSG_MDMC_ON_DEV_REMOVED;
 		msg.obj = dev;

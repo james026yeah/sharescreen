@@ -1,18 +1,3 @@
-/******************************************************************
-*
-*	MediaServer for CyberLink
-*
-*	Copyright (C) Satoshi Konno 2003
-*
-*	File : ID3.java
-*
-*	Revision:
-*
-*	12/03/03
-*		- first revision.
-*
-******************************************************************/
-
 package org.cybergarage.upnp.std.av.server.object.format;
 
 import java.io.*;
@@ -22,7 +7,7 @@ import org.cybergarage.upnp.std.av.server.object.item.*;
 import org.cybergarage.xml.*;
 import org.cybergarage.util.*;
 
-public class ID3Format extends Header implements Format, FormatObject
+public abstract class AudioIOFormat extends Header implements Format, FormatObject
 {
 	////////////////////////////////////////////////
 	// Constants
@@ -46,16 +31,24 @@ public class ID3Format extends Header implements Format, FormatObject
 	// Constroctor
 	////////////////////////////////////////////////
 	
-	public ID3Format()
+	public AudioIOFormat()
 	{
 		mp3File = null;
 	}
 	
-	public ID3Format(File file)
+	public AudioIOFormat(File file)
 	{
 		mp3File = file;
 		loadHeader(file);
 	}
+	
+	////////////////////////////////////////////////
+	// Abstract Methods
+	////////////////////////////////////////////////
+	
+	public abstract boolean equals(File file);
+	public abstract FormatObject createObject(File file);
+	public abstract String getMimeType();
 
 	////////////////////////////////////////////////
 	// loadHeader
@@ -217,28 +210,6 @@ public class ID3Format extends Header implements Format, FormatObject
 	public String getFrameStringData(String name)
 	{
 		return frameList.getFrameStringData(name);
-	}
-	
-	////////////////////////////////////////////////
-	// Abstract Methods
-	////////////////////////////////////////////////
-	
-	public boolean equals(File file)
-	{
-		String headerID = Header.getIDString(file, 3);
-		if (headerID.startsWith(HEADER_ID) == true||file.getPath().lastIndexOf(".mp3")!=-1 || file.getPath().lastIndexOf(".wma")!=-1 || file.getPath().lastIndexOf(".amr")!=-1)
-			return true;		
-		return false;
-	}
-	
-	public FormatObject createObject(File file)
-	{
-		return new ID3Format(file);
-	}
-	
-	public String getMimeType()
-	{
-		return "audio/mpeg";
 	}
 
 	public String getMediaClass()

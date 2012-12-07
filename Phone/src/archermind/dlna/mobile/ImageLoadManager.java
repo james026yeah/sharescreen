@@ -1,13 +1,12 @@
 package archermind.dlna.mobile;
 
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Map;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.graphics.Bitmap.Config;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.ThumbnailUtils;
 import android.provider.MediaStore.Video.Thumbnails;
@@ -18,173 +17,194 @@ import com.archermind.ashare.misc.CustomAsyncTask;
 
 public class ImageLoadManager {
 	
-	private static final String TAG = "ImageLoadManager";
+	private static final int IMAGE_THUMBNAIL = ImageTag.IMAGE_THUMBNAIL;
+	private static final int IMAGE_FULL = ImageTag.IMAGE_FULL;
+	private static final int VIDEO_THUMBNAIL = ImageTag.VIDEO_THUMBNAIL;
 	
-//	private static final int MAXIMUM_POOL_SIZE = 10;
+	private static Map<String, SoftReference<Bitmap>> mBitmaps;
 	
-	private static final Map<String, WeakReference<Bitmap>> mThumbnails = new HashMap<String, WeakReference<Bitmap>>();
-	private static final Map<String, WeakReference<Bitmap>> mPreviewImages = new HashMap<String, WeakReference<Bitmap>>();
-	private static final Map<String, WeakReference<Bitmap>> mVideoImages = new HashMap<String, WeakReference<Bitmap>>();
-	
-	private int mScreenWidth = 0;
-	private int mScreenHeight = 0;
-	
-	private boolean mIsVideoBitmap = false;
+	public ImageLoadManager() {
+		if(mBitmaps != null) {
+			mBitmaps = null;
+		}
+		mBitmaps = new HashMap<String, SoftReference<Bitmap>>();
+	}
 	
 	public BitmapDrawable loadImage(ImageView target) {
-		if (mThumbnails.containsKey(target.getTag())) {
-			WeakReference<Bitmap> temp = mThumbnails.get((String) target.getTag());
-			Log.d("www", "loadImage: temp = " + temp.get());
-			if (temp.get() != null) {
-				target.setBackgroundDrawable(new BitmapDrawable(temp.get()));
-				return null;
+
+		ImageTag tag = (ImageTag) target.getTag();
+		String path = tag.getFilePath();
+		int type = tag.getType();
+		
+		if (IMAGE_THUMBNAIL == type || VIDEO_THUMBNAIL == type) {
+			if (mBitmaps.containsKey(path)) {
+				SoftReference<Bitmap> temp = mBitmaps.get(path);
+				if (temp != null) {
+					if (temp.get() != null) {
+						target.setBackgroundDrawable(new BitmapDrawable(temp.get()));
+						return null;
+					}
+				}
 			}
-			else {
-				target.setBackgroundResource(R.color.app_main_bg);
-			}
+			new ImageLoadTask().execute(target);
 		}
-		
-//		ThreadPoolExecutor executor = (ThreadPoolExecutor) CustomAsyncTask.THREAD_POOL_EXECUTOR;
-//		executor.setMaximumPoolSize(MAXIMUM_POOL_SIZE);
-		
-		new ImageLoadTask().execute(target);
-		
+		if (IMAGE_FULL == type) {
+			mBitmaps.put(path, null);
+			new ImageLoadTask().execute(target);
+		}
 		return null;
 	}
 	
-	public BitmapDrawable loadPreviewImage(ImageView target, int screenWidth, int screenHeight) {
-		
-		mScreenWidth = screenWidth;
-		mScreenHeight = screenHeight;
-		
-		if (mPreviewImages.containsKey(target.getTag())) {
-			WeakReference<Bitmap> temp = mPreviewImages.get((String) target.getTag());
-			if (temp.get() != null) {
-				target.setImageBitmap(temp.get());
-				return null;
-			}
-			else {
-				target.setBackgroundResource(R.color.app_main_bg);
-			}
-		}
-		
-//		ThreadPoolExecutor executor = (ThreadPoolExecutor) CustomAsyncTask.THREAD_POOL_EXECUTOR;
-//		executor.setMaximumPoolSize(MAXIMUM_POOL_SIZE);
-		
-		new ImageLoadTask().execute(target);
-		
-		return null;
-	}
-	
-	public BitmapDrawable loadVideoImage(ImageView target) {
-		
-		mIsVideoBitmap = true;
-		
-		if (mVideoImages.containsKey(target.getTag())) {
-			WeakReference<Bitmap> temp = mVideoImages.get((String) target.getTag());
-			if (temp.get() != null) {
-				target.setImageBitmap(temp.get());
-				return null;
-			}
-			else {
-				target.setBackgroundResource(R.color.app_main_bg);
-			}
-		}
-		
-//		ThreadPoolExecutor executor = (ThreadPoolExecutor) CustomAsyncTask.THREAD_POOL_EXECUTOR;
-//		executor.setMaximumPoolSize(MAXIMUM_POOL_SIZE);
-		
-		new ImageLoadTask().execute(target);
-		
-		return null;
-	}
 	
 	class ImageLoadTask extends CustomAsyncTask<ImageView, Void, Bitmap> {
 		
-		private ImageView mTarget;
-		private String mTag;
+		private ImageView mImageView;
+		private ImageTag mTag;
 		
 		@Override
 		protected Bitmap doInBackground(ImageView... params) {
-			mTarget = params[0];
-			mTag = (String) mTarget.getTag();
-			Log.d(TAG, "doInBackground: " + mTag);
-			Log.d("www", "doInBackground: " + Thread.currentThread().getId());
-			if(mScreenWidth != 0) {
-				return createImageBitmap(mTag);
-			}
-			else {
-				return createBitmap(mTag);
-			}
+			mImageView = params[0];
+			mTag = (ImageTag) mImageView.getTag();
+			return createBitmap(mTag);
 		}
 		
 		@Override
 		protected void onPostExecute(Bitmap result) {
-			Log.d(TAG, "onPostExecute: mTarget = " + mTarget.getTag());
-			Log.d(TAG, "onPostExecute: mTag = " + mTag);
-			if(mScreenWidth != 0) {
-				mPreviewImages.put((String) mTarget.getTag(), new WeakReference<Bitmap>(result));
-				if (mTag.equals(mTarget.getTag())) {
-					mTarget.setImageBitmap(result);
+			mBitmaps.put(mTag.getFilePath(), new SoftReference<Bitmap>(result));
+			if(mTag.equals(mImageView.getTag())) {
+				if (IMAGE_THUMBNAIL == mTag.getType() || VIDEO_THUMBNAIL == mTag.getType()) {
+					mImageView.setBackgroundDrawable(new BitmapDrawable(result));
 				}
-			}
-			else {
-				mThumbnails.put((String) mTarget.getTag(), new WeakReference<Bitmap>(result));
-				if (mTag.equals(mTarget.getTag())) {
-					mTarget.setBackgroundDrawable(new BitmapDrawable(result));
+				if(IMAGE_FULL == mTag.getType()) {
+					mImageView.setImageBitmap(result);
 				}
 			}
 		}
 	}
 	
-	private Bitmap createBitmap(String filePath) {
-		BitmapFactory.Options options = new BitmapFactory.Options();
-		options.inSampleSize = 10;
+	
+	private Bitmap createBitmap(ImageTag tag) {
 		Bitmap bitmap = null;
-		if(mIsVideoBitmap) {
-			bitmap = ThumbnailUtils.createVideoThumbnail(filePath, Thumbnails.MINI_KIND);
+		String thumbnailPath = tag.getThumbnailPath();
+		
+		if(thumbnailPath != null) {
+			Log.e("ImageViewActivity", "########### use thumbnail path ##############");
+			bitmap = createThumbnail(thumbnailPath);
 		} else {
-			bitmap = BitmapFactory.decodeFile(filePath, options);
+			Log.e("ImageViewActivity", "~~~~~~~~~~~ use file path ~~~~~~~~~~~~~~");
+			int type = tag.getType();
+			switch(type) {
+			case IMAGE_THUMBNAIL:
+				bitmap = createImageThumbnail(tag);
+				break;
+			case IMAGE_FULL:
+				bitmap = createImageFull(tag);
+				break;
+			case VIDEO_THUMBNAIL:
+				bitmap = createVideoThumbnail(tag);
+				break;
+			}
 		}
 		return bitmap;
 	}
 	
-	private Bitmap createImageBitmap(String path) {
+	
+	private Bitmap createThumbnail(String thumbnailPath) {
+		BitmapFactory.Options options = new BitmapFactory.Options();
+		Bitmap bitmap = BitmapFactory.decodeFile(thumbnailPath, options);
+		return bitmap;
+	}
+	
+	
+	private Bitmap createImageThumbnail(ImageTag tag) {
+		Bitmap bitmap = null;
 
 		BitmapFactory.Options options = new BitmapFactory.Options();
 		options.inJustDecodeBounds = true;
-		BitmapFactory.decodeFile(path, options);
-		int mWidth = options.outWidth;
-		int mHeight = options.outHeight;
+		BitmapFactory.decodeFile(tag.getFilePath(), options);
+
+		int type = tag.getType();
+		int width = 0;
+		int height = 0;
 		int scale = 1;
-		while ((mWidth / scale > mScreenWidth * 2) || (mHeight / scale > mScreenHeight * 2)) {
+
+		if (IMAGE_THUMBNAIL == type) {
+			width = tag.getScreenWidth() / 3;
+			height = tag.getScreenHeight() / 3;
+		}
+		if (IMAGE_FULL == type) {
+			width = tag.getScreenWidth();
+			height = tag.getScreenHeight();
+		}
+		while ((options.outWidth / scale > width * 2) || (options.outHeight / scale > height * 2)) {
 			scale *= 2;
 		}
-
-		options = new BitmapFactory.Options();
-		options.inPreferredConfig = Config.ARGB_8888;
+		options.inJustDecodeBounds = false;
 		options.inSampleSize = scale;
-		Bitmap bm = BitmapFactory.decodeFile(path, options);
+		bitmap = BitmapFactory.decodeFile(tag.getFilePath(), options);
 
-		if (bm != null) {
-			int h = bm.getHeight();
-			int w = bm.getWidth();
+		return bitmap;
+	}
+	
+	
+	private Bitmap createImageFull(ImageTag tag) {
+		Bitmap bitmap = null;
+		bitmap = createImageThumbnail(tag);
+		
+		if (bitmap != null) {
 
-			float ft = (float) ((float) w / (float) h);
-			float fs = (float) ((float) mScreenWidth / (float) mScreenHeight);
-
-			int neww = ft >= fs ? mScreenWidth : (int) (mScreenHeight * ft);
-			int newh = ft >= fs ? (int) (mScreenWidth / ft) : mScreenHeight;
-
-			float scaleWidth = ((float) neww) / w;
-			float scaleHeight = ((float) newh) / h;
+			int width = bitmap.getWidth();
+			int height = bitmap.getHeight();
 
 			Matrix matrix = new Matrix();
-			matrix.postScale(scaleWidth, scaleHeight);
-			bm = Bitmap.createBitmap(bm, 0, 0, w, h, matrix, true);
-			return bm;
+
+			if (tag.getScale() == 0) {
+				// float scaleWidth;
+				// float scaleHeight;
+
+				if (width > tag.getScreenWidth() || height > tag.getScreenHeight()) {
+					// scaleWidth = (float) width / (float)
+					// tag.getScreenWidth();
+					// scaleHeight = (float) height / (float)
+					// tag.getScreenHeight();
+					// maxScale = Math.max(scaleWidth, scaleHeight);
+					tag.setIsBigImage(true);
+					tag.setMaxScale(3.0f);
+					tag.setMinScale(1.0f);
+					tag.setScale(1.0f);
+				} else {
+					float scaleWidth = (float) tag.getScreenWidth() / (float) width;
+					float scaleHeight = (float) tag.getScreenHeight() / (float) height;
+					tag.setIsBigImage(false);
+					tag.setMaxScale(Math.min(scaleWidth, scaleHeight));
+					tag.setMinScale(1.0f);
+					tag.setScale(1.0f);
+				}
+			}
+			matrix.setScale(tag.getScale(), tag.getScale());
+			bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
+
+			width = bitmap.getWidth();
+			height = bitmap.getHeight();
+
+			matrix = new Matrix();
+			matrix.setRotate(tag.getRotateValue());
+			bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
 		}
-		return null;
+
+		return bitmap;
+	}
+	
+	
+	private Bitmap createVideoThumbnail(ImageTag tag) {
+		Bitmap bitmap = null;
+		bitmap = ThumbnailUtils.createVideoThumbnail(tag.getFilePath(), Thumbnails.MINI_KIND);
+		if (bitmap != null) {
+			Matrix matrix = new Matrix();
+			matrix.setScale(0.4f, 0.4f);
+			bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+		}
+		return bitmap;
 	}
 	
 }

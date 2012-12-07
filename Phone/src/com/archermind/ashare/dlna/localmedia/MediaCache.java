@@ -4,10 +4,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
+import org.cybergarage.upnp.std.av.server.object.Format;
+import org.cybergarage.upnp.std.av.server.object.FormatList;
+import org.cybergarage.upnp.std.av.server.object.format.*;
 import android.util.Log;
 
+@SuppressWarnings("unchecked")
 public class MediaCache {
+	public static final String TAG = "MediaCache";
 	private static MediaCache sInstance = null;
 	private HashMap<String, ArrayList<PhotoItem>> mImageData = null;
 	private HashMap<String, ArrayList<MusicItem>> mMusicArtistData = null;
@@ -16,6 +20,29 @@ public class MediaCache {
 	private HashMap<String, ArrayList<VideoItem>> mVideoData = null;
 	private LocalMediaDbHelper mDbHelper;
 	private boolean mInitialized = false;
+	public static FormatList sFormatList = new FormatList();
+	static {
+		sFormatList.add(new AudioMPEGFormat());
+		sFormatList.add(new AudioAMRFormat());
+		sFormatList.add(new AudioAMR_WBFormat());
+		sFormatList.add(new AudioMIDIFormat());
+		sFormatList.add(new AudioX_MS_WMAFormat());
+		sFormatList.add(new AudioMP4Format());
+		// dlna can not play this format
+		//sFormatList.add(new AudioAACFormat());
+		//sFormatList.add(new AudioX_WAVFormat());
+		
+		sFormatList.add(new GIFFormat());
+		sFormatList.add(new JPEGFormat());
+		sFormatList.add(new PNGFormat());
+		sFormatList.add(new BMPFormat());
+		sFormatList.add(new ImageX_MS_BMPFormat());
+		
+		sFormatList.add(new VideoMPEGFormat());
+		sFormatList.add(new VideoMPGFormat());
+		sFormatList.add(new VideoMP4Format());
+		sFormatList.add(new Video3GPPFormat());
+	}
 	protected MediaCache() {
 	}
 	public static MediaCache instance() {
@@ -148,5 +175,15 @@ public class MediaCache {
 			}
 		}
 		return photoAlbums;
+	}
+	
+	public static boolean supportedMediaItem(String mimeType, String path) {
+		//Format format = MediaCache.sFormatList.getFormat(file);
+		Format format = MediaCache.sFormatList.getFormat(mimeType);
+		if (format == null) {
+			Log.d(TAG, "supportedMediaItem file format mimeType=" + mimeType + " not support filepath=" + path);
+			return false;
+		}
+		return true;
 	}
 }

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Map;
 
+import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -15,6 +16,7 @@ import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.ParcelFileDescriptor;
@@ -22,6 +24,7 @@ import android.os.RemoteException;
 import android.os.Vibrator;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ImageButton;
@@ -35,6 +38,7 @@ import com.archermind.ashare.service.IMusicPlayService;
 import com.archermind.ashare.service.MusicPlayService;
 import com.archermind.ashare.ui.control.VerticalSeekBar;
 import com.archermind.ashare.ui.control.VerticalSeekBar.OnSeekBarChangeListener;
+import com.archermind.ashare.wiremote.natives.WiRemoteAgent;
 
 public class MusicPlayActivity extends BaseActivity implements Runnable {
 
@@ -46,22 +50,27 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 	private SeekBar mMusicProgress;
 	private AudioManager audioManager;
 	private int currentVolume, maxVolume;
-	private boolean mIsPlayOnPhone = true;
+	private static boolean mIsPlayOnPhone = true;
 	private ImageButton mPostButton;
 	private ImageButton mStatusButton;
 	private TextView mDuration;
 	private TextView mNowPosition;
-	private Boolean mSeekBarTouchMode = false;
-	private Boolean mIsOnTVPause = false;
+	private static Boolean mSeekBarTouchMode = false;
+	private static Boolean mIsOnTVPause = true;
 	private ImageButton mShuffle;
 	private ImageButton mRepeat;
 	private ImageView mMusicImg;
 	private int mTvSeekPosition = 0;
-	private int mTvPlayPosition = 0;
+	private static int mTvPlayPosition = 0;
 	private LinearLayout mVolumeControlLayout;
 	private Intent mMusicSerIntent;
+	private boolean mVolumeControlVisual = false;
+	private boolean mIsDLNAConnected = false;
 	
-	
+	private static final int KEY_DOWN = 1;
+	private static final int KEY_UP = 0;
+	private static final int KEYCODE_VOLUMEDOWN = 114;
+	private static final int KEYCODE_VOLUMEUP = 115;
 	public static final int TIME_SECOND = 1000;
 	public static final int TIME_MINUTE = TIME_SECOND * 60;
 	public static final int TIME_HOUR = TIME_MINUTE * 60;
@@ -82,7 +91,7 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 		mVolumeControlLayout = (LinearLayout) findViewById(R.id.volum_contro);
 
 		maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-		mVolumnControl.setMax(maxVolume-1);
+		mVolumnControl.setMax(maxVolume);
 		currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 		mVolumnControl.setProgress(currentVolume);
 		
@@ -121,6 +130,19 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 		}
 	}
 
+	@Override
+	protected void onServiceConnected() {
+		// TODO Auto-generated method stub
+		super.onServiceConnected();
+		super.getFriendlyNameOfRenderer();
+	}
+	
+	protected void onGetFriendlyName(String friendlyName) {
+		if (friendlyName != null) {
+			mIsDLNAConnected = true;
+		}
+	};
+
 	Handler handler = new Handler(){
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
@@ -128,6 +150,8 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 				try {
 					if (getMusicImg(mMusicPlaySer.getNowPlayItem().getAlbumArtURI()) != null) {
 						mMusicImg.setImageBitmap(getMusicImg(mMusicPlaySer.getNowPlayItem().getAlbumArtURI()));
+					} else {
+						mStatusButton.setImageResource(R.drawable.video_bth_play_normal);
 					}
 					mMusicProgress.setMax((int) mMusicPlaySer.duration());
 					mMusicProgress.setProgress((int) mMusicPlaySer.position());
@@ -193,6 +217,12 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 							}
 						}
 					});
+					if (!mIsPlayOnPhone) {
+						postGetPositionInfo();
+						if (!mIsOnTVPause) {
+							mStatusButton.setImageResource(R.drawable.video_bth_pause_normal);
+						}
+					}
 				} catch (RemoteException e) {
 					e.printStackTrace();
 				}
@@ -217,6 +247,7 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 				break;
 			case 2:
 				mVolumeControlLayout.setVisibility(LinearLayout.GONE);
+				mVolumeControlVisual = false;
 				break;
 			default:
 				break;
@@ -227,7 +258,7 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 	public void onDestroy() {
 		super.onDestroy();
 		unbindService(mMusicSerConn);
-		stopService(mMusicSerIntent);
+		unregisterReceiver(mReceiver);
 	}
 
 
@@ -246,51 +277,87 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		Message msg = new Message();
-		msg.what = 2;
-		switch (keyCode) {
-		case KeyEvent.KEYCODE_VOLUME_UP:
-			mVolumeControlLayout.setVisibility(LinearLayout.VISIBLE);
-			handler.removeMessages(2);
-			handler.sendMessageDelayed(msg, 3000);
-			if (currentVolume < maxVolume){
-				currentVolume += 1;
-				mVolumnControl.setProgress(currentVolume);
-			}
-			if (!mIsPlayOnPhone) {
-				postSetVolume((float) currentVolume/maxVolume);
-				Log.e("james","postSetVolume" + currentVolume);
-			}
-			if (currentVolume == audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)) {
-				Vibrator vib = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-				vib.vibrate(200);
-			}
-			break;
-
-		case KeyEvent.KEYCODE_VOLUME_DOWN:
-			mVolumeControlLayout.setVisibility(LinearLayout.VISIBLE);
-			handler.removeMessages(2);
-			handler.sendMessageDelayed(msg, 3000);
-			if (currentVolume > 0){
-				currentVolume -= 1;
-				Log.e("james",currentVolume + "volume");
-				mVolumnControl.setProgress(currentVolume);
-			}
-			if (!mIsPlayOnPhone) {
-				postSetVolume((float) currentVolume/maxVolume);
-				Log.d(TAG,"postSetVolume" + currentVolume);
-			}
-			if (currentVolume == 0) {
-				Vibrator vib = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-				vib.vibrate(200);
-			}
-			break;
+//		Message msg = new Message();
+//		msg.what = 2;
+//		case KeyEvent.KEYCODE_VOLUME_UP:
+//			mVolumeControlLayout.setVisibility(LinearLayout.VISIBLE);
+//			mVolumeControlVisual = true;
+//			handler.removeMessages(2);
+//			handler.sendMessageDelayed(msg, 3000);
+//			if (currentVolume < maxVolume){
+//				currentVolume += 1;
+//				mVolumnControl.setProgress(currentVolume);
+//			}
+//			if (!mIsPlayOnPhone) {
+//				postSetVolume((float) currentVolume/maxVolume);
+//				Log.e("james","postSetVolume" + currentVolume);
+//			}
+//			if (currentVolume == audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)) {
+//				Vibrator vib = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+//				vib.vibrate(200);
+//			}
+//			break;
+//
+//		case KeyEvent.KEYCODE_VOLUME_DOWN:
+//			mVolumeControlLayout.setVisibility(LinearLayout.VISIBLE);
+//			mVolumeControlVisual = true;
+//			handler.removeMessages(2);
+//			handler.sendMessageDelayed(msg, 3000);
+//			if (currentVolume > 0){
+//				currentVolume -= 1;
+//				Log.e("james",currentVolume + "volume");
+//				mVolumnControl.setProgress(currentVolume);
+//			}
+//			if (!mIsPlayOnPhone) {
+//				postSetVolume((float) currentVolume/maxVolume);
+//				Log.d(TAG,"postSetVolume" + currentVolume);
+//			}
+//			if (currentVolume == 0) {
+//				Vibrator vib = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+//				vib.vibrate(200);
+//			}
+//			break;
 			
+		switch (keyCode) {
+		case KeyEvent.KEYCODE_VOLUME_UP: {
+			if (!mIsPlayOnPhone) {
+				switch (event.getAction()) {
+				case MotionEvent.ACTION_DOWN:
+					WiRemoteAgent.setKeyEvent(KEY_DOWN, KEYCODE_VOLUMEUP);
+					return false;
+				case MotionEvent.ACTION_UP:
+					WiRemoteAgent.setKeyEvent(KEY_UP, KEYCODE_VOLUMEUP);
+					return false;
+				default:
+					break;
+				}
+			}
+		}
+		break;
+		case KeyEvent.KEYCODE_VOLUME_DOWN:{
+			if (!mIsPlayOnPhone) {
+				switch (event.getAction()) {
+				case MotionEvent.ACTION_DOWN:
+					WiRemoteAgent.setKeyEvent(KEY_DOWN, KEYCODE_VOLUMEDOWN);
+					return false;
+				case MotionEvent.ACTION_UP:
+					WiRemoteAgent.setKeyEvent(KEY_UP, KEYCODE_VOLUMEDOWN);
+					return false;
+				default:
+					break;
+				}
+			}
+		}
+		break;
+		case KeyEvent.KEYCODE_BACK:
+			finish();
+			overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);
+			break;
 		default:
 			super.onKeyDown(keyCode, event);
 			break;
 		}
-		return true;
+		return false;
 	}
 
 	public void doClick(View view) throws RemoteException {
@@ -313,12 +380,15 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 		case R.id.stop:
 			if (mIsPlayOnPhone) {
 				mMusicPlaySer.stop();
-				mMusicPlaySer.setPlayList(null);
-				finish();
+				mMusicPlaySer.setInitialed(false);
 			} else {
 				poststop();
-				finish();
+				mIsPlayOnPhone = true;
+				mIsOnTVPause = true;
+				mMusicPlaySer.setPlayOnPhone(true);
 			}
+			finish();
+			overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);
 			break;
 		case R.id.next:
 			mMusicPlaySer.next();
@@ -329,7 +399,7 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 				mTitleTextView.setText(mMusicPlaySer.getNowPlayItem().getTitle());
 				mDuration.setText(setDurationFormat(Integer.parseInt(mMusicPlaySer.getNowPlayItem().getDuration())));
 				postPlay(mMusicPlaySer.getNowPlayItem().getItemUri(),
-						MUSIC_TYPE);
+						mMusicPlaySer.getNowPlayItem().metaData);
 			} else if (mIsPlayOnPhone) {
 				if (mMusicPlaySer.getPreparedStatus()) {
 					mMusicPlaySer.play();
@@ -345,7 +415,7 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 				mTitleTextView.setText(mMusicPlaySer.getNowPlayItem().getTitle());
 				mDuration.setText(setDurationFormat(Integer.parseInt(mMusicPlaySer.getNowPlayItem().getDuration())));
 				postPlay(mMusicPlaySer.getNowPlayItem().getItemUri(),
-						MUSIC_TYPE);
+						mMusicPlaySer.getNowPlayItem().metaData);
 			} else if (mIsPlayOnPhone) {
 				if (mMusicPlaySer.getPreparedStatus()) {
 					mMusicPlaySer.play();
@@ -369,13 +439,38 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 			mMusicPlaySer.setMusicShowList(mMusicPlaySer.getPlayList());
 			Intent intent = new Intent();
 			intent.putExtra("title", getResources().getString(R.string.playing_list));
+			intent.putExtra("scrollto", true);
 			intent.setClass(getApplicationContext(), MusicListActivity.class);
-			startActivity(intent);
+			startActivityForResult(intent,	0);
+			overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);
+			break;
+		case R.id.volume_show:
+			if (mVolumeControlVisual == false) {
+				mVolumeControlLayout.setVisibility(LinearLayout.VISIBLE);
+				mVolumeControlVisual = true;
+				handler.removeMessages(2);
+				Message msg = new Message();
+				msg.what = 2;
+				handler.sendMessageDelayed(msg, 3000);
+			} else {
+				mVolumeControlLayout.setVisibility(LinearLayout.GONE);
+				handler.removeMessages(2);
+				mVolumeControlVisual = false;
+			}
 			break;
 		}
-
 	}
 	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		// TODO Auto-generated method stub
+		if (resultCode == 0) {
+			finish();
+			return;
+		}
+		super.onActivityResult(requestCode, resultCode, data);
+	}
+
 	@Override
 	public void onGetPlayresult(Boolean obj) {
 		if (obj) {
@@ -393,12 +488,36 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 	
 	@Override
 	public void onGetPositioninforesult(Map obj) {
-		int positionInt = (int) fromDateStringToInt((String) obj.get("relTime"));
-		mTvPlayPosition = positionInt;
-		if (!mSeekBarTouchMode && !mIsPlayOnPhone) {
-			mMusicProgress.setProgress(positionInt);
-			mNowPosition.setText(setDurationFormat(positionInt));
-			postGetPositionInfo();
+		if (obj != null) {
+			int positionInt = (int) fromDateStringToInt((String) obj
+					.get("relTime"));
+			mTvPlayPosition = positionInt;
+			if (!mSeekBarTouchMode && !mIsPlayOnPhone) {
+				mMusicProgress.setProgress(positionInt);
+				mNowPosition.setText(setDurationFormat(positionInt));
+				postGetPositionInfo();
+			}
+		} else {
+			mIsPlayOnPhone = true;
+			try {
+				mMusicPlaySer.setPlayOnPhone(true);
+				mMusicPlaySer.seekTo(mTvPlayPosition);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+			try {
+				if (mMusicPlaySer.isPlaying()) {
+					mStatusButton
+							.setImageResource(R.drawable.video_bth_pause_normal);
+				} else {
+					mStatusButton
+							.setImageResource(R.drawable.video_bth_play_normal);
+				}
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			Log.d(TAG, "isPlayOnPhone" + mIsPlayOnPhone);
 		}
 	}
 	
@@ -443,6 +562,9 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 						mStatusButton.setImageResource(R.drawable.video_bth_pause_normal);
 						if (getMusicImg(mMusicPlaySer.getNowPlayItem().getAlbumArtURI()) != null) {
 							mMusicImg.setImageBitmap(getMusicImg(mMusicPlaySer.getNowPlayItem().getAlbumArtURI()));
+						} else {
+							Log.e("james","setdefault");
+							mMusicImg.setImageResource(R.drawable.phone_music_album_default);
 						}
 					} else {
 						mStatusButton.setImageResource(R.drawable.video_bth_play_normal);
@@ -480,39 +602,48 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 	class PostBtnListener implements OnClickListener {
 		@Override
 		public void onClick(View v) {
-			if (mIsPlayOnPhone) {
-				try {
-					mPostButton.setClickable(false);
-					mMusicPlaySer.pause();
-					mIsPlayOnPhone = false;
-					mIsOnTVPause = false;
-					postPlay(mMusicPlaySer.getNowPlayItem().getItemUri(), MUSIC_TYPE);
-					postSetVolume((float) currentVolume/maxVolume);
-					postSeek(mMusicPlaySer.position() + "");
-					Log.d(TAG,"isPlayOnPhone" + mIsPlayOnPhone);
-				} catch (RemoteException e) {
-					e.printStackTrace();
+			if (mIsDLNAConnected) {
+				if (mIsPlayOnPhone) {
+					try {
+						mPostButton.setClickable(false);
+						mMusicPlaySer.pause();
+						mMusicPlaySer.setPlayOnPhone(false);
+						mIsPlayOnPhone = false;
+						mIsOnTVPause = false;
+						postPlay(mMusicPlaySer.getNowPlayItem().getItemUri(),
+								mMusicPlaySer.getNowPlayItem().metaData);
+						postSetVolume((float) currentVolume / maxVolume);
+						postSeek(mMusicPlaySer.position() + "");
+						Log.d(TAG, "isPlayOnPhone" + mIsPlayOnPhone);
+					} catch (RemoteException e) {
+						e.printStackTrace();
+					}
+				} else {
+					mIsPlayOnPhone = true;
+					poststop();
+					try {
+						mMusicPlaySer.setPlayOnPhone(true);
+						mMusicPlaySer.play();
+						mMusicPlaySer.seekTo(mTvPlayPosition);
+					} catch (RemoteException e) {
+						e.printStackTrace();
+					}
+					try {
+						if (mMusicPlaySer.isPlaying()) {
+							mStatusButton
+									.setImageResource(R.drawable.video_bth_pause_normal);
+						} else {
+							mStatusButton
+									.setImageResource(R.drawable.video_bth_play_normal);
+						}
+					} catch (RemoteException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					Log.d(TAG, "isPlayOnPhone" + mIsPlayOnPhone);
 				}
 			} else {
-				mIsPlayOnPhone = true;
-				poststop();
-				try {
-					mMusicPlaySer.play();
-					mMusicPlaySer.seekTo(mTvPlayPosition);
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
-				try {
-					if (mMusicPlaySer.isPlaying()) {
-						mStatusButton.setImageResource(R.drawable.video_bth_pause_normal);
-					} else {
-						mStatusButton.setImageResource(R.drawable.video_bth_play_normal);
-					}
-				} catch (RemoteException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				Log.d(TAG,"isPlayOnPhone" + mIsPlayOnPhone);
+				Toast.makeText(getApplicationContext(), R.string.not_connect_to_device, Toast.LENGTH_SHORT).show();
 			}
 		}
 	}
@@ -595,4 +726,5 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 			}
 		}
 	}
+	
 }

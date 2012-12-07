@@ -3,6 +3,7 @@ package archermind.dlna.mobile;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
@@ -22,6 +23,7 @@ public class FeedbackActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				finish();
+				overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);
 			}
 		});
 		
@@ -35,11 +37,21 @@ public class FeedbackActivity extends Activity {
 			public void onClick(View v) {
 				// Send feedback
 				finish();
+				overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);
 			}
 		});
 		
 		
 		
+	}
+	
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+		if (keyCode == KeyEvent.KEYCODE_BACK) {
+			finish();
+			overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);
+		}
+		return super.onKeyDown(keyCode, event);
 	}
 
 }

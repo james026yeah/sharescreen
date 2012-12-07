@@ -164,12 +164,18 @@ public class BaseActivity extends Activity {
 			case MessageDefs.MSG_SERVICE_ON_QUITED:
 				onServiceQuited();
 				break;
+			case MessageDefs.MSG_SERVICE_ON_GET_NAME_OF_CURRENT_RENDERER:
+			    onGetFriendlyName((String)msg.obj);
+			    break;
 			default:
 			    super.handleMessage(msg);
             }
         }
     }
     protected void onServiceQuited() {
+    }
+    protected void onGetFriendlyName(String friendlyName) {
+        Log.v(TAG, "onGetFriendlyName" + friendlyName);
     }
 	protected void quit() {
 		if(null != mService) {
@@ -182,6 +188,17 @@ public class BaseActivity extends Activity {
 			}
 		}
 	}
+    protected void getFriendlyNameOfRenderer() {
+        if(null != mService) {
+            try {
+                Message msg = Message.obtain(null,
+                        MessageDefs.MSG_SERVICE_GET_NAME_OF_CURRENT_RENDERER);
+                msg.replyTo = mMessenger;
+                mService.send(msg);
+            } catch (RemoteException e) {
+            }
+        }
+    }
     /**
      * 
      * @param obj
@@ -787,15 +804,15 @@ protected void postPlay(String uri,String type){
 	protected void postFlipImage( String target){
 		if(null != mService) {
 			try {
-				 Message msg = Message.obtain(null,
-				    		MessageDefs.MSG_MDMC_AV_TRANS_IMAGESEEK);
-				    Bundle data = new Bundle();
-				    data.putString("UNIT", "FLIP");
-				    data.putString("TARGET", target);
-				    // Location is unique for devices
-				    msg.replyTo = mMessenger;
-				    msg.setData(data);
-				    mService.send(msg);
+				Message msg = Message.obtain(null,
+			    		MessageDefs.MSG_MDMC_AV_TRANS_IMAGESEEK);
+			    // Location is unique for devices
+			    msg.replyTo = mMessenger;
+			    Bundle data = new Bundle();
+			    data.putString("UNIT", "FLIP");
+			    data.putString("TARGET", target);
+			    msg.setData(data);
+			    mService.send(msg);
 			} catch (RemoteException e) {
 			}
 		}

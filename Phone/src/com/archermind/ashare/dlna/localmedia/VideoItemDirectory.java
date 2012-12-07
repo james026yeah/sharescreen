@@ -16,11 +16,12 @@ import org.cybergarage.xml.Attribute;
 import org.cybergarage.xml.AttributeList;
 import org.cybergarage.upnp.std.av.server.UPnP;
 
+import android.util.Log;
 
 public class VideoItemDirectory extends Directory {
 	
+	public static final String TAG = "VideoItemDirectory";
 	private ArrayList<VideoItem> mFileList;
-
 	
 	public VideoItemDirectory(String name, ArrayList<VideoItem> fileList) {
 		super(name);
@@ -30,7 +31,7 @@ public class VideoItemDirectory extends Directory {
 	@SuppressWarnings("unchecked")
 	private boolean updateItemNode(FileItemNode itemNode, File file,VideoItem info)
 	{
-		Format format = getContentDirectory().getFormat(file);
+		Format format = getContentDirectory().getFormat(info.mime_type);
 		if (format == null)
 			return false;
 		FormatObject formatObj = format.createObject(file);
@@ -65,6 +66,7 @@ public class VideoItemDirectory extends Directory {
 		catch (Exception e) {
 			Debug.warning(e);
 		}
+		itemNode.setMimeType(format.getMimeType());
 		itemNode.setAlbumArtURI(info.thumbFilePath);
 		
 		// ProtocolInfo
@@ -89,12 +91,12 @@ public class VideoItemDirectory extends Directory {
 	
 	private FileItemNode createCompareItemNode(File file)
 	{
-		Format format = getContentDirectory().getFormat(file);
+		/*Format format = getContentDirectory().getFormat(file);
 		if (format == null) {
 			if (file != null)
-				System.out.println("format == null ,filename=" + file.getAbsolutePath());
+				Log.d(TAG, "format == null ,filename=" + file.getAbsolutePath());
 			return null;
-		}
+		}*/
 		FileItemNode itemNode = new FileItemNode();
 		itemNode.setFile(file);
 		return itemNode;
@@ -169,7 +171,6 @@ public class VideoItemDirectory extends Directory {
 		
 		// Checking Added or Updated Items
 		FileItemNodeList itemNodeList = createItemNodeList();
-		
 		int itemNodeCnt = itemNodeList.size();
 		for (int n=0; n<itemNodeCnt; n++) {
 			FileItemNode itemNode = itemNodeList.getFileItemNode(n);
@@ -188,13 +189,13 @@ public class VideoItemDirectory extends Directory {
 		FileItemNodeList nodeList = new FileItemNodeList();
 		for (VideoItem info : mFileList) {
 			File file=new File(info.filePath);
-			//when we detect file not exists,remove it
 			if (!file.exists()) {
-				System.out.println("dms file not exist path=" + info.filePath);
+				Log.d(TAG,"dms file not exist path=" + info.filePath);
 				continue;
 			}
 			FileItemNode itemNode = createCompareItemNode(file);
 			if (itemNode == null) {
+				Log.d(TAG,"dms create video Item node is null...." + info.filePath);
 				continue;
 			}
 			nodeList.add(itemNode);

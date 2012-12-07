@@ -65,7 +65,9 @@ public class DeviceConfigActivity extends BaseActivity {
 	private ImageView mProgressIcon;
 
 	private TextView mTitle;
-	private TextView mLeftTopBtn;
+	private ImageView mLeftTopBtn;
+	
+	private boolean mPaused = false;
 
 	private AdapterView.OnItemClickListener mItemClickListener = new OnItemClickListener() {
 		@Override
@@ -97,7 +99,8 @@ public class DeviceConfigActivity extends BaseActivity {
 
 	void showTVList() {
 		mCurrentMode = DEVICE_LIST_MODE_TV;
-		mLeftTopBtn.setText(R.string.device_config_title_add);
+		mLeftTopBtn.setImageResource(R.drawable.btn_add_sel);
+//		mLeftTopBtn.setText(R.string.device_config_title_add);
 		mTitle.setText(R.string.device_config_title_tv);
 		if (mDeviceList.isEmpty()) {
 			showProgress();
@@ -109,10 +112,14 @@ public class DeviceConfigActivity extends BaseActivity {
 
 	void showAPList() {
 		mCurrentMode = DEVICE_LIST_MODE_AP;
-		mLeftTopBtn.setText(R.string.device_config_title_local);
+		mLeftTopBtn.setImageResource(R.drawable.btn_local_connection_sel);
+//		mLeftTopBtn.setText(R.string.device_config_title_local);
 		mTitle.setText(R.string.device_config_title_ap);
 		mScanResult.clear();
-		mScanResult.addAll(mWifiManager.getScanResults());
+		List<ScanResult> list = mWifiManager.getScanResults();
+		if (list != null) {
+			mScanResult.addAll(list);
+		}
 		mDeviceBaseAdapter.notifyDataSetChanged();
 	}
 
@@ -189,9 +196,10 @@ public class DeviceConfigActivity extends BaseActivity {
 
 		mTitle = (TextView) findViewById(R.id.title);
 
-		mLeftTopBtn = (TextView) findViewById(R.id.btn_left_top);
-		mLeftTopBtn.setBackgroundResource(R.drawable.left_top_btn_bg);
-		mLeftTopBtn.setText(R.string.device_config_title_add);
+		mLeftTopBtn = (ImageView) findViewById(R.id.image_left_top);
+		mLeftTopBtn.setImageResource(R.drawable.btn_add_sel);
+//		mLeftTopBtn.setBackgroundResource(R.drawable.left_top_btn_bg);
+//		mLeftTopBtn.setText(R.string.device_config_title_add);
 		mLeftTopBtn.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -209,9 +217,25 @@ public class DeviceConfigActivity extends BaseActivity {
 			}
 		});
 
-		TextView temp = (TextView) findViewById(R.id.btn_right_top);
+//		TextView temp = (TextView) findViewById(R.id.btn_right_top);
+//		temp.setVisibility(View.VISIBLE);
+//		temp.setBackgroundResource(R.drawable.btn_refresh_sel);
+//		temp.setOnClickListener(new OnClickListener() {
+//			@Override
+//			public void onClick(View v) {
+//				if (mCurrentMode == DEVICE_LIST_MODE_AP) {
+//					showAPList();
+//				} else {
+//					getDeviceList();
+//					showProgress();
+//				}
+//			}
+//		});
+		
+		ImageView temp = (ImageView) findViewById(R.id.image_right_top);
 		temp.setVisibility(View.VISIBLE);
-		temp.setBackgroundResource(R.drawable.btn_refresh_sel);
+		temp.setImageResource(R.drawable.btn_refresh_sel);
+		temp.setBackgroundResource(R.drawable.image_right_top_bg_sel);
 		temp.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -230,6 +254,7 @@ public class DeviceConfigActivity extends BaseActivity {
 	protected void onResume() {
 		super.onResume();
 		Log.d(TAG, "onResume: ");
+		mPaused = false;
 		IntentFilter filter = new IntentFilter();  
 		filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION); 
 		registerReceiver(mNetworkReceiver, filter); 
@@ -239,6 +264,7 @@ public class DeviceConfigActivity extends BaseActivity {
 	@Override
 	protected void onPause() {
 		super.onPause();
+		mPaused = true;
 		unregisterReceiver(mNetworkReceiver);
 	}
 
@@ -254,7 +280,9 @@ public class DeviceConfigActivity extends BaseActivity {
 
 		if (devices.isEmpty()) {
 			Log.d(TAG, "Device list is empty ? true");
-			showDialog(DIALOG_NO_DEVICE);
+			if (!mPaused) {
+				showDialog(DIALOG_NO_DEVICE);
+			}
 		} else {
 			Log.d(TAG, "Device list is empty ? false");
 			mDeviceList.clear();
@@ -285,6 +313,7 @@ public class DeviceConfigActivity extends BaseActivity {
 					mPassword = pwd.getText().toString();
 					Log.d(TAG, "Broadcast custom SSID and password: "
 							+ mTargetAP.SSID);
+					pwd.setText("");
 					WifiConfiguration wc = new WifiConfiguration();
 					// wc.SSID = "\"" + getCustomSSID() + "\"";
 					wc.SSID = getCustomSSID();
@@ -451,9 +480,9 @@ public class DeviceConfigActivity extends BaseActivity {
 							.setOnClickListener(new OnClickListener() {
 								@Override
 								public void onClick(View v) {
-									startActivity(new Intent(
-											DeviceConfigActivity.this,
-											ConfigTVActivity.class));
+//									startActivity(new Intent(
+//											DeviceConfigActivity.this,
+//											ConfigTVActivity.class));
 								}
 							});
 				} else {

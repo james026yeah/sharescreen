@@ -20,6 +20,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
@@ -28,13 +29,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
-/**
- * @author coolszy
- * @date 2012-4-26
- * @blog http://blog.92coding.com
- */
 
 public class UpdateManager {
 	/* 下载中 */
@@ -57,7 +52,7 @@ public class UpdateManager {
 	private ProgressBar mProgress;
 	private Dialog mDownloadDialog;
 
-	private String mVersionUrl = "http://dp.archermind.com/update/version.xml";
+	private String mVersionUrl = "http://ashare.archermind.com/update/version.xml";
 
 	private Handler mHandler = new Handler() {
 		public void handleMessage(Message msg) {
@@ -85,13 +80,19 @@ public class UpdateManager {
 	 * 检测软件更新
 	 */
 	public void checkUpdate() {
-		if (isUpdate()) {
-			// 显示提示对话框
-			showNoticeDialog();
-		} else {
-			Toast.makeText(mContext, R.string.soft_update_no, Toast.LENGTH_LONG)
-					.show();
-		}
+		new AsyncTask<Void, Void, Boolean>(){
+			@Override
+			protected Boolean doInBackground(Void... params) {
+				return isUpdate();
+			}
+			
+			@Override
+			protected void onPostExecute(Boolean result) {
+				if (result) {
+					showNoticeDialog();
+				}
+			}
+		}.execute();
 	}
 
 	/**
@@ -100,6 +101,7 @@ public class UpdateManager {
 	 * @return
 	 */
 	private boolean isUpdate() {
+		Log.d("@@@@@@", "isUpdate: ");
 		// 获取当前软件版本
 		int versionCode = getVersionCode(mContext);
 		// 把version.xml放到网络上，然后获取文件信息
@@ -141,7 +143,7 @@ public class UpdateManager {
 		try {
 			// 获取软件版本号，对应AndroidManifest.xml下android:versionCode
 			versionCode = context.getPackageManager().getPackageInfo(
-					"com.archermind.ashare", 0).versionCode;
+					"archermind.dlna.mobile", 0).versionCode;
 		} catch (NameNotFoundException e) {
 			e.printStackTrace();
 		}

@@ -52,7 +52,7 @@ public class GameControllerActivity extends BaseActivity {
 					WiRemoteAgent.setTouchEvent(Math.round(event.getX(0)),
 							Math.round(event.getY(0)),
 							Math.round(event.getX(1)),
-							Math.round(event.getX(1)), event.getAction());
+							Math.round(event.getY(1)), event.getAction());
 				} else {
 					WiRemoteAgent.setTouchEvent(Math.round(event.getX(0)),
 							Math.round(event.getY(0)),

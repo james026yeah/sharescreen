@@ -10,6 +10,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.View;
+import archermind.dlna.mobile.ImageZoomState.ControlType;
 
 /**
  * View capable of drawing an image at different zoom state levels
@@ -32,8 +33,8 @@ public class ImageZoomView extends View implements Observer {
 	private float mAspectQuotient;
 
 	/** State of the zoom. */
-	private ZoomState mState;
-
+	private ImageZoomState mState;
+	
 	/**
 	 * Constructor
 	 */
@@ -61,7 +62,7 @@ public class ImageZoomView extends View implements Observer {
 	 * @param state
 	 *            The zoom state
 	 */
-	public void setZoomState(ZoomState state) {
+	public void setZoomState(ImageZoomState state) {
 		if (mState != null) {
 			mState.deleteObserver(this);
 		}
@@ -82,42 +83,61 @@ public class ImageZoomView extends View implements Observer {
 	@Override
 	protected void onDraw(Canvas canvas) {
 		if (mBitmap != null && mState != null) {
-			final int viewWidth = getWidth();
-			final int viewHeight = getHeight();
-			final int bitmapWidth = mBitmap.getWidth();
-			final int bitmapHeight = mBitmap.getHeight();
-
+			final int vWidth = getWidth();
+			final int vHeight = getHeight();
+			final int bWidth = mBitmap.getWidth();
+			final int bHeight = mBitmap.getHeight();
+			
 			final float panX = mState.getPanX();
 			final float panY = mState.getPanY();
-			final float zoomX = mState.getZoomX(mAspectQuotient) * viewWidth / bitmapWidth;
-			final float zoomY = mState.getZoomY(mAspectQuotient) * viewHeight / bitmapHeight;
+			final float zoomX = mState.getZoomX(mAspectQuotient) * vWidth / bWidth;
+			final float zoomY = mState.getZoomY(mAspectQuotient) * vHeight / bHeight;
 
 			// Setup source and destination rectangles
-			mRectSrc.left = (int) (panX * bitmapWidth - viewWidth / (zoomX * 2));
-			mRectSrc.top = (int) (panY * bitmapHeight - viewHeight / (zoomY * 2));
-			mRectSrc.right = (int) (mRectSrc.left + viewWidth / zoomX);
-			mRectSrc.bottom = (int) (mRectSrc.top + viewHeight / zoomY);
+			mRectSrc.left = (int) (panX * bWidth - vWidth / (zoomX * 2));
+			mRectSrc.top = (int) (panY * bHeight - vHeight / (zoomY * 2));
+			mRectSrc.right = (int) (mRectSrc.left + vWidth / zoomX);
+			mRectSrc.bottom = (int) (mRectSrc.top + vHeight / zoomY);
 			mRectDst.left = getLeft();
 			mRectDst.top = getTop();
 			mRectDst.right = getRight();
 			mRectDst.bottom = getBottom();
 
+			if(mState.getControlType() == ControlType.ZOOM) {
+				mState.setMaxPanX(1.0f);
+				mState.setMinPanX(0.0f);
+				mState.setMaxPanY(1.0f);
+				mState.setMinPanY(0.0f);
+			}
+			
 			// Adjust source rectangle so that it fits within the source image.
 			if (mRectSrc.left < 0) {
 				mRectDst.left += -mRectSrc.left * zoomX;
 				mRectSrc.left = 0;
+				if(mState.getControlType() == ControlType.PAN) {
+					mState.setMinPanX(mState.getPanX());
+				}
 			}
-			if (mRectSrc.right > bitmapWidth) {
-				mRectDst.right -= (mRectSrc.right - bitmapWidth) * zoomX;
-				mRectSrc.right = bitmapWidth;
+			if (mRectSrc.right > bWidth) {
+				mRectDst.right -= (mRectSrc.right - bWidth) * zoomX;
+				mRectSrc.right = bWidth;
+				if(mState.getControlType() == ControlType.PAN) {
+					mState.setMaxPanX(mState.getPanX());
+				}
 			}
 			if (mRectSrc.top < 0) {
 				mRectDst.top += -mRectSrc.top * zoomY;
 				mRectSrc.top = 0;
+				if(mState.getControlType() == ControlType.PAN) {
+					mState.setMinPanY(mState.getPanY());
+				}
 			}
-			if (mRectSrc.bottom > bitmapHeight) {
-				mRectDst.bottom -= (mRectSrc.bottom - bitmapHeight) * zoomY;
-				mRectSrc.bottom = bitmapHeight;
+			if (mRectSrc.bottom > bHeight) {
+				mRectDst.bottom -= (mRectSrc.bottom - bHeight) * zoomY;
+				mRectSrc.bottom = bHeight;
+				if(mState.getControlType() == ControlType.PAN) {
+					mState.setMaxPanY(mState.getPanY());
+				}
 			}
 
 			canvas.drawBitmap(mBitmap, mRectSrc, mRectDst, mPaint);

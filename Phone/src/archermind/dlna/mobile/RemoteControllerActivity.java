@@ -1,12 +1,12 @@
 package archermind.dlna.mobile;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.archermind.ashare.misc.DeviceInfo;
-import com.archermind.ashare.wiremote.natives.WiRemoteAgent;
-
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
@@ -14,15 +14,25 @@ import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Display;
 import android.view.MotionEvent;
+import android.view.OrientationEventListener;
+import android.view.Surface;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.widget.AbsoluteLayout;
 import android.widget.AbsoluteLayout.LayoutParams;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.archermind.ashare.mirror.AShareJniCallBack;
+import com.archermind.ashare.mirror.AshareProcess;
+import com.archermind.ashare.mirror.NativeAshare;
+import com.archermind.ashare.mirror.AShareJniCallBack.AShareJniCallBackListener;
+import com.archermind.ashare.misc.DeviceInfo;
+import com.archermind.ashare.wiremote.natives.WiRemoteAgent;
 
 @SuppressWarnings("deprecation")
 public class RemoteControllerActivity extends BaseActivity {
@@ -35,6 +45,10 @@ public class RemoteControllerActivity extends BaseActivity {
 	private AbsoluteLayout mTouchArea;
 	private TextView mTouchPoint1;
 	private TextView mTouchPoint2;
+	
+	private RelativeLayout mControllerArea;
+	
+	private ImageView mControllerBg;
 
 	private List<TextView> mPoints;
 
@@ -46,8 +60,7 @@ public class RemoteControllerActivity extends BaseActivity {
 	private TextView mHomeBtn;
 	private TextView mBackBtn;
 	private TextView mSleepBtn;
-	
-	private boolean mHasTarget = false;
+	private TextView mAshareMirrorText;
 
 	private static final int TOUCH_DLG_ID = 0;
 	private static final int MOUSE_DLG_ID = 1;
@@ -57,7 +70,15 @@ public class RemoteControllerActivity extends BaseActivity {
 	private static final int KEYCODE_HOME = 172;
 	private static final int KEYCODE_OK = 272;
 	private static final int KEYCODE_SLEEP = 100;
-	// private static final int KEYCODE_WAKEUP = 200;
+	
+	private static final int KEYCODE_UP = 103;
+	private static final int KEYCODE_LEFT = 105;
+	private static final int KEYCODE_OK_KEYBOARD = 66;
+	private static final int KEYCODE_RIGHT = 106;
+	private static final int KEYCODE_DOWN = 108;
+	private static final int KEYCODE_MUTE = 113;
+	private static final int KEYCODE_VOLUMEDOWN = 114;
+	private static final int KEYCODE_VOLUMEUP = 115;
 
 	@SuppressWarnings("unused")
 	private static boolean mIsSleeping = false;
@@ -66,11 +87,15 @@ public class RemoteControllerActivity extends BaseActivity {
 	private String[] mControlPages = null;
 
 	private static boolean mHasGyroscope = false;
-
+	
+	private static boolean mIsMouseMode = false;
+	AshareProcess mAshareProcess = AshareProcess.newInstance(this);
+	private String mCurrentRenderIp;
 	private View.OnTouchListener mOnTouchBtns = new OnTouchListener() {
 		@Override
 		public boolean onTouch(View v, MotionEvent event) {
 			int keycode = 0;
+			int imageId = 0;
 			switch (v.getId()) {
 			case R.id.btn_menu:
 				keycode = KEYCODE_MENU;
@@ -86,30 +111,59 @@ public class RemoteControllerActivity extends BaseActivity {
 				break;
 			case R.id.btn_sleep:
 				keycode = KEYCODE_SLEEP;
-				// if (mIsSleeping) {
-				// keycode = KEYCODE_SLEEP;
-				// if (event.getAction() == MotionEvent.ACTION_UP) {
-				// mIsSleeping = false;
-				// }
-				// } else {
-				// keycode = KEYCODE_WAKEUP;
-				// if (event.getAction() == MotionEvent.ACTION_UP) {
-				// mIsSleeping = true;
-				// }
-				// }
+				break;
+				
+			case R.id.btn_switcher_up:
+				imageId = R.drawable.remote_control_circle_top_select;
+				keycode = KEYCODE_UP;
+				break;
+			case R.id.btn_switcher_left:
+				imageId = R.drawable.remote_control_circle_left_select;
+				keycode = KEYCODE_LEFT;
+				break;
+			case R.id.btn_switcher_ok:
+				imageId = R.drawable.remote_control_circle_ok_select;
+				keycode = KEYCODE_OK_KEYBOARD;
+				break;
+			case R.id.btn_switcher_right:
+				imageId = R.drawable.remote_control_circle_right_select;
+				keycode = KEYCODE_RIGHT;
+				break;
+			case R.id.btn_switcher_down:
+				imageId = R.drawable.remote_control_circle_down_select;
+				keycode = KEYCODE_DOWN;
+				break;
+			case R.id.btn_controller_mute:
+				keycode = KEYCODE_MUTE;
+				break;
+			case R.id.btn_controller_vol_down:
+				keycode = KEYCODE_VOLUMEDOWN;
+				break;
+			case R.id.btn_controller_vol_up:
+				keycode = KEYCODE_VOLUMEUP;
 				break;
 			default:
+				keycode = 0;
+				imageId = 0;
 				break;
 			}
 			switch (event.getAction()) {
 			case MotionEvent.ACTION_DOWN:
 				Log.d(TAG, "KEY_DOWN: " + keycode);
+				if (imageId != 0) {
+					mControllerBg.setBackgroundResource(imageId);
+				}
 				WiRemoteAgent.setKeyEvent(KEY_DOWN, keycode);
-				break;
+				v.setPressed(true);
+				return true;
 			case MotionEvent.ACTION_UP:
 				Log.d(TAG, "KEY_UP: " + keycode);
+				if (imageId != 0) {
+					mControllerBg.setBackgroundResource(R.drawable.remote_control_bth_circle_normal);
+				}
 				WiRemoteAgent.setKeyEvent(KEY_UP, keycode);
-				break;
+				v.setPressed(false);
+				return true;
 			default:
 				break;
 			}
@@ -120,6 +174,13 @@ public class RemoteControllerActivity extends BaseActivity {
 	private View.OnClickListener mClickListener = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
+			if (mAshareMirrorText != null) {
+				if (mAshareProcess.isRunning()) {
+					mAshareMirrorText.setText(getResources().getString(R.string.stop_ashare_mirror));
+				} else {
+					mAshareMirrorText.setText(getResources().getString(R.string.ashare_mirror));
+				}
+			}
 			switch (v.getId()) {
 			case R.id.top_left_btn:
 				finish();
@@ -136,6 +197,43 @@ public class RemoteControllerActivity extends BaseActivity {
 			}
 		}
 	};
+	
+//	private View.OnTouchListener mControllerTouchListener = new OnTouchListener() {
+//		@Override
+//		public boolean onTouch(View v, MotionEvent event) {
+//			int imageId = 0;
+//			switch (v.getId()) {
+//			case R.id.btn_switcher_left:
+//				imageId = R.drawable.remote_control_circle_left_select;
+//				break;
+//			case R.id.btn_switcher_up:
+//				imageId = R.drawable.remote_control_circle_top_select;
+//				break;
+//			case R.id.btn_switcher_right:
+//				imageId = R.drawable.remote_control_circle_right_select;
+//				break;
+//			case R.id.btn_switcher_down:
+//				imageId = R.drawable.remote_control_circle_down_select;
+//				break;
+//			case R.id.btn_switcher_ok:
+//				imageId = R.drawable.remote_control_circle_ok_select;
+//				break;
+//			default:
+//				break;
+//			}
+//			switch (event.getAction()) {
+//			case MotionEvent.ACTION_DOWN:
+//				mControllerBg.setBackgroundResource(imageId);
+//				break;
+//			case MotionEvent.ACTION_UP:
+//				mControllerBg.setBackgroundResource(R.drawable.remote_control_bth_circle_normal);
+//				break;
+//			default:
+//				break;
+//			}
+//			return true;
+//		}
+//	};
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -162,6 +260,15 @@ public class RemoteControllerActivity extends BaseActivity {
 		mBackBtn.setOnTouchListener(mOnTouchBtns);
 		mSleepBtn = (TextView) findViewById(R.id.btn_sleep);
 		mSleepBtn.setOnTouchListener(mOnTouchBtns);
+		
+		findViewById(R.id.btn_switcher_up).setOnTouchListener(mOnTouchBtns);
+		findViewById(R.id.btn_switcher_left).setOnTouchListener(mOnTouchBtns);
+		findViewById(R.id.btn_switcher_ok).setOnTouchListener(mOnTouchBtns);
+		findViewById(R.id.btn_switcher_right).setOnTouchListener(mOnTouchBtns);
+		findViewById(R.id.btn_switcher_down).setOnTouchListener(mOnTouchBtns);
+		findViewById(R.id.btn_controller_mute).setOnTouchListener(mOnTouchBtns);
+		findViewById(R.id.btn_controller_vol_down).setOnTouchListener(mOnTouchBtns);
+		findViewById(R.id.btn_controller_vol_up).setOnTouchListener(mOnTouchBtns);
 
 		mTouchArea = (AbsoluteLayout) findViewById(R.id.touch_area);
 		mTouchArea.setOnTouchListener(new OnTouchListener() {
@@ -174,12 +281,6 @@ public class RemoteControllerActivity extends BaseActivity {
 
 				int pointerCount = event.getPointerCount();
 
-				// Log.d(TAG,
-				// "x1: " + Math.round(event.getX(0)) + " y1: "
-				// + Math.round(event.getY(0)) + " a1: " + "x2: "
-				// + Math.round(event.getX(1)) + " y2: "
-				// + Math.round(event.getY(1)) + " a2: "
-				// + event.getAction());
 				if (pointerCount == 2) {
 					WiRemoteAgent.mouseEvent(Math.round(event.getX(0)),
 							Math.round(event.getY(0)),
@@ -225,19 +326,43 @@ public class RemoteControllerActivity extends BaseActivity {
 				return true;
 			}
 		});
+		
+		mControllerArea = (RelativeLayout) findViewById(R.id.controller_area);
+		
+		mControllerBg = (ImageView) findViewById(R.id.btn_background);
 
 		if (mHasGyroscope) {
-			mTouchArea.setVisibility(View.GONE);
+			showMouse();
 		} else {
-			mTouchArea.setVisibility(View.VISIBLE);
+			showTouch();
 		}
-//		mTouchArea.setVisibility(View.VISIBLE);
 
 		mTouchPoint1 = (TextView) findViewById(R.id.touch_point1);
 		mTouchPoint2 = (TextView) findViewById(R.id.touch_point2);
 		mPoints.add(mTouchPoint1);
 		mPoints.add(mTouchPoint2);
 		
+	}
+	
+	private void showMouse() {
+		mIsMouseMode = true;
+		mTouchArea.setVisibility(View.GONE);
+		mControllerArea.setVisibility(View.GONE);
+		WiRemoteAgent.gyroMouseControl(1);
+	}
+
+	private void showTouch() {
+		mIsMouseMode = false;
+		mTouchArea.setVisibility(View.VISIBLE);
+		mControllerArea.setVisibility(View.GONE);
+		WiRemoteAgent.gyroMouseControl(0);
+	}
+
+	private void showController() {
+		mIsMouseMode = false;
+		mTouchArea.setVisibility(View.GONE);
+		mControllerArea.setVisibility(View.VISIBLE);
+		WiRemoteAgent.gyroMouseControl(0);
 	}
 
 	@Override
@@ -248,6 +373,12 @@ public class RemoteControllerActivity extends BaseActivity {
 			getIPAddrOfCurrentRenderer();
 		}
 		
+	}
+	
+	@Override
+	protected void onPause() {
+		super.onPause();
+		WiRemoteAgent.gyroMouseControl(0);
 	}
 	
 	@Override
@@ -266,23 +397,21 @@ public class RemoteControllerActivity extends BaseActivity {
 		super.onGetIPAddrOfCurrentRenderer(ipAddr);
 		Log.d(TAG, "onGetIPAddrOfCurrentRenderer: ipAddr = " + ipAddr);
 		if (ipAddr == null) {
-			Toast.makeText(getApplicationContext(), "未选中设备", Toast.LENGTH_SHORT).show();
+			Toast.makeText(getApplicationContext(), R.string.not_connect_to_device, Toast.LENGTH_SHORT).show();
 			finish();
 			return;
 		}
-		
-		mHasTarget = true;
-		
+		mCurrentRenderIp = ipAddr;
 		int width = getWindowManager().getDefaultDisplay().getWidth();
 		int height = getWindowManager().getDefaultDisplay().getHeight();
 		Log.d(TAG, "onGetIPAddrOfCurrentRenderer: width = " + width + " height = " + height);
 		WiRemoteAgent.deinit();
 		WiRemoteAgent.init(width, height);
 		WiRemoteAgent.connectServer(ipAddr);
-		if (mTouchArea.getVisibility() == View.VISIBLE) {
-			WiRemoteAgent.gyroMouseControl(0);
-		} else {
+		if (mIsMouseMode) {
 			WiRemoteAgent.gyroMouseControl(1);
+		} else {
+			WiRemoteAgent.gyroMouseControl(0);
 		}
 		
 	}
@@ -309,43 +438,65 @@ public class RemoteControllerActivity extends BaseActivity {
 
 	@Override
 	protected Dialog onCreateDialog(int id) {
+		Log.d("jni_debug","onCreateDialog..............");
 
 		final Dialog dialog = new Dialog(this, R.style.Theme_DeleteImageDialog);
 		// Get the layout inflater
 		View dlgContent = getLayoutInflater().inflate(R.layout.dialog_control_pages_sel, null);
 
-		final TextView controlMode = (TextView) dlgContent.findViewById(R.id.touch_or_mouse);
-		if (mTouchArea.getVisibility() == View.VISIBLE) {
-			controlMode.setText("Mouse");
-		} else {
-			controlMode.setText("Touch");
-		}
-		controlMode.setOnClickListener(new OnClickListener() {
+		dlgContent.findViewById(R.id.touch).setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				if (mTouchArea.getVisibility() == View.VISIBLE) {
-					mTouchArea.setVisibility(View.GONE);
-					WiRemoteAgent.gyroMouseControl(1);
-				} else {
-					mTouchArea.setVisibility(View.VISIBLE);
-					WiRemoteAgent.gyroMouseControl(0);
-				}
+				showTouch();
 				dialog.dismiss();
 			}
 		});
-		TextView gameController = (TextView) dlgContent.findViewById(R.id.game_controller);
-		gameController.setOnClickListener(new OnClickListener() {
+		dlgContent.findViewById(R.id.mouse).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				showMouse();
+				dialog.dismiss();
+			}
+		});
+		dlgContent.findViewById(R.id.controller).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				showController();
+				dialog.dismiss();
+			}
+		});
+		dlgContent.findViewById(R.id.game_controller).setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				startActivity(new Intent(RemoteControllerActivity.this, GameControllerActivity.class));
 				dialog.dismiss();
 			}
 		});
+		mAshareMirrorText = (TextView)dlgContent.findViewById(R.id.ashare_mirror);
+		dlgContent.findViewById(R.id.ashare_mirror).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (mAshareProcess.isRunning()) {
+					mAshareProcess.stopAshareMirror();
+				} else {
+					startAshareMirror(mCurrentRenderIp);
+				}
+				dialog.dismiss();
+			}
+		});
 		
 		dialog.setContentView(dlgContent);
-
-		// Add action buttons;
 		return dialog;
 	}
-
+	
+	public void startAshareMirror(String ip) {
+		if (ip == null) {
+			Log.d(TAG,"ip null mirror error");
+			return;
+		}
+		if (mAshareProcess == null) {
+			mAshareProcess = AshareProcess.newInstance(RemoteControllerActivity.this);
+		}
+		mAshareProcess.startAshareMirror(ip);
+	}
 }

@@ -30,5 +30,7 @@ interface IMusicPlayService
     void pauseButtonPressed();
     void setPlayOnPhone(boolean onphone);
     boolean getPlayOnPhone();
+    boolean getInitialed();
+    void setInitialed(boolean ini);
 }
 

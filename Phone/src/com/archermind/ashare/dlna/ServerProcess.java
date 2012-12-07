@@ -1,19 +1,12 @@
 package com.archermind.ashare.dlna;
 
 import java.util.UUID;
-
 import org.cybergarage.upnp.Action;
 import org.cybergarage.upnp.control.ActionListener;
 import org.cybergarage.upnp.std.av.renderer.ConnectionManager;
 import org.cybergarage.upnp.std.av.server.ContentDirectory;
 import org.cybergarage.upnp.std.av.server.MediaServer;
-import org.cybergarage.upnp.std.av.server.object.format.GIFFormat;
-import org.cybergarage.upnp.std.av.server.object.format.ID3Format;
-import org.cybergarage.upnp.std.av.server.object.format.JPEGFormat;
-import org.cybergarage.upnp.std.av.server.object.format.MPEGFormat;
-import org.cybergarage.upnp.std.av.server.object.format.PNGFormat;
-
-import android.content.Context;
+import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
@@ -21,8 +14,8 @@ import android.util.Log;
 import archermind.dlna.mobile.MessageDefs;
 
 import com.archermind.ashare.dlna.localmedia.ImageAlbumsDirectory;
-import com.archermind.ashare.dlna.localmedia.LocalMediaDbHelper;
 import com.archermind.ashare.dlna.localmedia.MediaCache;
+import com.archermind.ashare.dlna.localmedia.MeidaDataLoadUtil;
 import com.archermind.ashare.dlna.localmedia.MusicAlbumArtistDirectory;
 import com.archermind.ashare.dlna.localmedia.VideoClollectionDirectory;
 
@@ -65,7 +58,7 @@ public class ServerProcess extends HandlerThread implements ActionListener {
 	private MediaServer mMediaServer;
 	private Handler mHandler;
 	private Handler mUIHandler;
-	private Context mContext;
+	private WifiManager mWifiMgr;
 	private Handler.Callback mCb = new Handler.Callback() {
 		@Override
 		public boolean handleMessage(Message msg) {
@@ -75,18 +68,22 @@ public class ServerProcess extends HandlerThread implements ActionListener {
 				Log.v(TAG, "-------------->MessageDefs.MSG_MDMS_START_DMS");
 				if (!mMediaServer.isRunning()) {
 					Log.v(TAG, "first time -------------->MessageDefs.MSG_MDMS_START_DMS");
-					mMediaServer.addPlugIn(new ID3Format());
-					mMediaServer.addPlugIn(new GIFFormat());
-					mMediaServer.addPlugIn(new JPEGFormat());
-					mMediaServer.addPlugIn(new PNGFormat());
-					mMediaServer.addPlugIn(new MPEGFormat());
+					for (int i = 0;i < MediaCache.sFormatList.size(); i++) {
+						mMediaServer.addPlugIn(MediaCache.sFormatList.getFormat(i));
+					}
+					long startTime = System.currentTimeMillis();
+					Log.d(TAG,"mediaserver add contentdirectory start!!!!!");
 					ImageAlbumsDirectory imageDir = new ImageAlbumsDirectory("images");
 					mMediaServer.getContentDirectory().addDirectory(imageDir);
 					MusicAlbumArtistDirectory musicDir = new MusicAlbumArtistDirectory("musics");
 					mMediaServer.getContentDirectory().addDirectory(musicDir);
 					VideoClollectionDirectory videoDir = new VideoClollectionDirectory("Videos");
 					mMediaServer.getContentDirectory().addDirectory(videoDir);
-					UUID uuid = UUID.randomUUID();
+					Log.d(TAG,"mediaserver add contentdirectory time=" + (System.currentTimeMillis() - startTime) + "ms");
+                    String macAddr = mWifiMgr.getConnectionInfo().getMacAddress();
+                    Log.v(TAG, "mac address:" + macAddr);
+                    UUID uuid = UUID.nameUUIDFromBytes(macAddr.getBytes());
+                    Log.v(TAG, "uuid from mac address:" + uuid.toString());
 					Log.v(TAG, "start MDMS -----------------> with UDN:" + uuid.toString());
 					mMediaServer.setUDN("uuid:" + uuid.toString());
 					mMediaServer.start();
@@ -105,10 +102,10 @@ public class ServerProcess extends HandlerThread implements ActionListener {
 		}
 	};
 
-	public ServerProcess(Handler uiHander, Context context) {
+	public ServerProcess(Handler uiHander, WifiManager wifiMgr) {
 		super(TAG);
 		mUIHandler = uiHander;
-		mContext = context;
+		mWifiMgr = wifiMgr;
 		try {
 			mMediaServer = new MediaServer(DESCRIPTION, ContentDirectory.SCPD,
 					ConnectionManager.SCPD);
