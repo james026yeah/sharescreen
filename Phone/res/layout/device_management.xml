@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/app_main_bg" >
+
+    <ListView
+        android:id="@+id/devices_listView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/title_bar"
+        android:cacheColorHint="@android:color/transparent" />
+
+    <include
+        android:id="@+id/title_bar"
+        layout="@layout/more_options_title" />
+
+    <include 
+        android:id="@+id/progress_bar_container"
+        layout="@layout/progress_bar_layout" />
+
+</RelativeLayout>

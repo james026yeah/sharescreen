@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    <TextView 
+        android:id="@+id/ib"
+        android:text="@string/bottom_tab_online_media"
+        android:textSize="12dp"
+        android:textColor="#BCC1C5"
+        android:gravity="center_horizontal"
+        android:drawableTop="@drawable/online_media_tab_inner"
+        android:drawablePadding="-20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>

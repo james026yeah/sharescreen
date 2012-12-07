@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#EBEFF3" >
+
+    <RelativeLayout
+        android:id="@+id/remote_top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/top_bar"
+        android:gravity="center_vertical" >
+
+        <TextView
+            android:id="@+id/top_left_btn"
+            android:layout_width="26.67dp"
+            android:layout_height="26.67dp"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="8dp"
+            android:background="@drawable/remote_btn_close_sel"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="24dp"
+            android:layout_centerHorizontal="true"
+            android:gravity="center"
+            android:text="@string/tab_remote_controller_indicator"
+            android:textColor="@android:color/darker_gray" />
+
+        <TextView
+            android:id="@+id/top_right_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_marginRight="8dp"
+            android:background="@drawable/remote_btn_switch_sel"
+            android:gravity="center" />
+    </RelativeLayout>
+
+    <ImageView
+        android:id="@+id/air_mouse_area"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/remote_top_bar"
+        android:layout_above="@+id/bottom_bar"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="8dp"
+        android:background="@drawable/two_dimensional_code_bg"
+        android:gravity="center"
+        android:scaleType="center" />
+
+    <ImageView
+        android:id="@+id/btn_ok"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:clickable="true"
+        android:src="@drawable/remote_btn_ok_sel" />
+
+    <AbsoluteLayout
+        android:id="@+id/touch_area"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/remote_top_bar"
+        android:layout_above="@+id/bottom_bar"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="8dp"
+        android:background="@drawable/two_dimensional_code_bg" >
+
+        <TextView
+            android:id="@+id/touch_point1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/touch_point"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/touch_point2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/touch_point"
+            android:visibility="gone" />
+    </AbsoluteLayout>
+
+    <RelativeLayout
+        android:id="@+id/controller_area"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/remote_top_bar"
+        android:layout_above="@+id/bottom_bar"
+        android:layout_margin="8dp"
+        android:background="@drawable/two_dimensional_code_bg" >
+
+        <ImageView
+            android:id="@+id/btn_background"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/remote_control_bth_circle_normal" />
+
+        <ImageView
+            android:id="@+id/btn_switcher_up"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_alignTop="@+id/btn_background"
+            android:layout_centerHorizontal="true" />
+
+        <ImageView
+            android:id="@+id/btn_switcher_ok"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_alignLeft="@+id/btn_switcher_up"
+            android:layout_below="@+id/btn_switcher_up" />
+
+        <ImageView
+            android:id="@+id/btn_switcher_left"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_alignBottom="@+id/btn_switcher_ok"
+            android:layout_toLeftOf="@+id/btn_switcher_ok" />
+
+        <ImageView
+            android:id="@+id/btn_switcher_right"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_alignBottom="@+id/btn_switcher_ok"
+            android:layout_toRightOf="@+id/btn_switcher_ok" />
+
+        <ImageView
+            android:id="@+id/btn_switcher_down"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_alignLeft="@+id/btn_switcher_up"
+            android:layout_below="@+id/btn_switcher_ok" />
+
+        <ImageView
+            android:id="@+id/btn_controller_play"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/btn_background"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="24dp"
+            android:src="@drawable/remote_control_bth_play_sel" />
+
+        <ImageView
+            android:id="@+id/btn_controller_front"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/btn_controller_play"
+            android:layout_centerHorizontal="true"
+            android:layout_marginRight="24dp"
+            android:layout_toLeftOf="@+id/btn_controller_play"
+            android:src="@drawable/remote_control_bth_front_sel" />
+
+        <ImageView
+            android:id="@+id/btn_controller_after"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/btn_controller_play"
+            android:layout_centerHorizontal="true"
+            android:layout_marginLeft="24dp"
+            android:layout_toRightOf="@+id/btn_controller_play"
+            android:src="@drawable/remote_control_bth_after_sel" />
+
+        <ImageView
+            android:id="@+id/btn_controller_vol_down"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/btn_controller_play"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="12dp"
+            android:src="@drawable/remote_control_bth_decrease_sel"
+            android:clickable="true" />
+
+        <ImageView
+            android:id="@+id/btn_controller_mute"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/btn_controller_vol_down"
+            android:layout_centerHorizontal="true"
+            android:layout_marginRight="24dp"
+            android:layout_toLeftOf="@+id/btn_controller_vol_down"
+            android:src="@drawable/remote_control_bth_mute_sel"
+            android:clickable="true" />
+
+        <ImageView
+            android:id="@+id/btn_controller_vol_up"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/btn_controller_vol_down"
+            android:layout_centerHorizontal="true"
+            android:layout_marginLeft="24dp"
+            android:layout_toRightOf="@+id/btn_controller_vol_down"
+            android:src="@drawable/remote_control_bth_increase_sel"
+            android:clickable="true" />
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/bottom_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/photo_bth_bar"
+        android:gravity="center" >
+
+        <TextView
+            android:id="@+id/btn_menu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="12dp"
+            android:background="@drawable/remote_btn_menu_sel"
+            android:clickable="true"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/btn_home"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="6dp"
+            android:background="@drawable/remote_btn_home_sel"
+            android:clickable="true"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/btn_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="6dp"
+            android:background="@drawable/remote_btn_back_sel"
+            android:clickable="true"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/btn_sleep"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="12dp"
+            android:background="@drawable/remote_btn_sleep_sel"
+            android:clickable="true"
+            android:gravity="center" />
+    </LinearLayout>
+
+</RelativeLayout>

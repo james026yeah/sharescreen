@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/app_main_bg">
+    
+    <LinearLayout
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="40.66dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+		<!-- <RelativeLayout
+	        android:id="@+id/item_ashare"
+	        android:layout_width="match_parent"
+	        android:layout_height="@dimen/list_sel_item_height"
+	        android:background="@drawable/more_list_sel"
+	        android:clickable="true"
+	        android:orientation="vertical" >
+	
+	        <TextView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:duplicateParentState="true"
+	            android:paddingLeft="18dp"
+	            android:paddingTop="10dp"
+	            android:text="@string/more_option_multiscreen_first"
+	            android:textAppearance="@style/MoreOptionsTextAppearanceFirst" />
+	
+	        <TextView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:duplicateParentState="true"
+	            android:paddingLeft="18dp"
+	            android:paddingTop="34dp"
+	            android:text="@string/more_option_multiscreen_second"
+	            android:textAppearance="@style/MoreOptionsTextAppearanceSecond" />
+	
+	        <ImageView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_alignParentRight="true"
+	            android:layout_centerVertical="true"
+	            android:layout_marginRight="12dp"
+	            android:duplicateParentState="true"
+	            android:src="@drawable/list_btn_arrow_sel" />
+	    </RelativeLayout> -->
+	    
+	    <RelativeLayout
+	        android:id="@+id/item_setting"
+	        android:layout_width="match_parent"
+	        android:layout_height="@dimen/list_sel_item_height"
+	        android:background="@drawable/more_list_sel"
+	        android:clickable="true"
+	        android:orientation="vertical" >
+	
+	        <TextView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:duplicateParentState="true"
+	            android:paddingLeft="18dp"
+	            android:paddingTop="10dp"
+	            android:text="@string/more_option_setting_first"
+	            android:textAppearance="@style/MoreOptionsTextAppearanceFirst" />
+	
+	        <TextView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:duplicateParentState="true"
+	            android:paddingLeft="18dp"
+	            android:paddingTop="34dp"
+	            android:text="@string/more_option_setting_second"
+	            android:textAppearance="@style/MoreOptionsTextAppearanceSecond" />
+	
+	        <ImageView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_alignParentRight="true"
+	            android:layout_centerVertical="true"
+	            android:layout_marginRight="12dp"
+	            android:duplicateParentState="true"
+	            android:src="@drawable/list_btn_arrow_sel" />
+	    </RelativeLayout>
+	
+	    <RelativeLayout
+	        android:id="@+id/item_gesture"
+	        android:layout_width="match_parent"
+	        android:layout_height="@dimen/list_sel_item_height"
+	        android:background="@drawable/more_list_sel"
+	        android:clickable="true"
+	        android:orientation="vertical" >
+	
+	        <TextView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_centerVertical="true"
+	            android:duplicateParentState="true"
+	            android:paddingLeft="18dp"
+	            android:text="@string/more_option_gesture_first"
+	            android:textAppearance="@style/MoreOptionsTextAppearanceFirst" />
+	
+	        <ImageView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_alignParentRight="true"
+	            android:layout_centerVertical="true"
+	            android:layout_marginRight="12dp"
+	            android:duplicateParentState="true"
+	            android:src="@drawable/list_btn_arrow_sel" />
+	    </RelativeLayout>
+	
+	    <RelativeLayout
+	        android:id="@+id/item_feedback"
+	        android:layout_width="match_parent"
+	        android:layout_height="@dimen/list_sel_item_height"
+	        android:background="@drawable/more_list_sel"
+	        android:clickable="true"
+	        android:orientation="vertical" >
+	
+	        <TextView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_centerVertical="true"
+	            android:duplicateParentState="true"
+	            android:paddingLeft="18dp"
+	            android:text="@string/more_option_feedback"
+	            android:textAppearance="@style/MoreOptionsTextAppearanceFirst" />
+	
+	        <ImageView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_alignParentRight="true"
+	            android:layout_centerVertical="true"
+	            android:layout_marginRight="12dp"
+	            android:duplicateParentState="true"
+	            android:src="@drawable/list_btn_arrow_sel" />
+	    </RelativeLayout>
+	
+	    <RelativeLayout
+	        android:id="@+id/item_about"
+	        android:layout_width="match_parent"
+	        android:layout_height="@dimen/list_sel_item_height"
+	        android:background="@drawable/more_list_sel"
+	        android:clickable="true"
+	        android:orientation="vertical" >
+	
+	        <TextView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_centerVertical="true"
+	            android:duplicateParentState="true"
+	            android:paddingLeft="18dp"
+	            android:text="@string/more_option_about"
+	            android:textAppearance="@style/MoreOptionsTextAppearanceFirst" />
+	
+	        <ImageView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_alignParentRight="true"
+	            android:layout_centerVertical="true"
+	            android:layout_marginRight="12dp"
+	            android:duplicateParentState="true"
+	            android:src="@drawable/list_btn_arrow_sel" />
+	    </RelativeLayout>
+	
+	    <RelativeLayout
+	        android:id="@+id/item_update"
+	        android:layout_width="match_parent"
+	        android:layout_height="@dimen/list_sel_item_height"
+	        android:background="@drawable/more_list_sel"
+	        android:clickable="true"
+	        android:orientation="vertical" >
+	
+	        <TextView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:duplicateParentState="true"
+	            android:paddingLeft="18dp"
+	            android:paddingTop="10dp"
+	            android:text="@string/more_option_update_first"
+	            android:textAppearance="@style/MoreOptionsTextAppearanceFirst" />
+	
+	        <TextView
+	            android:id="@+id/item_update_version"
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:duplicateParentState="true"
+	            android:paddingLeft="18dp"
+	            android:paddingTop="34dp"
+	            android:text="@string/more_option_update_second"
+	            android:textAppearance="@style/MoreOptionsTextAppearanceSecond" />
+	
+	        <ImageView
+	            android:layout_width="wrap_content"
+	            android:layout_height="wrap_content"
+	            android:layout_alignParentRight="true"
+	            android:layout_centerVertical="true"
+	            android:layout_marginRight="12dp"
+	            android:duplicateParentState="true"
+	            android:src="@drawable/list_btn_arrow_sel" />
+	    </RelativeLayout>
+
+	    <TextView
+	        android:id="@id/more_option_btn_exit"
+	        android:layout_width="268dp"
+	        android:layout_height="40dp"
+	        android:layout_gravity="center_horizontal"
+	        android:layout_marginTop="7.33dp"
+	        android:clickable="true"
+	        android:background="@drawable/more_options_btn_sel"
+	        android:gravity="center"
+	        android:text="@string/more_option_exit"
+	        android:textAppearance="@style/MoreOptionsTextAppearanceSecond" />
+    </LinearLayout>
+    <include layout="@layout/more_options_title"/>
+</RelativeLayout>

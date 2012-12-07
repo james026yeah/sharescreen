@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+    <FrameLayout 
+        android:layout_width="match_parent" 
+        android:layout_height="match_parent" >
+	    <ListView android:id="@id/dms_list"
+	        android:layout_width="match_parent" 
+	        android:layout_height="match_parent" />
+	    <TextView
+	        android:id="@id/current_renderer"
+	        android:layout_width="match_parent"
+	        android:layout_height="64dip"
+	        android:layout_gravity="bottom"
+	        android:clickable="true"
+	        android:background="@drawable/renderer_indicator"
+	        android:text="@string/current_renderer"
+	        android:textColor="@android:color/white"
+	        android:drawableRight="@drawable/next"
+	        android:paddingRight="10dip"
+	        android:paddingLeft="10dip"
+	        android:textSize="18sp"
+	        android:gravity="center"/>
+		<ListView 
+		    android:id="@id/dmr_list"
+		    android:visibility="invisible"
+	        android:layout_width="match_parent" 
+	        android:layout_height="match_parent"
+	        android:background="@android:color/white" />
+	</FrameLayout>
+</LinearLayout>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    
+    <item android:id="@android:id/secondaryProgress">
+        <clip android:drawable="@drawable/music_volume_progress_bar_blue">
+        </clip>
+    </item>
+    <item android:id="@android:id/progress">
+        <clip
+            android:drawable="@drawable/music_volume_progress_bar_blue">
+
+        </clip>
+    </item>
+
+</layer-list>
