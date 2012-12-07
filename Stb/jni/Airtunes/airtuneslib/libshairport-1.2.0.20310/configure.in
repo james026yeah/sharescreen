@@ -1,0 +1,24 @@
+# -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_INIT([shairport.c], [1.2.0], [http://trac.xbmc.org])
+AM_INIT_AUTOMAKE(shairport,1.2.0)
+AC_CONFIG_HEADERS([config.h])
+AC_PROG_CC
+
+AC_DISABLE_STATIC 
+AC_PROG_LIBTOOL
+
+# Checks for libraries.
+#AC_CHECK_LIB([c],   [main])
+#AC_CHECK_LIB([m],   [main])
+AC_CHECK_LIB([ssl], [main],, AC_MSG_ERROR($missing_library))
+AC_CHECK_LIB([pthread], [main],, AC_MSG_ERROR($missing_library))
+
+OUTPUT_FILES="Makefile"
+
+LIBDIR=$PREFIX
+
+AC_CONFIG_FILES([${OUTPUT_FILES}])
+AC_OUTPUT(Makefile src/Makefile)
+AC_OUTPUT

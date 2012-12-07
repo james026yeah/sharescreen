@@ -8,12 +8,6 @@
         android:layout_height="match_parent"
         android:background="@drawable/tv_bg" >
 
-        <io.vov.vitamio.widget.VideoView
-            android:id="@+id/music_view_surface"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone" />
-
         <RelativeLayout
             android:id="@+id/music_view_top_layout"
             android:layout_width="match_parent"
@@ -223,8 +217,7 @@
             android:layout_height="wrap_content"
             android:layout_above="@id/music_view_bottom_layout"
             android:layout_below="@id/music_view_top_layout"
-            android:layout_centerInParent="true"
-            android:paddingBottom="25dp" >
+            android:layout_centerInParent="true" >
 
             <ImageView
                 android:id="@+id/music_album"
@@ -238,20 +231,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="60dp"
-                android:layout_marginTop="25dp"
+                android:layout_marginTop="0dp"
                 android:orientation="horizontal" >
-
-                <ImageView
-                    android:id="@+id/music_album_left"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:contentDescription="@string/app_name"
-                    android:visibility="gone" />
-
                 <ImageView
                     android:id="@+id/music_album_right"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="493.33dp"
+                    android:layout_height="440dp"
+                    android:gravity="center"
                     android:background="@drawable/tv_music_album_default"
                     android:contentDescription="@string/app_name" />
             </LinearLayout>
