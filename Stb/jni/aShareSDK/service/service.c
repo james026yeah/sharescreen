@@ -3,8 +3,8 @@
 #include "server.h"
 #include "client.h"
 #include "protocol_ext.h"
-#include "native_surface.h"
-#include "surface.h"
+//#include "../native_surface/native_surface.h"
+//#include "surface.h"
 
 #undef LOG_TAG
 #define LOG_TAG "ishare_service"

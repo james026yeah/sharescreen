@@ -15,10 +15,16 @@ import android.util.Log;
 
 public class BonjourAgentRegister {
 	
-	private static final String TAG = "BonjourAgentRegister";
-	private static final String AIRPLAY_SERVICE_TYPE = "_airplay._tcp.local.";
-	private static final String AIRPLAY_SERVICE_NAME = "aShare_Test";
-	private static final int AIRPLAY_SERVICE_PORT = 36667;
+	public static final String TAG = "BonjourAgentRegister";
+	public static final String AIRPLAY_SERVICE_TYPE = "_airplay._tcp.local.";
+	public static final String AIRPLAY_SERVICE_NAME = "aShare_Test";
+	public static final int AIRPLAY_SERVICE_PORT = 36667;
+	
+	public static final String AIRTUNES_SERVICE_TYPE = "_raop._tcp.local.";
+	public static final int AIRTUNES_SERVICE_PORT = 49152; 
+	public static final String AIRTUNES_SERVICE_NAME = "XXAirTunes";
+	
+	
 	private static BonjourAgentRegister sBonjourAgentRegister;
 	private MulticastLock mMulticastLock;
 	android.net.wifi.WifiManager.MulticastLock lock;

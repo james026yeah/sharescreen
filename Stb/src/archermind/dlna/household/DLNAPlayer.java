@@ -1,18 +1,30 @@
 package archermind.dlna.household;
 
-import io.vov.vitamio.MediaPlayer;
-import io.vov.vitamio.MediaPlayer.OnCompletionListener;
-import io.vov.vitamio.widget.VideoView;
-
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.AnimationDrawable;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnCompletionListener;
+import android.media.MediaPlayer.OnPreparedListener;
+import android.media.MediaPlayer.OnErrorListener;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -34,6 +46,9 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import archermind.airplay.AirplayProcess;
 import archermind.ashare.R;
+import archermind.dlna.media.MediaItem;
+import archermind.dlna.media.MusicItem;
+import archermind.dlna.media.VideoItem;
 
 import com.archermind.ashare.TypeDefs;
 
@@ -41,7 +56,6 @@ public class DLNAPlayer extends Activity {
 	private static final String TAG = "DLNAPlayer";
 	private int mVideoWidth;
 	private int mVideoHeight;
-	private VideoView mVideoPlayer;
 	private SurfaceView mSurfaceView;
 	private android.media.MediaPlayer mMediaPlayer;
 	private android.widget.VideoView mVPlayer;
@@ -54,21 +68,27 @@ public class DLNAPlayer extends Activity {
 	private TextView mTotalTimeView;
 	private TextView mVideoName;
 	private TextView mMusicName;
+	private TextView mAuthorName;
 	private RelativeLayout mVideoTopLayout;
 	private RelativeLayout mVideoBottomLayout;
 	private RelativeLayout mMusicBottomLayout;
 	private Handler mDismissHandler;
 	private ImageView mCdView;
+	private ImageView mArmartImageView;
 	private Animation hideAnimation;
 	private AnimationDrawable mCdAnim = null;
 	private final Handler cdHandler = new Handler();
 	private final static int DEFAULT_MAX = 1000;
 	private final static String DEFAULT_VIDEO_NAME = "Video";
 	private final static String DEFAULT_MUSIC_NAME = "Music";
+	private final static String DEFAULT_AUTHOR_NAME = "";
 	private final static float DEFAULE_SCALE = 1920 / 1080l;
 	private final static int HIDE_CONTROL_LAYOUT = 100;
 	private final static int DEFAULT_HIDE_TIME = 4000;
 	private int mMediaType;
+	private MusicItem mCurrAudioInfo;
+	private MusicItem mNextAudioInfo;
+	private VideoItem mVideoInfo;
 
 	public static String mNextAudioUrl = "";
 	public static boolean mIsPlay = false;
@@ -171,15 +191,20 @@ public class DLNAPlayer extends Activity {
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
-		if (!io.vov.vitamio.LibsChecker.checkVitamioLibs(this))
-			return;
 
 		Bundle data = getIntent().getExtras();
 		if (null != data) {
 			mUri = data.getString(TypeDefs.KEY_MEDIA_URI);
 			Log.d(TAG, "Media URI:" + mUri);
+			if(mUri.isEmpty())
+			{
+				finish();
+				return;
+			}
 			mMediaType = data.getInt(TypeDefs.KEY_MEDIA_TYPE);
 			if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO) {
+				mNextAudioInfo = data.getParcelable(TypeDefs.KEY_NEXT_MEDIA_INFO);
+				mCurrAudioInfo = data.getParcelable(TypeDefs.KEY_CURR_MEDIA_INFO);
 				setContentView(R.layout.music_player);
 				mStartView = (ImageView) findViewById(R.id.music_view_start);
 				mPauseView = (ImageView) findViewById(R.id.music_view_pause);
@@ -187,16 +212,18 @@ public class DLNAPlayer extends Activity {
 				mCurrentTimeView = (TextView) findViewById(R.id.music_view_current_time);
 				mTotalTimeView = (TextView) findViewById(R.id.music_view_all_time);
 				mMusicName = (TextView) findViewById(R.id.music_view_name);
+				mAuthorName = (TextView) findViewById(R.id.music_view_author);
 				mMusicBottomLayout = (RelativeLayout) findViewById(R.id.music_view_bottom_layout);
 				mCdView = (ImageView) findViewById(R.id.music_album);
 				mCdAnim = (AnimationDrawable) mCdView.getBackground();
+				mArmartImageView = (ImageView) findViewById(R.id.music_album_right);
 			} else {
+				mVideoInfo = data.getParcelable(TypeDefs.KEY_CURR_MEDIA_INFO);
 				requestWindowFeature(Window.FEATURE_NO_TITLE);
 				getWindow().setFlags(
 						WindowManager.LayoutParams.FLAG_FULLSCREEN,
 						WindowManager.LayoutParams.FLAG_FULLSCREEN);
 				setContentView(R.layout.video_player);
-				mVideoPlayer = (VideoView) findViewById(R.id.video_view_surface);
 				mSurfaceView = (SurfaceView) findViewById(R.id.video_view_surface_dlna);
 				mStartView = (ImageView) findViewById(R.id.video_view_start);
 				mPauseView = (ImageView) findViewById(R.id.video_view_pause);
@@ -220,20 +247,7 @@ public class DLNAPlayer extends Activity {
 		bind2RendererService();
 	}
 
-	private OnCompletionListener mCompletionListener = new OnCompletionListener() {
-		public void onCompletion(MediaPlayer mp) {
-			if (mNextAudioUrl.isEmpty()) {
-				mIsPlayCompletion = true;
-				finish();
-			} else {
-				stop();
-				play(mNextAudioUrl);
-				mNextAudioUrl = "";
-			}
-		}
-	};
-
-	private android.media.MediaPlayer.OnCompletionListener mAudioCompletionListener = new android.media.MediaPlayer.OnCompletionListener() {
+	private OnCompletionListener mAudioCompletionListener = new OnCompletionListener() {
 		public void onCompletion(android.media.MediaPlayer mp) {
 			if (mNextAudioUrl.isEmpty()) {
 				mIsPlayCompletion = true;
@@ -245,14 +259,65 @@ public class DLNAPlayer extends Activity {
 			}
 		}
 	};
-
-	private android.media.MediaPlayer.OnPreparedListener mPreparedListener = new android.media.MediaPlayer.OnPreparedListener() {
+	
+	private OnCompletionListener mVideoCompletionListener = new OnCompletionListener() {
+		
+		@Override
+		public void onCompletion(MediaPlayer mp) {
+			stop();
+			finish();
+		}
+	};
+	
+	private OnErrorListener mAudioErrorListener = new OnErrorListener(){
 
 		@Override
-		public void onPrepared(android.media.MediaPlayer mp) {
+		public boolean onError(MediaPlayer mp, int what, int extra) {
+			// TODO Auto-generated method stub
+			if (mMediaPlayer != null) {
+				mMediaPlayer.stop();
+				mMediaPlayer.release();
+				mMediaPlayer = null;
+			}
+			mIsPlayCompletion = true;
+			finish();
+			return false;
+		}
+
+	};
+	
+	private OnErrorListener mVideoErrorListener = new OnErrorListener(){
+
+		@Override
+		public boolean onError(MediaPlayer mp, int what, int extra) {
+			// TODO Auto-generated method stub
+			mVPlayer.stopPlayback();
+			mIsPlayCompletion = true;
+			finish();
+			return false;
+		}
+		
+	};
+	
+	private OnPreparedListener mAudioPreparedListener = new OnPreparedListener() {
+
+		@Override
+		public void onPrepared(MediaPlayer mp) {
 			// TODO Auto-generated method stub
 			mp.start();
+			mIsPlayCompletion = false;
 		}
+	};
+	
+	private OnPreparedListener mVideoPreparedListener = new OnPreparedListener() {
+
+		@Override
+		public void onPrepared(MediaPlayer mp) {
+			// TODO Auto-generated method stub
+			mVPlayer.start();
+			mIsPlayCompletion = false;
+		}
+		
 	};
 
 	public void play(String url) {
@@ -260,36 +325,11 @@ public class DLNAPlayer extends Activity {
 			try {
 				mMediaPlayer.reset();
 				mMediaPlayer.setDataSource(url);
-				Log.d("sss","url"+url);
-				if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_VIDEO) {
-					holder = mSurfaceView.getHolder();
-					holder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
-					holder.addCallback(new SurfaceHolder.Callback() {
-
-						@Override
-						public void surfaceCreated(SurfaceHolder holder) {
-							mMediaPlayer.setDisplay(holder);
-							mMediaPlayer
-									.setAudioStreamType(AudioManager.STREAM_MUSIC);
-						}
-
-						@Override
-						public void surfaceChanged(SurfaceHolder holder,
-								int format, int width, int height) {
-
-						}
-
-						@Override
-						public void surfaceDestroyed(SurfaceHolder holder) {
-
-						}
-
-					});
-				}
 				mMediaPlayer.setOnCompletionListener(mAudioCompletionListener);
-				//mMediaPlayer.setOnPreparedListener(mPreparedListener);
+				mMediaPlayer.setOnPreparedListener(mAudioPreparedListener);
+				mMediaPlayer.setOnErrorListener(mAudioErrorListener);
 				mMediaPlayer.prepare();
-				mMediaPlayer.start();
+				//mMediaPlayer.start();
 				
 			} catch (IOException ex) {
 				Log.v(TAG, "Unable to open content: " + url);
@@ -298,13 +338,10 @@ public class DLNAPlayer extends Activity {
 		} else if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_VIDEO
 				|| mMediaType == TypeDefs.MEDIA_TYPE_AIRPLAY_VIDEO) {
 			mVPlayer.setVideoURI(Uri.parse(url));
-			mVPlayer.start();
-		} else {
-			mVideoPlayer.setOnCompletionListener(mCompletionListener);
-			mVideoPlayer.setVideoURI(Uri.parse(url));
-			mVideoPlayer.setVideoQuality(MediaPlayer.VIDEOQUALITY_HIGH);
+			mVPlayer.setOnCompletionListener(mVideoCompletionListener);
+			mVPlayer.setOnErrorListener(mVideoErrorListener);
+			mVPlayer.setOnPreparedListener(mVideoPreparedListener);
 		}
-		mIsPlayCompletion = false;
 	}
 
 	public void stop() {
@@ -318,8 +355,6 @@ public class DLNAPlayer extends Activity {
 		} else if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_VIDEO
 				|| mMediaType == TypeDefs.MEDIA_TYPE_AIRPLAY_VIDEO) {
 			mVPlayer.stopPlayback();
-		} else {
-			mVideoPlayer.stopPlayback();
 		}
 		mIsPause = false;
 		mIsPlay = false;
@@ -334,8 +369,6 @@ public class DLNAPlayer extends Activity {
 		} else if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_VIDEO
 				|| mMediaType == TypeDefs.MEDIA_TYPE_AIRPLAY_VIDEO) {
 			mVPlayer.seekTo(position);
-		} else {
-			mVideoPlayer.seekTo(position);
 		}
 		show();
 	}
@@ -351,8 +384,6 @@ public class DLNAPlayer extends Activity {
 		} else if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_VIDEO
 				|| mMediaType == TypeDefs.MEDIA_TYPE_AIRPLAY_VIDEO) {
 			mVPlayer.pause();
-		} else {
-			mVideoPlayer.pause();
 		}
 		mIsPause = true;
 		mIsPlay = false;
@@ -366,8 +397,6 @@ public class DLNAPlayer extends Activity {
 		} else if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_VIDEO
 				|| mMediaType == TypeDefs.MEDIA_TYPE_AIRPLAY_VIDEO) {
 
-		} else {
-			mVideoPlayer.setVolume(lvolume, rvolume);
 		}
 	}
 
@@ -382,8 +411,6 @@ public class DLNAPlayer extends Activity {
 		} else if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_VIDEO
 				|| mMediaType == TypeDefs.MEDIA_TYPE_AIRPLAY_VIDEO) {
 			mVPlayer.start();
-		} else {
-			mVideoPlayer.start();
 		}
 
 		mIsPlay = true;
@@ -421,12 +448,6 @@ public class DLNAPlayer extends Activity {
 			mIsPlay = mVPlayer.isPlaying();
 			mTotalTime = mVPlayer.getDuration();
 			mCurrentPosition = mVPlayer.getCurrentPosition();
-		} else {
-			mVideoWidth = mVideoPlayer.getWidth();
-			mVideoHeight = mVideoPlayer.getHeight();
-			mIsPlay = mVideoPlayer.isPlaying();
-			mTotalTime = mVideoPlayer.getDuration();
-			mCurrentPosition = mVideoPlayer.getCurrentPosition();
 		}
 		updateViews();
 	}
@@ -468,7 +489,7 @@ public class DLNAPlayer extends Activity {
 	}
 
 	private void updateViews() {
-		if (mMediaPlayer != null || mVideoPlayer != null) {
+		if (mMediaPlayer != null || mVPlayer != null) {
 			SetTime();
 			SetSeekBar();
 		}
@@ -512,21 +533,6 @@ public class DLNAPlayer extends Activity {
 		return position;
 	}
 
-	private void setSize() {
-		float width = (float) getWindowManager().getDefaultDisplay().getWidth();
-		float height = (float) getWindowManager().getDefaultDisplay()
-				.getHeight();
-		if (null != mVideoPlayer) {
-			if (0 != height) {
-				mVideoPlayer.setVideoLayout(VideoView.VIDEO_LAYOUT_SCALE, width
-						/ height);
-			} else {
-				mVideoPlayer.setVideoLayout(VideoView.VIDEO_LAYOUT_SCALE,
-						DEFAULE_SCALE);
-			}
-		}
-	}
-
 	private void initInfo() {
 
 		mDismissHandler = new Handler() {
@@ -545,26 +551,70 @@ public class DLNAPlayer extends Activity {
 		hideAnimation = AnimationUtils.loadAnimation(this, R.anim.player_out);
 		hideAnimation.setAnimationListener(hideListener);
 
-		String name = null;
-		// name = getFileName(mUri);
-
 		Updatedata();
 		if (isVideo()) {
-			mVideoName.setText((null != name) ? name : DEFAULT_VIDEO_NAME);
-			setSize();
+			mVideoName.setText((null != mVideoInfo.getTitle()) ? mVideoInfo.getTitle() : DEFAULT_VIDEO_NAME);
 		} else {
-			mMusicName.setText((null != name) ? name : DEFAULT_MUSIC_NAME);
+			mMusicName.setText((null != mCurrAudioInfo.getTitle()) ? mCurrAudioInfo.getTitle() : DEFAULT_MUSIC_NAME);
+			mAuthorName.setText((null != mCurrAudioInfo.getArtist()) ? mCurrAudioInfo.getArtist() : DEFAULT_AUTHOR_NAME);
 			cdHandler.postDelayed(new Runnable() {
 				public void run() {
 					startCd();
 				}
 			}, 200);
+			String armartUrl = mCurrAudioInfo.getAlbumArtURI();
+			if (armartUrl != null && !"".equals(armartUrl)) {
+				new DownloadArmartBackground().execute(armartUrl);
+			}
 		}
 
 		mDismissHandler.sendEmptyMessageDelayed(HIDE_CONTROL_LAYOUT,
 				DEFAULT_HIDE_TIME);
 	}
+	
+	public class DownloadArmartBackground extends AsyncTask<String, Void, Bitmap>{
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
+        }
+        @Override
+        protected Bitmap doInBackground(String... params) {
+        	Bitmap bitmap = getBitmapFromUrl(params[0]);
+        	Log.v(TAG, "bitmap " + bitmap);
+        	return bitmap;
+        }
+        
+		public Bitmap getBitmapFromUrl(String imgUrl) {
+			URL url;
+			Bitmap bitmap = null;
+			try {
+				url = new URL(imgUrl);
+				InputStream is = url.openConnection().getInputStream();
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				byte[] b = new byte[1024];
+				int len = 0;
+				while ((len = is.read(b, 0, 1024)) != -1) {
+					baos.write(b, 0, len);
+					baos.flush();
+				}
+				byte[] bytes = baos.toByteArray();
+				bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return bitmap;
+		}
 
+        @Override
+        protected void onPostExecute(Bitmap result) {
+            super.onPostExecute(result);
+            if (result != null) {
+            	mArmartImageView.setImageBitmap(result);
+            }
+        }
+	}
 	private void show() {
 		if (isVideo()) {
 			if (null != mVideoTopLayout) {

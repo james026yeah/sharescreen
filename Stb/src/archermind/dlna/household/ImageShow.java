@@ -1,8 +1,8 @@
 package archermind.dlna.household;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -28,36 +29,45 @@ import com.archermind.ashare.TypeDefs;
 
 public class ImageShow extends Activity {
     private final static String TAG = "ImageShow";
+    //private PhotoItem mPhotoInfo;
     private String mMediaURI;
     private boolean mIsBound = false;
     private Messenger mService = null;
     private ImageView mImageView;
     private int mMediaType;
     private Bitmap mBitmap;
-    private Handler mHandler = new IncomingHandler();
+    private Bitmap mChangeBitmap;
+    private float mFlip = 0;
+    private float mScaling = 1;
+    private Handler mHandler = new IncomingHandler(this);
     DisplayMetrics mDm;
     private DownloadPhotoBackground mPhotoDownloadTask;
     private final Messenger mMessenger = new Messenger(mHandler);
 
-    class IncomingHandler extends Handler {
+    static class IncomingHandler extends Handler {
+        ImageShow mImageShow;
+        public IncomingHandler(ImageShow imageShow) {
+            mImageShow = imageShow;
+        }
         @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-            case TypeDefs.MSG_DMR_AV_TRANS_SEEK:
-                if(msg.arg2 == TypeDefs.MEDIA_TYPE_DLNA_IMAGE) {
-                    if(msg.arg1 == TypeDefs.IMAGE_CONTROL_FLIP) {
-                        //float FLIP = Float.valueOf(msg.obj.toString());
-                    } else if(msg.arg1 == TypeDefs.IMAGE_CONTROL_SCALING) {
-                        //float SCALING = Float.valueOf(msg.obj.toString());
-                    }
-                }
-                break;
+		public void handleMessage(Message msg) {
+			switch (msg.what) {
+			case TypeDefs.MSG_DMR_AV_TRANS_SEEK:
+				if (msg.arg2 == TypeDefs.MEDIA_TYPE_DLNA_IMAGE) {
+					if (msg.arg1 == TypeDefs.IMAGE_CONTROL_FLIP) {
+					    mImageShow.mFlip = Float.valueOf(msg.obj.toString());
+					} else if (msg.arg1 == TypeDefs.IMAGE_CONTROL_SCALING) {
+					    mImageShow.mScaling = Float.valueOf(msg.obj.toString());
+					}
+					mImageShow.ShowChangedImage(mImageShow.mFlip, mImageShow.mScaling);
+				}
+				break;
             case TypeDefs.MSG_DMR_RENDERER_UPDATEDATA:
                 if(msg.arg2 == TypeDefs.MEDIA_TYPE_DLNA_IMAGE) {
                     if(msg.arg1 == TypeDefs.IMAGE_CONTROL_FLIP) {
-                        //float FLIP = Float.valueOf(msg.obj.toString());
+                        mImageShow.mFlip = Float.valueOf(msg.obj.toString());
                     } else if(msg.arg1 == TypeDefs.IMAGE_CONTROL_SCALING) {
-                        //float SCALING = Float.valueOf(msg.obj.toString());
+                        mImageShow.mScaling = Float.valueOf(msg.obj.toString());
                     }
                 }
                 break;
@@ -115,6 +125,7 @@ public class ImageShow extends Activity {
         mDm = new DisplayMetrics();
         getWindow().getWindowManager().getDefaultDisplay().getMetrics(mDm);
         Log.v(TAG, "dm width:" + mDm.widthPixels + ", height:" + mDm.heightPixels);
+        showPhoto(this.getIntent());
     }
 
     public class DownloadPhotoBackground extends AsyncTask<String, Void, Bitmap>{
@@ -124,29 +135,32 @@ public class ImageShow extends Activity {
         }
         @Override
         protected Bitmap doInBackground(String... params) {
+            Log.v(TAG, "doInBackground ......");
+            long startTime, stopTime;
+            
             Bitmap bitmap = null;
             URL myFileUrl = null;
-            HttpURLConnection conn = null;
             InputStream is = null;
             try {
+                startTime = System.currentTimeMillis();
                 myFileUrl = new URL(params[0]);
                 BitmapFactory.Options options = new BitmapFactory.Options();
+                is = myFileUrl.openConnection().getInputStream();
+                byte[] data = getBytes(is);
+                stopTime = System.currentTimeMillis();
+                Log.v(TAG, "get image data cost time: " + (stopTime - startTime) + "ms");
+
                 // Step1: Get resolution of the bitmap
-                conn = (HttpURLConnection) myFileUrl.openConnection();
-                conn.setDoInput(true);
-                conn.connect();
-                is = conn.getInputStream();
+                startTime = System.currentTimeMillis();
                 options.inJustDecodeBounds = true;
-                BitmapFactory.decodeStream(is, null, options);
+                bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
                 Log.v(TAG, "bitmap height:" + options.outHeight +
                         ", width=" + options.outWidth);
-                conn.disconnect();
+                stopTime = System.currentTimeMillis();
+                Log.v(TAG, "get image resolution: " + (stopTime - startTime) + "ms");
 
                 // Step2: Get the actual bitmap
-                conn = (HttpURLConnection) myFileUrl.openConnection();
-                conn.setDoInput(true);
-                conn.connect();
-                is = conn.getInputStream();
+                startTime = System.currentTimeMillis();
                 options.inJustDecodeBounds = false;
                 float scaleWidth = (float)options.outWidth / (float)mDm.widthPixels;
                 float scaleHeight = (float)options.outHeight / (float)mDm.heightPixels;
@@ -157,16 +171,13 @@ public class ImageShow extends Activity {
                     Log.v(TAG, "maxScaleRate: " + maxScaleRate + 
                             ", inSampleSize:" + options.inSampleSize);
                 }
-                bitmap = BitmapFactory.decodeStream(is, null, options);
-                Log.v(TAG, "bitmap " + bitmap);
+                bitmap = BitmapFactory.decodeByteArray(data, 0, data.length, options);
+                stopTime = System.currentTimeMillis();
+                Log.v(TAG, "build bitmap cost: " + (stopTime - startTime) + "ms");
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-                if(conn != null) {
-                    conn.disconnect();
-                }
             }
             return bitmap;
         }
@@ -175,9 +186,6 @@ public class ImageShow extends Activity {
         protected void onPostExecute(Bitmap result) {
             super.onPostExecute(result);
             if (result != null) {
-                if(mBitmap != null) {
-                    mBitmap.recycle();
-                }
                 mBitmap = result;
                 ImageView.ScaleType scaleType = ImageView.ScaleType.FIT_CENTER;
                 if(mBitmap != null && (mBitmap.getHeight() <= mDm.heightPixels) &&
@@ -194,10 +202,12 @@ public class ImageShow extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        if(mBitmap != null) {
-            mBitmap.recycle();
-            mBitmap = null;
-        }
+		mFlip = 0;
+		mScaling = 1;
+        showPhoto(intent);
+    }
+    
+    private void showPhoto(Intent intent) {
         mMediaType = intent.getExtras().getInt(TypeDefs.KEY_MEDIA_TYPE);
         if(mMediaType == TypeDefs.MEDIA_TYPE_AIRPLAY_IMAGE) {
             byte[] imgbytes = intent.getExtras().getByteArray(TypeDefs.KEY_AIRPLAY_IMAGE_DATA);
@@ -205,12 +215,33 @@ public class ImageShow extends Activity {
             mImageView.setImageBitmap(mBitmap);
         } else if(mMediaType == TypeDefs.MEDIA_TYPE_DLNA_IMAGE) {
             Log.v(TAG, "onNewIntent --- decode bitmap");
+            //mPhotoInfo = intent.getExtras().getParcelable(TypeDefs.KEY_CURR_MEDIA_INFO);
             mMediaURI = intent.getExtras().getString(TypeDefs.KEY_MEDIA_URI);
             mPhotoDownloadTask = new DownloadPhotoBackground();
             mPhotoDownloadTask.execute(mMediaURI);
         }
     }
 
+	private void ShowChangedImage(float flip, float scaling) {
+	    Log.v(TAG, "flip:" + flip + "m scaling:" + scaling);
+		if (mBitmap != null) {
+			Matrix matrix = new Matrix();
+			matrix.setScale(scaling, scaling);
+				mChangeBitmap = Bitmap.createBitmap(mBitmap, 0, 0,
+						mBitmap.getWidth(), mBitmap.getHeight(), matrix, true);
+			matrix = new Matrix();
+			matrix.setRotate(flip);
+				mChangeBitmap = Bitmap.createBitmap(mChangeBitmap, 0, 0,
+						mChangeBitmap.getWidth(), mChangeBitmap.getHeight(),
+						matrix, true);
+			mImageView.setImageBitmap(mChangeBitmap);
+			/*if (mChangeBitmap != null) {
+				mChangeBitmap.recycle();
+				mChangeBitmap = null;
+			}*/
+		}
+	}
+    
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -221,4 +252,16 @@ public class ImageShow extends Activity {
             mBitmap = null;
         }
     }
+
+    private byte[] getBytes(InputStream is) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] b = new byte[1024];
+        int len = 0;
+        while ((len = is.read(b, 0, 1024)) != -1) {
+            baos.write(b, 0, len);
+            baos.flush();
+        }
+        byte[] bytes = baos.toByteArray();
+        return bytes;
+    }  
 }

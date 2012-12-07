@@ -16,6 +16,10 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
 import archermind.dlna.household.DLNAPlayer;
+import archermind.dlna.media.MediaInfoUtil;
+import archermind.dlna.media.MediaItem;
+import archermind.dlna.media.VideoItem;
+import archermind.dlna.media.MediaItem.MediaType;
 
 import com.archermind.ashare.TypeDefs;
 
@@ -41,21 +45,21 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 			"      <serviceList>\n" +
 			"         <service>\n" +
 			"            <serviceType>urn:schemas-upnp-org:service:RenderingControl:1</serviceType>\n" +
-			"            <serviceId>RenderingControl</serviceId>\n" +
+			"            <serviceId>urn:upnp-org:serviceId:RenderingControl</serviceId>\n" +
 			"            <SCPDURL>/service/RenderingControl.xml</SCPDURL>\n" +
 			"            <controlURL>/service/RenderingControl_control</controlURL>\n" +
 			"            <eventSubURL>/service/RenderingControl_event</eventSubURL>\n" +
 			"         </service>\n" +
 			"         <service>\n" +
 			"            <serviceType>urn:schemas-upnp-org:service:ConnectionManager:1</serviceType>\n" +
-			"            <serviceId>ConnectionManager</serviceId>\n" +
+			"            <serviceId>urn:upnp-org:serviceId:ConnectionManager</serviceId>\n" +
 			"            <SCPDURL>/service/ConnectionManager.xml</SCPDURL>\n" +
 			"            <controlURL>/service/ConnectionManager_control</controlURL>\n" +
 			"            <eventSubURL>/service/ConnectionManager_event</eventSubURL>\n" +
 			"         </service>\n" +
 			"         <service>\n" +
 			"            <serviceType>urn:schemas-upnp-org:service:AVTransport:1</serviceType>\n" +
-			"            <serviceId>AVTransport</serviceId>\n" +
+			"            <serviceId>urn:upnp-org:serviceId:AVTransport</serviceId>\n" +
 			"            <SCPDURL>/service/AVTransport.xml</SCPDURL>\n" +
 			"            <controlURL>/service/AVTransport_control</controlURL>\n" +
 			"            <eventSubURL>/service/AVTransport_event</eventSubURL>\n" +
@@ -77,13 +81,9 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 			boolean ret = false;
 			switch(msg.what) {
 			case MSG_START_RENDERER:
-				String friendlyName = (String)msg.obj;
-				Log.d(TAG, "start renderer------------>with name:" + friendlyName);
-				UUID uuid = UUID.randomUUID();
-				Log.d(TAG, "start renderer------------>with random uuid:" + uuid.toString());
-				mRenderer.setUDN("uuid:" + uuid.toString());
-				if(friendlyName != null)
-					mRenderer.setFriendlyName(generateDMRFriendlyName(friendlyName, uuid.toString()));
+				String uuid = (String)msg.obj;
+				mRenderer.setUDN("uuid:" + uuid);
+				mRenderer.setFriendlyName(generateDMRFriendlyName("TV Dongle", uuid));
 				mRenderer.start();
 				
 				Message renderMsg = new Message();
@@ -127,9 +127,9 @@ public class RendererProcess extends HandlerThread implements ActionListener {
     		mUIHandler.sendEmptyMessage(TypeDefs.MSG_DMR_ON_PROC_PREPARED);
     }
     
-    public void startRenderer(String friendlyName) {
+    public void startRenderer(String uuid) {
     	if(null != mHandler) {
-    		mHandler.sendMessage(Message.obtain(null, MSG_START_RENDERER, friendlyName));
+    		mHandler.sendMessage(Message.obtain(null, MSG_START_RENDERER, uuid));
     	}
     }
     
@@ -156,17 +156,17 @@ public class RendererProcess extends HandlerThread implements ActionListener {
     	}   
     }
     
-    public int getMediatype(String mediatype) { 
+    public int getMediatype(MediaItem mediatype) { 
     	mMediaType = TypeDefs.MEDIA_TYPE_DLNA_VIDEO;
-    	if(mediatype.equals("VIDEO"))
+    	if(mediatype.getMeidaType()== MediaType.VIDEO)
     	{
     		mMediaType = TypeDefs.MEDIA_TYPE_DLNA_VIDEO;
     	}
-    	else if(mediatype.equals("MUSIC"))
+    	else if(mediatype.getMeidaType()== MediaType.MUSIC)
     	{
     		mMediaType = TypeDefs.MEDIA_TYPE_DLNA_AUDIO;
     	}
-    	else if(mediatype.equals("IMAGE"))
+    	else if(mediatype.getMeidaType()== MediaType.PHOTO)
     	{
     		mMediaType = TypeDefs.MEDIA_TYPE_DLNA_IMAGE;
     	}
@@ -180,23 +180,40 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 		if(actionName.equals(AVTransport.SETAVTRANSPORTURI)) {
 			Argument arg = action.getArgument(AVTransport.CURRENTURI);
 			Argument mediatype = action.getArgument(AVTransport.CURRENTURIMETADATA);
-			Message msg = new Message();
+			
+			MediaItem mediainfo = MediaInfoUtil.parseMediaInfo(mediatype.getValue());
+			MediaItem mtype=mediainfo;
+			if (mediainfo == null) {
+				if (arg.getValue() == null) {
+					return false;
+				}
+				mediainfo = new VideoItem(null, null, null,null, arg.getValue(), null);
+			}
+ 			Message msg = new Message();
 			msg.what = TypeDefs.MSG_DMR_AV_TRANS_SET_URI;
-			msg.obj = arg.getValue();
-			msg.arg1 = getMediatype(mediatype.getValue());
+			msg.obj = mediainfo;
+			msg.arg1 = getMediatype(mediainfo);
 			Log.d(TAG, "CURRENTURI:" + arg.getValue());
 			if(null != mUIHandler)
 			{
 	    		mUIHandler.sendMessage(msg);
+	    		if(mtype == null){
+	    			Log.d(TAG, mediatype.getValue()+"");
+	    			 mUIHandler.sendEmptyMessage(TypeDefs.MSG_DMR_AV_TRANS_PLAY);
+	    		}
 	    		return true;
 			}
 		} else if(actionName.equals(AVTransport.SETNEXTAVTRANSPORTURI)) {
 			Argument arg = action.getArgument(AVTransport.NEXTURI);
 			Argument mediatype = action.getArgument(AVTransport.NEXTURIMETADATA);
+			MediaItem mediainfo = MediaInfoUtil.parseMediaInfo(mediatype.getValue());
+			if (mediainfo == null) {
+				return false;
+			}
 			Message msg = new Message();
 			msg.what = TypeDefs.MSG_DMR_AV_TRANS_SET_NEXT_URI;
-			msg.obj = arg.getValue();
-			msg.arg1 = getMediatype(mediatype.getValue());
+			msg.obj = mediainfo;
+			msg.arg1 = getMediatype(mediainfo);
 			Log.d(TAG, "Next URI:" + arg.getValue());
 			if(null != mUIHandler)
 			{
@@ -336,13 +353,13 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 			if(null != mUIHandler)
 			{
 	    		mUIHandler.sendEmptyMessage(TypeDefs.MSG_DMR_RENDERER_UPDATEDATA);
-	    		action.setArgumentValue(RenderingControl.GETMUTE, String.valueOf(DLNAPlayer.mVolume));
+	    		action.setArgumentValue(RenderingControl.CURRENTMUTE, String.valueOf(DLNAPlayer.mVolume));
 	    		return true;
 			}
-		}else if (actionName.equals("GetCurrentConnectionIDs")){
+		}else if (actionName.equals(ConnectionManager.GETCURRENTCONNECTIONIDS)){
 			return mRenderer.getConnectionManager().getCurrentConnectionIDs(action);
 			
-	    }else if(actionName.equals("GetMediaInfo")){
+	    }else if(actionName.equals(AVTransport.GETMEDIAINFO)){
 	    	action.setArgumentValue(AVTransport.NRTRACKS,0);
 	    	action.setArgumentValue(AVTransport.MEDIADURATION,"");
 	    	action.setArgumentValue(AVTransport.CURRENTURI,"");
@@ -352,20 +369,26 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 	    	action.setArgumentValue(AVTransport.RECORDMEDIUM,"");
             return true;
 	    	
-	    }else if(actionName.equals("getCurrentConnectionInfo")){
+	    }else if(actionName.equals(ConnectionManager.GETCURRENTCONNECTIONINFO)){
 	    	return mRenderer.getConnectionManager().getCurrentConnectionInfo(action);
-	    }else if(actionName.equals("GetTransportInfo")){
+	    }else if(actionName.equals(AVTransport.GETTRANSPORTINFO)){
+	    	if(null != mUIHandler)
+			{
+	    		mUIHandler.sendEmptyMessage(TypeDefs.MSG_DMR_RENDERER_UPDATEDATA);
+			}
 			action.setArgumentValue(AVTransport.CURRENTSPEED,"1");
 			action.setArgumentValue(AVTransport.CURRENTTRANSPORTSTATUS,"OK");
-			action.setArgumentValue(AVTransport.CURRENTTRANSPORTSTATE,"playing");
+			action.setArgumentValue(AVTransport.CURRENTTRANSPORTSTATE,DLNAPlayer.mIsPlayCompletion?"STOPED":"PLAYING");
 	    	return true;
 	    }
-	    else if(actionName.equals("GetProtocolInfo")){
+	    else if(actionName.equals(ConnectionManager.GETPROTOCOLINFO)){
             String sourceValue = "http-get:*:video/vnd.dlna.mpeg-tts:*,http-get:*:video/mpeg2:*,http-get:*:video/mp2t:*,http-get:*:video/mpeg:*,http-get:*:video/mp4v-es:*,http-get:*:video/mp4:*,http-get:*:video/quicktime:*,http-get:*:video/x-ms-wmv:*,http-get:*:video/x-ms-asf:*,http-get:*:video/x-msvideo:*,http-get:*:video/x-ms-video:*,http-get:*:video/divx:*,http-get:*:video/x-divx:*,http-get:*:video/x-ms-avi:*,http-get:*:video/avi:*,http-get:*:video/x-mkv:*,http-get:*:video/mkv:*,http-get:*:video/x-matroska:*,http-get:*:video/ogg:*,http-get:*:video/3gpp:*,http-get:*:video/webm:*,http-get:*:video/x-flv:*,http-get:*:video/flv:*,http-get:*:video/wtv:*";
-            action.getArgument("Source").setValue(sourceValue);
+            action.getArgument(ConnectionManager.SOURCE).setValue(sourceValue);
             // Sink
-            action.getArgument("Sink").setValue(sourceValue);
+            action.getArgument(ConnectionManager.SINK).setValue(sourceValue);
             return true;
+        }else if(actionName.equals(AVTransport.GETCURRENTTRANSPORTACTIONS)){
+        	action.setArgumentValue(AVTransport.ACTIONS, AVTransport.PLAYING);
         }
 		return false;
 	}

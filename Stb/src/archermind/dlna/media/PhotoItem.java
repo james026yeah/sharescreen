@@ -69,6 +69,12 @@ public class PhotoItem extends MediaItem implements Parcelable {
 	public PhotoItem() {
 		
 	}
+	
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return " title==" + this.title + " uri=" + this.itemUri;
+	}
 
 	public PhotoItem(Parcel source) {
 		thumbFilePath = source.readString();

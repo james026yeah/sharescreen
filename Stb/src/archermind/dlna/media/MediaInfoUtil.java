@@ -3,6 +3,7 @@ package archermind.dlna.media;
 import org.cybergarage.upnp.UPnP;
 import org.cybergarage.upnp.std.av.controller.server.BrowseResult;
 import org.cybergarage.upnp.std.av.server.object.item.ItemNode;
+import org.cybergarage.xml.Attribute;
 import org.cybergarage.xml.Node;
 import org.cybergarage.xml.Parser;
 import org.cybergarage.xml.ParserException;
@@ -24,9 +25,11 @@ public class MediaInfoUtil {
 			if (ItemNode.isItemNode(xmlNode)) {
 				itemNode.set(xmlNode);
 				if (itemNode.isMovieClass()) {
-
-					String duration = itemNode.getResourceNode(0)
-							.getAttribute("duration").getValue();
+					Attribute durationAttr = itemNode.getResourceNode(0).getAttribute("duration");
+					String duration = null;
+					if (durationAttr != null) {
+						duration = durationAttr.getValue();
+					}
 					String albumArtURI = itemNode.getAlbumArtURI();
 					String filePath = itemNode.getPropertyValue(UPnp.FILEPATH);
 					String title = itemNode.getTitle();
@@ -41,8 +44,11 @@ public class MediaInfoUtil {
 									.getURL(), itemNode.toString());
 				} else if (itemNode.isAudioClass()) {
 
-					String duration = itemNode.getResourceNode(0)
-							.getAttribute("duration").getValue();
+					Attribute durationAttr = itemNode.getResourceNode(0).getAttribute("duration");
+					String duration = null;
+					if (durationAttr != null) {
+						duration = durationAttr.getValue();
+					}
 					String artist = itemNode.getPropertyValue(UPnp.ARITIST);
 					String malbum = itemNode.getPropertyValue(UPnp.ALBUM);
 					String albumArtURI = itemNode.getAlbumArtURI();

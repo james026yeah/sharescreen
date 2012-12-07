@@ -47,6 +47,12 @@ public class MusicItem extends MediaItem implements Parcelable {
 		itemId=source.readInt();
 	}
 	
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return " title==" + this.title + " uri=" + this.itemUri;
+	}
+	
 	public String getDuration() {
 		return duration;
 	}

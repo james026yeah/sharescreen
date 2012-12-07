@@ -12,6 +12,8 @@ public class TypeDefs {
 
 	public final static String KEY_MEDIA_TYPE = "media-type";
 	public final static String KEY_MEDIA_URI = "media-uri";
+	public final static String KEY_CURR_MEDIA_INFO = "curr-media-info";
+	public final static String KEY_NEXT_MEDIA_INFO = "next-media-info";
 	public final static String KEY_AIRPLAY_IMAGE_DATA = "airplay-image-data";
 	//image 缩放
 	public final static String KEY_IMAGE_CONTROL_SCALING="SCALING";
@@ -49,4 +51,5 @@ public class TypeDefs {
 	public final static int MSG_DMR_RENDERER_START_SUCCESS = 500;
 	public final static int MSG_DMR_RENDERER_GET_DMR_IDENTIFIER = 501;
 	public final static int MSG_DMR_RENDERER_ON_GET_DMR_IDENTIFIER = 502;
+	
 }

@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="hello">AShare is running</string>
     <string name="app_name">StbDLNA</string>
-
+    
+    <!-- call duty toast message -->
+    <string name="on_find_target_ap_prefix">Find access point:</string>
+    <string name="on_find_target_ap_subfix">Trying to connect.</string>
+    <string name="on_ap_connected_prefix">WiFi Connected to:</string>
+    <string name="on_ap_disconnected">Wifi is disconnected!</string>
 </resources>

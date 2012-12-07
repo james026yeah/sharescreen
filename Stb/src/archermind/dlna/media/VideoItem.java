@@ -16,6 +16,12 @@ public class VideoItem extends MediaItem implements Parcelable {
 		
 	}
 
+	@Override
+	public String toString() {
+		// TODO Auto-generated method stub
+		return " title==" + this.title + " uri=" + this.itemUri;
+	}
+
 	public String duration;
 	public String thumbFilePath;
 	public String filePath;

@@ -4,16 +4,16 @@
 #include "protocol.h"
 #include "protocol_client.h"
 #include "communicator.h"
-#include "native_surface.h"
-#include "surface.h"
+//#include "native_surface.h"
+//#include "surface.h"
 
 static struct ptl_client g_client;
 extern int g_surface_ready;
-extern int g_clear_screen_client;
+//extern int g_clear_screen_client;
 
 int ptl_disconnect_internal(void);
 int ptl_connect_internal(char *srv_addr, char *name, char *key);
-extern void init_surface(JNIEnv *env, jobject jsurface);
+//extern void init_surface(JNIEnv *env, jobject jsurface);
 int ptl_init(void);
 int ptl_start_media(void);
 extern void _callback_notify_status_client(int connected);

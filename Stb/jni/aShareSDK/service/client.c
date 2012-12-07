@@ -2,8 +2,8 @@
 #include "service.h"
 #include "buffer_client.h"
 #include "protocol_client.h"
-#include "native_surface.h"
-#include "surface.h"
+//#include "native_surface.h"
+//#include "surface.h"
 
 struct client_protocol g_protocol;
 

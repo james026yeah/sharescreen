@@ -6,6 +6,7 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
 import archermind.dlna.household.DLNAPlayer;
+import archermind.airplay.BonjourAgentRegister;
 
 import com.archermind.ashare.TypeDefs;
 

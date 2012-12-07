@@ -25,8 +25,8 @@
 #include "buffer_client.h"
 #include "utils.h"
 #include "comm.h"
-
-extern int g_clear_screen_client;
+#include <sys/system_properties.h>
+int g_clear_screen_client;
 #if defined(LOG_DEBUG) && LOG_DEBUG == 1
 
 #define LOG_TIME_DEFINE(n) \
@@ -122,9 +122,11 @@ static void *surface_thread(void *arg)
 		if((size > 0) && running)
 		{
 			LOG_TIME_START(decode);
+#ifndef PHONE_NOT_SKIA
 			ASurface_lock(surface, &dst);
 			ASurface_scaleToFullScreen_skia(surface, &src, &dst, size - sizeof(struct jpeg_frame));
 			ASurface_unlockAndPost(surface);
+#endif
 			if(first_frame)
 			{
 				char msg[128];
@@ -156,7 +158,9 @@ int surface_start(JNIEnv *env, jobject jsurface)
 	LOGD("%s start\n", __func__);
 	first_frame = 1;
 
+#ifndef PHONE_NOT_SKIA
 	ret = ASurface_init(env, jsurface, 15, &aSurface);
+#endif
 	ret = pthread_create(&surface_tid, NULL, surface_thread, aSurface);
 	if (ret != 0)
 		LOGE("create native surface thread error:%s\n", strerror(errno));
@@ -174,7 +178,9 @@ int surface_stop()
 	LOGD("%s ----------\n", __func__);
 	if(aSurface)
 	{
+#ifndef PHONE_NOT_SKIA
 		ASurface_deinit(&aSurface);
+#endif
 		aSurface = NULL;
 	}
 	return 0;

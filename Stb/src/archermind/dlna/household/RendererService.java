@@ -4,6 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.cybergarage.upnp.std.av.renderer.MediaRenderer;
 
@@ -26,7 +27,14 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+import android.widget.Toast;
 import archermind.airplay.AirplayProcess;
+import archermind.airtunes.AirtunesProcess;
+import archermind.ashare.R;
+import archermind.dlna.media.MediaItem;
+import archermind.dlna.media.MusicItem;
+import archermind.dlna.media.PhotoItem;
+import archermind.dlna.media.VideoItem;
 import archermind.dlna.renderer.RendererProcess;
 
 import com.archermind.ashare.TypeDefs;
@@ -42,11 +50,14 @@ public class RendererService extends Service {
 	
 	private RendererProcess mRendererProc;
 	private AirplayProcess mAirplayProc;
+	private AirtunesProcess mAirtunesProc;
 	private AshareProcess mAShareProcess;
 	private MediaRenderer mLocalDMR;
 	private String mDMRIdentifier;
 	private String mMediaURI;
 	private int mCurrentMediaType;
+	private MediaItem mCurrMediaInfo;
+	private MediaItem mNextMediaInfo;
 	
 	private MulticastLock mMulticastLock;
 	private ArrayList<Messenger> mClients = new ArrayList<Messenger>();
@@ -56,14 +67,21 @@ public class RendererService extends Service {
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
 			case TypeDefs.MSG_DMR_ON_PROC_PREPARED:
-				String nameFromDb = "TV Dongle";
-				Log.v(TAG, "MSG_DMR_ON_PROC_PREPARED friendname:" + nameFromDb);
-				mRendererProc.startRenderer(nameFromDb);
+			    String macAddr = mWifiMgr.getConnectionInfo().getMacAddress();
+                Log.v(TAG, "mac address:" + macAddr);
+                UUID uuid = UUID.nameUUIDFromBytes(macAddr.getBytes());
+                Log.v(TAG, "uuid from mac address:" + uuid.toString());
+				mRendererProc.startRenderer(uuid.toString());
 				break;
 			case TypeDefs.MSG_DMR_RENDERER_START_SUCCESS:
-				Log.d(TAG,"MSG_DMR_RENDERER_START_SUCCESS.....");
-				mLocalDMR = (MediaRenderer)msg.obj;
-				mAirplayProc.startAirplay(getDMRIdentifier());
+				Log.d(TAG, "MSG_DMR_RENDERER_START_SUCCESS.....");
+				mLocalDMR = (MediaRenderer) msg.obj;
+				if (mAirplayProc != null) {
+					mAirplayProc.startAirplay(getDMRIdentifier());
+				}
+				if (mAirtunesProc != null) {
+					mAirtunesProc.startAirplay(getDMRIdentifier());
+				}
 				// inform client that DMR identifier has generated
 				Message reply = new Message();
 				reply.what = TypeDefs.MSG_DMR_RENDERER_ON_GET_DMR_IDENTIFIER;
@@ -79,51 +97,79 @@ public class RendererService extends Service {
 			case AirplayProcess.MSG_AIRPLAY_PREPARED:
 				//mAirplayProc.startAirplay();
 				break;
-			case TypeDefs.MSG_DMR_AV_TRANS_SET_URI:
+			case TypeDefs.MSG_DMR_AV_TRANS_SET_URI:			
+				mCurrentMediaType = msg.arg1;
+				mCurrMediaInfo = (MediaItem)msg.obj;
+				mMediaURI = mCurrMediaInfo.getItemUri();
+				break;
 			case AirplayProcess.MSG_AIRPLAY_SET_URI:
 				mCurrentMediaType = msg.arg1;
 				mMediaURI = (String)msg.obj;
 				break;
 			case TypeDefs.MSG_DMR_AV_TRANS_SET_NEXT_URI:
 				mCurrentMediaType = msg.arg1;
-				if(mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO)
-				{
-					DLNAPlayer.mNextAudioUrl = (String)msg.obj;
+				mNextMediaInfo = (MediaItem) msg.obj;
+				if (mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO) {
+					DLNAPlayer.mNextAudioUrl = mNextMediaInfo.getItemUri();
 					break;
-				}
-				else
-				{
-					mMediaURI = (String)msg.obj;
+				} else {
+					mMediaURI = mNextMediaInfo.getItemUri();
+					mCurrMediaInfo = mNextMediaInfo;
 					break;
 				}
 			case TypeDefs.MSG_DMR_AV_TRANS_PLAY:
 			case AirplayProcess.MSG_AIRPLAY_PLAY:
-				if(null == mMediaURI) {
-					Log.e(TAG, "media URI should not be null when start play!!!!!");
+				if (null == mMediaURI) {
+					Log.e(TAG,
+							"media URI should not be null when start play!!!!!");
 					break;
 				}
-				if(mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_IMAGE) {
+				if (mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_IMAGE) {
 					// Play DLNA Photo
-					Intent tostart = new Intent(RendererService.this, ImageShow.class);
+					Intent tostart = new Intent(RendererService.this,
+							ImageShow.class);
 					tostart.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 					tostart.putExtra(TypeDefs.KEY_MEDIA_TYPE, mCurrentMediaType);
 					tostart.putExtra(TypeDefs.KEY_MEDIA_URI, mMediaURI);
+					tostart.putExtra(TypeDefs.KEY_CURR_MEDIA_INFO,
+							(PhotoItem) mCurrMediaInfo);
 					startActivity(tostart);
-				} else if(mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO || mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_VIDEO || mCurrentMediaType == TypeDefs.MEDIA_TYPE_AIRPLAY_VIDEO){
+				} else if (mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO
+						|| mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_VIDEO
+						|| mCurrentMediaType == TypeDefs.MEDIA_TYPE_AIRPLAY_VIDEO) {
 					// Play DLNA Video/Music AIRPLAY Video/Music
-					Intent tostart = new Intent(RendererService.this, DLNAPlayer.class);
+					Intent tostart = new Intent(RendererService.this,
+							DLNAPlayer.class);
 					tostart.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 					tostart.putExtra(TypeDefs.KEY_MEDIA_TYPE, mCurrentMediaType);
 					tostart.putExtra(TypeDefs.KEY_MEDIA_URI, mMediaURI);
+					if (mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO) {
+						tostart.putExtra(TypeDefs.KEY_CURR_MEDIA_INFO,
+								(MusicItem) mCurrMediaInfo);
+						tostart.putExtra(TypeDefs.KEY_NEXT_MEDIA_INFO,
+								(MusicItem) mNextMediaInfo);
+					} else if (mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_VIDEO) {
+						tostart.putExtra(TypeDefs.KEY_CURR_MEDIA_INFO,
+								(VideoItem) mCurrMediaInfo);
+					}
 					startActivity(tostart);
 				}
 				break;
 			case AirplayProcess.MSG_AIRPLAY_SHOW_PHOTO:
-				Intent tostart = new Intent(RendererService.this, ImageShow.class);
+				Intent tostart = new Intent(RendererService.this,
+						ImageShow.class);
 				tostart.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-				tostart.putExtra(TypeDefs.KEY_MEDIA_TYPE, TypeDefs.MEDIA_TYPE_AIRPLAY_IMAGE);
-				tostart.putExtra(TypeDefs.KEY_AIRPLAY_IMAGE_DATA, (byte[])msg.obj);
+				tostart.putExtra(TypeDefs.KEY_MEDIA_TYPE,
+						TypeDefs.MEDIA_TYPE_AIRPLAY_IMAGE);
+				tostart.putExtra(TypeDefs.KEY_AIRPLAY_IMAGE_DATA,
+						(byte[]) msg.obj);
 				startActivity(tostart);
+				break;
+			case AirtunesProcess.MSG_AIRTUNES_PLAY:
+				Intent airtunesstart = new Intent(RendererService.this,
+						AirTunesPlayer.class);
+				airtunesstart.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+				startActivity(airtunesstart);
 				break;
 			case TypeDefs.MSG_DMR_AV_TRANS_PAUSE_TO_PLAY:
 			case TypeDefs.MSG_DMR_AV_TRANS_PLAY_TO_PAUSE:
@@ -148,6 +194,15 @@ public class RendererService extends Service {
 			break;
 			case MSG_REGISTER_CLIENT:
 				mClients.add(msg.replyTo);
+				Message mm = new Message();
+				mm.what = TypeDefs.MSG_DMR_RENDERER_ON_GET_DMR_IDENTIFIER;
+				mm.obj = getDMRIdentifier();
+				try {
+					msg.replyTo.send(mm);
+				} catch (RemoteException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 				break;
 			case MSG_UNREGISTER_CLIENT:
 				mClients.remove(msg.replyTo);
@@ -254,11 +309,15 @@ public class RendererService extends Service {
         			Log.v(TAG, "mWifiReceiver() wifi connected, so start procs");
         			startProcs();
         			mHandler.removeCallbacks(mApScanner);
+                    String prefix = RendererService.this.getString(R.string.on_ap_connected_prefix);
+                    String toastTxt = prefix + "(" + getCurrentBSSID() + ")";
+                    Toast.makeText(RendererService.this, toastTxt, Toast.LENGTH_SHORT).show();
         		} else if(DetailedState.DISCONNECTED == detailState && !isWifiApEnabled()){
         			Log.v(TAG, "mWifiReceiver() wifi disconnected, so stop procs!");
         			stopProcs();
         			mHandler.removeCallbacks(mApScanner);
         			mHandler.post(mApScanner);
+        	        Toast.makeText(RendererService.this, R.string.on_ap_disconnected, Toast.LENGTH_SHORT).show();
         		}
 			}
 		}		
@@ -354,12 +413,16 @@ public class RendererService extends Service {
 	}
 	
 	private void connectToAp(ScanResult scanResult, String passwd) {
-		if(isWifiConnected()) {
+		if(isWifiConnected() || isWifiConnecting()) {
 			Log.v(TAG, "-----> Already Connected do nothing!!1"); 
 			return;
 		}
+		String prefix = this.getString(R.string.on_find_target_ap_prefix);
+		String subfix = this.getString(R.string.on_find_target_ap_subfix);
+		String toastTxt = prefix + "(" + scanResult.SSID + ")\n" + subfix;
+		Toast.makeText(this, toastTxt, Toast.LENGTH_LONG).show();
 		WifiConfiguration wifiConfig = getSavedWifiConfig(scanResult.BSSID);
-		if(wifiConfig != null) {    		
+		if(wifiConfig != null) {
     		boolean result = mWifiMgr.enableNetwork(wifiConfig.networkId, true);
     		Log.v(TAG, "Found remembered wifi config id:" + wifiConfig.networkId + 
     				" enable result:" + result);
@@ -368,7 +431,7 @@ public class RendererService extends Service {
     		wifiConfig = ap.getConfig();
     		int res = mWifiMgr.addNetwork(wifiConfig);
     		Log.v(TAG, "add Network returned " + res );
-    		boolean result = mWifiMgr.enableNetwork(res, true);        
+    		boolean result = mWifiMgr.enableNetwork(res, true);
     		Log.v(TAG, "enableNetwork returned " +result );
     	}
 	}
@@ -394,6 +457,11 @@ public class RendererService extends Service {
 			mAirplayProc = new AirplayProcess(mHandler, getApplicationContext());
 			mAirplayProc.start();
 		}
+		/*if(mAirtunesProc == null)
+		{
+			mAirtunesProc = new AirtunesProcess(mHandler, getApplicationContext());
+			mAirtunesProc.start();
+		}*/
 		
 		if(mAShareProcess == null) {
 			mAShareProcess = new AshareProcess(mHandler, getApplicationContext());
@@ -411,6 +479,10 @@ public class RendererService extends Service {
 		if(mAirplayProc != null) {
 			mAirplayProc.stopProcess();
 			mAirplayProc = null;
+		}
+		if(mAirtunesProc != null) {
+			mAirtunesProc.stopProcess();
+			mAirtunesProc = null;
 		}
 		// Stop command server
 		WiRemoteCmdServer.getInstance().stop();
@@ -437,12 +509,31 @@ public class RendererService extends Service {
     	}
     	return isConnected;
     }
+
+    protected boolean isWifiConnecting() {
+        boolean isConnecting = false;
+        WifiInfo wifiInfo = mWifiMgr.getConnectionInfo();
+        if(wifiInfo != null) {
+            SupplicantState state = wifiInfo.getSupplicantState();
+            Log.v(TAG, "isWifiConnecting: state:" + state.toString());
+            if(state == SupplicantState.ASSOCIATED || state == SupplicantState.ASSOCIATING ||
+                    state == SupplicantState.FOUR_WAY_HANDSHAKE || state == SupplicantState.GROUP_HANDSHAKE) {
+                isConnecting = true;
+            }
+        }
+        return isConnecting;
+    }
     
     protected String getCurrentBSSID() {
     	WifiInfo wifiInfo = mWifiMgr.getConnectionInfo();
     	return (wifiInfo != null) ? wifiInfo.getBSSID() : null;
     }
-    
+
+    protected String getCurrentSSID() {
+        WifiInfo wifiInfo = mWifiMgr.getConnectionInfo();
+        return (wifiInfo != null) ? wifiInfo.getSSID() : null;
+    }
+
 	protected boolean isWifiApEnabled() {
 		boolean isEnabled = false;
 		try {

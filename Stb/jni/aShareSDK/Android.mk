@@ -83,6 +83,6 @@ LOCAL_SHARED_LIBRARIES := libjpeg-turbo
 LOCAL_LDLIBS += -llog -ldl -landroid \
 	$(LOCAL_PATH)/display/skia/libs/libskia.so
 
-LOCAL_MODULE:= ashare_sdk
+LOCAL_MODULE:= libashare_sdk
 LOCAL_MODULE_TAGS := optional
 include $(BUILD_SHARED_LIBRARY)
