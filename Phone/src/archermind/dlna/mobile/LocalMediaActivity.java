@@ -1172,6 +1172,13 @@ public class LocalMediaActivity extends BaseActivity {
 		return super.onKeyDown(keyCode, event);
 	}
 
+	@Override
+	public void onDestroy() {
+	    // TODO Auto-generated method stub
+	    unbindService(mMusicSerConn);
+	    super.onDestroy();
+	}
+
 	public void doClick(View view) throws RemoteException {
 
 		switch (view.getId()) {
