@@ -39,6 +39,8 @@ public class FileItemNode extends ItemNode
 	
 	private File itemFile;
 	
+	private String mimeType = "*/*";
+	
 	public void setFile(File file)
 	{
 		itemFile = file;
@@ -100,15 +102,26 @@ public class FileItemNode extends ItemNode
 		return null;
 	}
 
-	public String getMimeType()
-	{
-		ContentDirectory cdir = getContentDirectory();
-		File itemFile = getFile();
-		Format itemFormat = cdir.getFormat(itemFile);
-		if (itemFormat == null) {
-			return "*/*";
-		}
-		return itemFormat.getMimeType();
+	/**************************************
+	 * modify obtain mimeType method
+	 */
+//	public String getMimeType()
+//	{
+//		ContentDirectory cdir = getContentDirectory();
+//		File itemFile = getFile();
+//		Format itemFormat = cdir.getFormat(itemFile);
+//		if (itemFormat == null) {
+//			return "*/*";
+//		}
+//		return itemFormat.getMimeType();
+//	}
+	
+	public void setMimeType(String mimeType) {
+		this.mimeType = mimeType;
+	}
+	
+	public String getMimeType() {
+		return mimeType;
 	}
 }
 

@@ -16,6 +16,7 @@
 
 package org.cybergarage.upnp.std.av.controller;
 
+import org.cybergarage.net.HostInterface;
 import org.cybergarage.upnp.Action;
 import org.cybergarage.upnp.Argument;
 import org.cybergarage.upnp.ControlPoint;
@@ -39,6 +40,7 @@ import org.cybergarage.xml.Node;
 import org.cybergarage.xml.Parser;
 import org.cybergarage.xml.ParserException;
 
+
 public class MediaController extends ControlPoint
 {
 	////////////////////////////////////////////////
@@ -47,6 +49,7 @@ public class MediaController extends ControlPoint
 	
 	public MediaController()
 	{
+	    HostInterface.setInterface(HostInterface.getLocalIpAddress());
 	}
 
 	////////////////////////////////////////////////

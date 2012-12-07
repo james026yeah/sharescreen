@@ -33,7 +33,6 @@ package org.cybergarage.upnp.std.av.server;
 
 import java.io.*;
 import java.util.*;
-
 import org.cybergarage.util.*;
 import org.cybergarage.http.*;
 import org.cybergarage.upnp.*;
@@ -108,8 +107,11 @@ public class ContentDirectory extends ThreadCore implements ActionListener, Quer
 	public final static String STOPPED = "STOPPED";
 	
 	public final static String CONTENT_EXPORT_URI = "/ExportContent";
+	public final static String CONTENT_EXPORT_ARMART_URI = "/ExportContentArmart";
 	public final static String CONTENT_IMPORT_URI = "/ImportContent";
 	public final static String CONTENT_ID = "id";
+	public final static String ARMART_PATH = "armart_parth";
+	public final static String ARMART_CONTENT_TYPE = "image/jpg";
 	
 	public final static String SCPD = 
 		"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + 
@@ -646,6 +648,11 @@ public class ContentDirectory extends ThreadCore implements ActionListener, Quer
 	{
 		return formatList.getFormat(file);
 	}
+	
+	public Format getFormat(String mimeType)
+	{
+		return formatList.getFormat(mimeType);
+	}
 
 	public Format getFormat(int n)
 	{
@@ -1156,49 +1163,68 @@ public class ContentDirectory extends ThreadCore implements ActionListener, Quer
 			httpReq.returnBadRequest();
 			return;
 		}
-
+		
 		ParameterList paramList = httpReq.getParameterList();
 		for (int n=0; n<paramList.size(); n++) {
 			Parameter param = paramList.getParameter(n);
 			Debug.message("[" + param.getName() + "] = " + param.getValue());
 		}
 		
-		////////////////////////////////////////
-		// Getting item ID
-		////////////////////////////////////////
-		
-		String id = paramList.getValue(CONTENT_ID);
-		
-		////////////////////////////////////////
-		// Has Item Node ?
-		////////////////////////////////////////
-		
-		ContentNode node = findContentNodeByID(id);
-		if (node == null) {
-			httpReq.returnBadRequest();
-			return;
-		}
-		if (!(node instanceof ItemNode)) {
-			httpReq.returnBadRequest();
-			return;
-		}
+		if (uri.startsWith(CONTENT_EXPORT_ARMART_URI)) {
+			String armartPath = paramList.getValue(ARMART_PATH);
+			File file = new File(armartPath);
+			long contentLen = file.length();
+			FileInputStream contentIn = null;
+			try {
+				contentIn = new FileInputStream(file);
+			} catch (FileNotFoundException e1) {
+				Debug.message("file not found path=" + file.getPath());
+				e1.printStackTrace();
+			}
 			
-		////////////////////////////////////////
-		// Return item content
-		////////////////////////////////////////
+			postResponse(httpReq, contentIn, ARMART_CONTENT_TYPE, contentLen);
+			return;
+		} else {
+			////////////////////////////////////////
+			// Getting item ID
+			////////////////////////////////////////
+			
+			String id = paramList.getValue(CONTENT_ID);
+			
+			////////////////////////////////////////
+			// Has Item Node ?
+			////////////////////////////////////////
+			
+			ContentNode node = findContentNodeByID(id);
+			if (node == null) {
+				httpReq.returnBadRequest();
+				return;
+			}
+			if (!(node instanceof ItemNode)) {
+				httpReq.returnBadRequest();
+				return;
+			}
 				
+			////////////////////////////////////////
+			// Return item content
+			////////////////////////////////////////
+					
+			ItemNode itemNode = (ItemNode)node;
 
-		ItemNode itemNode = (ItemNode)node;
-
-		long contentLen = itemNode.getContentLength();
-		String contentType = itemNode.getMimeType();
-		InputStream contentIn = itemNode.getContentInputStream();		
-		
+			long contentLen = itemNode.getContentLength();
+			String contentType = itemNode.getMimeType();
+			InputStream contentIn = itemNode.getContentInputStream();		
+			
+			postResponse(httpReq, contentIn, contentType, contentLen);
+		}
+	}
+	
+	private void postResponse(HTTPRequest httpReq, InputStream contentIn, String contentType, long contentLen) {
 		if (contentLen <= 0 || contentType.length() <= 0 || contentIn == null) {
 			httpReq.returnBadRequest();
 			return;
 		}
-
+		
 		MediaServer mserver = getMediaServer();
 		ConnectionManager conMan = mserver.getConnectionManager();
 		int conID = conMan.getNextConnectionID();
@@ -1208,15 +1234,13 @@ public class ContentDirectory extends ThreadCore implements ActionListener, Quer
 		conInfo.setStatus(ConnectionInfo.OK);
 		conMan.addConnectionInfo(conInfo);
 		
-		// Thanks for Robert Johansson <robert.johansson@kreatel.se>
 		HTTPResponse httpRes = new HTTPResponse();
 		httpRes.setContentType(contentType);
 		httpRes.setStatusCode(HTTPStatus.OK);
 		httpRes.setContentLength(contentLen);
 		httpRes.setContentInputStream(contentIn);
-
+		
 		httpReq.post(httpRes);
-
 		try {
 			contentIn.close();
 		}
@@ -1242,7 +1266,12 @@ public class ContentDirectory extends ThreadCore implements ActionListener, Quer
 	public String getContentExportURL(String id)
 	{
 		return "http://" + getInterfaceAddress() + ":" + getHTTPPort() + CONTENT_EXPORT_URI + "?" + CONTENT_ID + "=" + id;
-	}			
+	}
+	
+	public String getContentExportArmArtURL(String absolutePath)
+	{
+		return "http://" + getInterfaceAddress() + ":" + getHTTPPort() + CONTENT_EXPORT_ARMART_URI + "?" + ARMART_PATH + "=" + absolutePath;
+	}
 
 	public String getContentImportURL(String id)
 	{
