@@ -1,6 +1,7 @@
 package archermind.dlna.mobile;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.archermind.ashare.dlna.localmedia.Album;
 import com.archermind.ashare.dlna.localmedia.Artist;
@@ -10,19 +11,19 @@ public class MusicData{
 	private static ArrayList<MusicItem> sAllMusic;
 	private static ArrayList<Artist> sMusicArtist;
 	private static ArrayList<Album> sMusicAlbum;
-	private static ArrayList<MusicItem> sMusicPlayList;
+	private static List<MusicItem> sMusicPlayList;
 	private static ArrayList<MusicItem> sMusicShowList;
 	
-	public static void setMusicPlayList(ArrayList<MusicItem> musicPlayList) {
+	public static void setMusicPlayList(List<MusicItem> musicPlayList) {
 		sMusicPlayList = musicPlayList;
 	}
 	
-	public static ArrayList<MusicItem> getMusicPlayList() {
+	public static List<MusicItem> getMusicPlayList() {
 		return sMusicPlayList;
 	}
 	
-	public static void setMusicShowList(ArrayList<MusicItem> musicPlayList) {
-		sMusicShowList = musicPlayList;
+	public static void setMusicShowList(List<MusicItem> list) {
+		sMusicShowList = (ArrayList<MusicItem>) list;
 	}
 	
 	public static ArrayList<MusicItem> getMusicShowList() {

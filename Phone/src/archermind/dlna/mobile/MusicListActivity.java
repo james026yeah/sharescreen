@@ -105,7 +105,8 @@ public class MusicListActivity extends Activity {
 							// TODO Auto-generated method stub
 							try {
 								if (mMusicPlaySer.getPlayOnPhone()) {
-									mMusicPlaySer.setPlayList(mMusicData.getMusicShowList());
+								    MusicData.setMusicPlayList(MusicData.getMusicShowList());
+									mMusicPlaySer.setPlayList(MusicData.getMusicShowList());
 									mMusicPlaySer.playFrom(position);
 									mMusicPlaySer.play();
 								}

@@ -436,7 +436,7 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 			}
 			break;
 		case R.id.nowplayinglist:
-			mMusicPlaySer.setMusicShowList(mMusicPlaySer.getPlayList());
+			MusicData.setMusicShowList(MusicData.getMusicPlayList());
 			Intent intent = new Intent();
 			intent.putExtra("title", getResources().getString(R.string.playing_list));
 			intent.putExtra("scrollto", true);

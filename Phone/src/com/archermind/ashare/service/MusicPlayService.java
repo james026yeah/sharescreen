@@ -21,6 +21,8 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
 
+import archermind.dlna.mobile.MusicData;
+
 import com.archermind.ashare.dlna.localmedia.MusicItem;
 
 public class MusicPlayService extends Service implements OnAudioFocusChangeListener {
@@ -32,8 +34,8 @@ public class MusicPlayService extends Service implements OnAudioFocusChangeListe
 	private static final int PUSHING = 2;
 	
 	private static MusicItem mMusicPlayingItem;
-	private static List<MusicItem> mMusicShowList;
-	private static List<MusicItem> mMusicList;
+//	private static List<MusicItem> mMusicShowList;
+//	private static List<MusicItem> MusicData.getMusicPlayList();
 	private static MediaPlayer mMusicPlayer;
 	
 	private static boolean mIsSupposedToBePlaying = false;
@@ -63,7 +65,7 @@ public class MusicPlayService extends Service implements OnAudioFocusChangeListe
 		mMusicPlayer.setOnCompletionListener(new OnCompletionListener() {
 			@Override
 			public void onCompletion(MediaPlayer mp) {
-				if (mMusicPlayPosition != mMusicList.size() - 1) {
+				if (mMusicPlayPosition != MusicData.getMusicPlayList().size() - 1) {
 					next();
 					if (mIsPlayOnPhone) {
 						mp.start();
@@ -182,11 +184,11 @@ public class MusicPlayService extends Service implements OnAudioFocusChangeListe
 	
 	private void playFrom(int i) {
 		Log.d(TAG,"MusicPlayService playFrom:" + i);
-		if (i >= 0 && i < mMusicList.size()){
+		if (i >= 0 && i < MusicData.getMusicPlayList().size()){
 			mIsInitialed = true;
 			mMusicPlayer.reset();
 			try {
-				mMusicPlayer.setDataSource(mMusicList.get(i).getFilePath());
+				mMusicPlayer.setDataSource(MusicData.getMusicPlayList().get(i).getFilePath());
 				mMusicPlayer.prepare();
 				mIsPrepared = true;
 			} catch (IllegalArgumentException e) {
@@ -198,13 +200,13 @@ public class MusicPlayService extends Service implements OnAudioFocusChangeListe
 			}
 //			mIsSupposedToBePlaying = true;
 			mMusicPlayPosition = i;
-			mMusicPlayingItem = mMusicList.get(i);
+			mMusicPlayingItem = MusicData.getMusicPlayList().get(i);
 			Log.d(TAG,"musicPlayingItem:" + mMusicPlayingItem.getTitle());
 		} else if (mRepeatMode == 2) {
-			if (mMusicPlayPosition == mMusicList.size() - 1){
+			if (mMusicPlayPosition == MusicData.getMusicPlayList().size() - 1){
 				playFrom(0);
 			} else {
-				playFrom(mMusicList.size() - 1);
+				playFrom(MusicData.getMusicPlayList().size() - 1);
 			}
 		} else {
 			playFrom(mMusicPlayPosition);
@@ -221,7 +223,7 @@ public class MusicPlayService extends Service implements OnAudioFocusChangeListe
 				playFrom(mMusicPlayPosition + 1);
 			} else {
 				Random mRandom = new Random();
-				playFrom(mRandom.nextInt(mMusicList.size()));
+				playFrom(mRandom.nextInt(MusicData.getMusicPlayList().size()));
 			}
 		}
 		Intent intent = new Intent("statuschanged");
@@ -239,7 +241,7 @@ public class MusicPlayService extends Service implements OnAudioFocusChangeListe
 				playFrom(mMusicPlayPosition - 1);
 			} else {
 				Random mRandom = new Random();
-				playFrom(mRandom.nextInt(mMusicList.size()));
+				playFrom(mRandom.nextInt(MusicData.getMusicPlayList().size()));
 			}
 		}
 		Intent intent = new Intent("statuschanged");
@@ -325,7 +327,7 @@ public class MusicPlayService extends Service implements OnAudioFocusChangeListe
 
 		@Override
 		public void setPlayList(List<MusicItem> playlist) {
-			mMusicList = playlist;
+			MusicData.setMusicPlayList(playlist);
 		}
 
 		@Override
@@ -359,17 +361,17 @@ public class MusicPlayService extends Service implements OnAudioFocusChangeListe
 		
 		@Override
 		public void setMusicShowList(List<MusicItem> showlist) {
-			mMusicShowList = showlist;
+//			mMusicShowList = showlist;
 		}
 
 		@Override
 		public List<MusicItem> getMusicShowList() {
-			return mMusicShowList;
+			return MusicData.getMusicShowList();
 		}
 
 		@Override
 		public List<MusicItem> getPlayList() {
-			return mMusicList;
+			return MusicData.getMusicPlayList();
 		}
 		
 		public long position() {
