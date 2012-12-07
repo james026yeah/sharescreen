@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical" >
-		<RelativeLayout
+		<!-- <RelativeLayout
 	        android:id="@+id/item_ashare"
 	        android:layout_width="match_parent"
 	        android:layout_height="@dimen/list_sel_item_height"
@@ -44,7 +44,7 @@
 	            android:layout_marginRight="12dp"
 	            android:duplicateParentState="true"
 	            android:src="@drawable/list_btn_arrow_sel" />
-	    </RelativeLayout>
+	    </RelativeLayout> -->
 	    
 	    <RelativeLayout
 	        android:id="@+id/item_setting"

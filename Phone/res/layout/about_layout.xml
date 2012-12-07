@@ -8,26 +8,32 @@
 
     <include layout="@layout/more_options_title" />
 
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:src="@drawable/app_icon" />
+
     <LinearLayout
         android:layout_width="295dp"
         android:layout_height="164dp"
-        android:layout_marginTop="98dp"
+        android:layout_marginTop="48dp"
         android:background="@drawable/about_list_bg"
         android:orientation="vertical" >
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:orientation="horizontal" >
+            android:paddingRight="8dp" >
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:gravity="center"
-                android:textColor="#555759"
-                android:text="@string/about_label_version" />
+                android:text="@string/about_label_version"
+                android:textColor="#555759" />
 
             <TextView
                 android:id="@+id/version"
@@ -39,24 +45,24 @@
         </RelativeLayout>
 
         <ImageView
-            android:contentDescription="@string/app_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/about_list_line" />
+            android:background="@drawable/about_list_line"
+            android:contentDescription="@string/app_name" />
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:orientation="horizontal" >
+            android:paddingRight="8dp" >
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:gravity="center"
-                android:textColor="#555759"
-                android:text="@string/about_label_channel" />
+                android:text="@string/about_label_channel"
+                android:textColor="#555759" />
 
             <TextView
                 android:id="@+id/channel_code"
@@ -68,30 +74,30 @@
         </RelativeLayout>
 
         <ImageView
-            android:contentDescription="@string/app_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/about_list_line" />
+            android:background="@drawable/about_list_line"
+            android:contentDescription="@string/app_name" />
 
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
             android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:orientation="horizontal" >
+            android:paddingRight="8dp" >
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:gravity="center"
-                android:textColor="#555759"
-                android:text="@string/about_label_web" />
+                android:text="@string/about_label_web"
+                android:textColor="#555759" />
 
             <ImageView
-                android:contentDescription="@string/app_name"
                 android:layout_width="wrap_content"
                 android:layout_height="50dp"
                 android:layout_alignParentRight="true"
+                android:contentDescription="@string/app_name"
                 android:gravity="center"
                 android:src="@drawable/list_bth_arrow_blue" />
         </RelativeLayout>
@@ -100,24 +106,24 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:paddingLeft="48dip"
-        android:paddingRight="48dip"
-        android:orientation="horizontal" >
+        android:paddingRight="48dip" >
 
         <ImageView
-            android:contentDescription="@string/app_name"
             android:layout_width="72dp"
             android:layout_height="72dp"
             android:layout_marginTop="48dp"
             android:layout_weight="1"
+            android:contentDescription="@string/app_name"
             android:src="@drawable/about_icon_sina" />
 
         <ImageView
-            android:contentDescription="@string/app_name"
             android:layout_width="72dp"
             android:layout_height="72dp"
             android:layout_marginTop="48dp"
             android:layout_weight="1"
+            android:contentDescription="@string/app_name"
             android:src="@drawable/about_icon_tenxun" />
     </LinearLayout>
 
@@ -126,7 +132,7 @@
         android:layout_height="fill_parent"
         android:gravity="bottom"
         android:paddingBottom="15dp"
-        android:textColor="#3887D7"
-        android:text="@string/soft_copy_right" />
+        android:text="@string/soft_copy_right"
+        android:textColor="#3887D7" />
 
 </LinearLayout>

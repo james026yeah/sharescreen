@@ -25,9 +25,8 @@
             android:id="@+id/title_main"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="20dip"
             android:layout_marginBottom="5dip"
-            android:textColor="#545658"
+            android:textAppearance="@style/MusicListTextAppearanceFirst"
             android:singleLine="true"
             android:ellipsize="marquee"/>
         
@@ -39,15 +38,17 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:singleLine="true"
                 android:gravity="left|center_vertical"
-                android:textColor="#4C93DB"/>
+                android:textAppearance="@style/MusicListTextAppearanceSecond"/>
             <TextView 
                 android:id="@+id/detail"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:singleLine="true"
                 android:gravity="right|center_vertical"
-                android:textColor="#4C93DB"/>
+                android:textAppearance="@style/MusicListTextAppearanceSecond"/>
         </LinearLayout>
     </LinearLayout>
     <ImageView 

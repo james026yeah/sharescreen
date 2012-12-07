@@ -26,15 +26,21 @@
             android:id="@android:id/tabcontent"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:layout_marginBottom="-11dip"
             android:layout_above="@android:id/tabs" />
 
-        <ImageView
+        <TextView
             android:id="@+id/remoteControlCover"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
             android:layout_centerHorizontal="true"
-            android:background="@drawable/remote_controller_tab_inner"
+            android:gravity="center_horizontal"
+            android:text="@string/bottom_tab_remote"
+            android:textSize="12dp"
+            android:textColor="#BCC1C5"
+            android:drawableTop="@drawable/remote_controller_tab_inner"
+            android:drawablePadding="-18dp"
             android:contentDescription="@string/app_name" />
     </RelativeLayout>
 

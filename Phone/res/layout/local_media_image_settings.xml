@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:title="@string/image_setting" >
+
+    <ListPreference
+        android:defaultValue="@string/image_slide_time_default_value"
+        android:dialogTitle="@string/image_slide_time_title"
+        android:entries="@array/image_slide_time"
+        android:entryValues="@array/image_slide_time_values"
+        android:key="slide"
+        android:persistent="true"
+        android:title="@string/image_slide_time_title" />
+
+    <ListPreference
+        android:defaultValue="@string/image_post_time_default_value"
+        android:dialogTitle="@string/image_post_time_title"
+        android:entries="@array/image_post_time"
+        android:entryValues="@array/image_post_time_values"
+        android:key="post"
+        android:persistent="true"
+        android:title="@string/image_post_time_title" />
+
+    <ListPreference
+        android:defaultValue="@string/image_rotate_angle_default_value"
+        android:dialogTitle="@string/image_rotate_angle_title"
+        android:entries="@array/image_rotate_angle"
+        android:entryValues="@array/image_rotate_angle_values"
+        android:key="rotate"
+        android:persistent="true"
+        android:title="@string/image_rotate_angle_title" />
+
+</PreferenceScreen>

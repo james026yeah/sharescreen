@@ -13,6 +13,6 @@
         android:layout_margin="20dp"
         android:gravity="left|top"
         android:background="@drawable/about_list_bg"
-        android:hint="意见反馈" />
+        android:hint="@string/your_options" />
 
 </LinearLayout>

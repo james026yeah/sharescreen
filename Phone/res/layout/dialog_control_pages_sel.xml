@@ -8,17 +8,45 @@
         android:layout_width="240dp"
         android:layout_height="32dp"
         android:gravity="left|center_vertical"
-        android:text="Select Control Pages"
+        android:text="@string/controler_select"
         android:textColor="@android:color/white" />
 
     <TextView
-        android:id="@+id/touch_or_mouse"
+        android:id="@+id/touch"
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:clickable="true"
         android:drawableRight="@drawable/list_btn_arrow_sel"
         android:gravity="left|center_vertical"
-        android:text="Touch Mode" />
+        android:text="@string/touch_pad" />
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/pop_line" />
+
+    <TextView
+        android:id="@+id/mouse"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:clickable="true"
+        android:drawableRight="@drawable/list_btn_arrow_sel"
+        android:gravity="left|center_vertical"
+        android:text="@string/air_mouse" />
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/pop_line" />
+    
+    <TextView
+        android:id="@+id/controller"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:clickable="true"
+        android:drawableRight="@drawable/list_btn_arrow_sel"
+        android:gravity="left|center_vertical"
+        android:text="@string/traditional_remote" />
 
     <ImageView
         android:layout_width="match_parent"
@@ -33,6 +61,21 @@
         android:drawableBottom="@drawable/pop_line"
         android:drawableRight="@drawable/list_btn_arrow_sel"
         android:gravity="left|center_vertical"
-        android:text="Game Controller" />
+        android:text="@string/full_screen" />
+    
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/pop_line" />
+
+    <TextView
+        android:id="@+id/ashare_mirror"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:clickable="true"
+        android:drawableBottom="@drawable/pop_line"
+        android:drawableRight="@drawable/list_btn_arrow_sel"
+        android:gravity="left|center_vertical"
+        android:text="@string/ashare_mirror" />
 
 </LinearLayout>

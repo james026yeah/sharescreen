@@ -1,147 +1,168 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent" >
 
-    <ImageView
-        android:id="@+id/image"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:contentDescription="@string/app_name" />
-
-    <RelativeLayout
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/local_media_music"
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
 
-        <LinearLayout
-            android:id="@+id/play_info"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="15dip"
-            android:background="@drawable/music_nowplaying_bg"
-            android:clickable="true"
-            android:onClick="doClick"
-            android:orientation="horizontal" >
 
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingRight="10dip" >
-
-                <TextView
-                    android:id="@+id/music_name"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="8dip"
-                    android:text="@string/no_song_playing"
-                    android:textColor="#545658"
-                    android:textSize="20dip" />
-
-                <TextView
-                    android:id="@+id/music_artist"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="8dip"
-                    android:text="@string/no_artist_playing"
-                    android:textColor="#4E93D9" />
-            </LinearLayout>
-
-            <ImageButton
-                android:id="@+id/play_status_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_marginRight="8dip"
-                android:background="@drawable/music_play"
-                android:contentDescription="@string/app_name"
-                android:onClick="doClick" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="200dip"
-            android:layout_marginTop="80dip"
-            android:layout_marginLeft="10dip"
-            android:layout_marginRight="10dip"
-            android:layout_below="@+id/play_info"
-            android:orientation="vertical" >
-
-            <LinearLayout
+            <RelativeLayout
+                android:id="@+id/upper_control"
                 android:layout_width="fill_parent"
-                android:layout_height="100dip" >
+                android:layout_height="wrap_content"
+                android:background="@drawable/music_cd_bg"
+                android:orientation="horizontal" >
 
                 <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="30dp" >
+
+                    <TextView
+                        android:id="@+id/music_name"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="25dp"
+                        android:shadowColor="#194A79"
+                        android:shadowDx="5.0"
+                        android:shadowDy="5.0"
+                        android:shadowRadius="5.0"
+                        android:singleLine="true"
+                        android:ellipsize="marquee"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:marqueeRepeatLimit="marquee_forever"
+                        android:scrollHorizontally="true"
+                        android:text="@string/no_song_playing"
+                        android:textColor="#dce1e8"
+                        android:textSize="24dp" />
+
+                    <TextView
+                        android:id="@+id/music_artist"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="25dp"
+                        android:layout_marginTop="8dp"
+                        android:singleLine="true"
+                        android:ellipsize="marquee"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:marqueeRepeatLimit="marquee_forever"
+                        android:scrollHorizontally="true"
+                        android:text="@string/no_artist_playing"
+                        android:textColor="#214D78" />
+                </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/play_info"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerHorizontal="true"
+                    android:layout_centerVertical="true"
+                    android:background="#00000000"
+                    android:clickable="true"
+                    android:contentDescription="@string/app_name"
+                    android:onClick="doClick"
+                    android:src="@drawable/btn_music_big_play" />
+
+            </RelativeLayout>
+
+        
+        <LinearLayout 
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_marginTop="-8dp"
+            android:orientation="horizontal"
+            android:layout_below="@+id/upper_control">
+            
+            <LinearLayout
                     android:id="@+id/allsongs_btn"
-                    android:layout_width="140dip"
-                    android:layout_height="90dip"
-                    android:layout_margin="5dip"
+                    android:layout_width="0dip"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
                     android:background="@drawable/btn_music"
                     android:gravity="center"
-                    android:onClick="doClick"
-                    android:orientation="vertical" >
+                    android:clickable="true"
+                    android:onClick="doClick" >
 
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/music_bth_music"
-                        android:contentDescription="@string/app_name" />
 
                     <TextView
                         android:id="@+id/allmusiccount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/lable_all_music" />
+                        android:drawableTop="@drawable/music_bth_music"
+                        android:singleLine="true"
+                        android:ellipsize="marquee"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:marqueeRepeatLimit="marquee_forever"
+                        android:scrollHorizontally="true"
+                        android:text="@string/lable_all_music"
+                        android:textSize="18dp" />
                 </LinearLayout>
-
+                <ImageView 
+                    android:contentDescription="@string/app_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/music_bth_long_line"/>
                 <LinearLayout
-                    android:id="@+id/album_btn"
-                    android:layout_width="140dip"
-                    android:layout_height="90dip"
-                    android:layout_margin="5dip"
+                    android:id="@+id/artist_btn"
+                    android:layout_width="0dip"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
                     android:background="@drawable/btn_music"
                     android:gravity="center"
                     android:onClick="doClick"
                     android:orientation="vertical" >
 
-                    <ImageView
+
+                    <TextView
+                        android:id="@+id/artistcount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/music_bth_album_select"
-                        android:contentDescription="@string/app_name" />
+                        android:drawableTop="@drawable/music_bth_singer_select"
+                        android:ellipsize="marquee"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:marqueeRepeatLimit="marquee_forever"
+                        android:scrollHorizontally="true"
+                        android:singleLine="true"
+                        android:text="@string/lable_artist"
+                        android:textSize="18dp"/>
+                </LinearLayout>
+                <ImageView 
+                    android:contentDescription="@string/app_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/music_bth_long_line"/>
+                <LinearLayout
+                    android:id="@+id/album_btn"
+                    android:layout_width="0dip"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/btn_music"
+                    android:gravity="center"
+                    android:onClick="doClick"
+                    android:orientation="vertical" >
+
 
                     <TextView
                         android:id="@+id/albumcount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/lable_album" />
+                        android:drawableTop="@drawable/music_bth_album_select"
+                        android:ellipsize="marquee"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:marqueeRepeatLimit="marquee_forever"
+                        android:scrollHorizontally="true"
+                        android:singleLine="true"
+                        android:text="@string/lable_album"
+                        android:textSize="18dp" />
                 </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/artist_btn"
-                android:layout_width="140dip"
-                android:layout_height="90dip"
-                android:layout_margin="5dip"
-                android:background="@drawable/btn_music"
-                android:gravity="center"
-                android:onClick="doClick"
-                android:orientation="vertical" >
-
-                <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="@drawable/music_bth_singer_select"
-                    android:contentDescription="@string/app_name" />
-
-                <TextView
-                    android:id="@+id/artistcount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/lable_artist" />
-            </LinearLayout>
+                
         </LinearLayout>
     </RelativeLayout>
-
-</FrameLayout>

@@ -50,6 +50,30 @@
         <item name="android:textStyle">normal</item>
     </style>
 
+    <style name="MusicListTextAppearanceFirst">
+        <item name="android:textColor">@color/more_option_text_first</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+
+    <style name="MusicListTextAppearanceSecond">
+        <item name="android:textColor">@color/more_option_text_second</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+    
+    <style name="MusicTextAppearanceTitle">
+        <item name="android:textColor">#dce1e8</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+    
+    <style name="MusicButtonTextAppearance">
+        <item name="android:textColor">@color/more_option_text_second</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+    
     <style name="GestureGuideTipTextAppearance">
         <item name="android:textColor">#e5f2ff</item>
         <item name="android:textSize">18sp</item>

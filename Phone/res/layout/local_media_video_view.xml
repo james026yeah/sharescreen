@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent" >
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content" >
 
     <SurfaceView
         android:id="@+id/video_view_surface"
@@ -53,6 +53,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
+                android:layout_toLeftOf="@id/video_view_push"
+                android:layout_toRightOf="@id/video_view_back"
+                android:gravity="center"
+                android:singleLine="true"
                 android:textColor="#ffffff"
                 android:textSize="18sp" />
         </RelativeLayout>
@@ -117,7 +121,7 @@
                     android:id="@+id/video_view_prev"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="35dp"
+                    android:layout_marginRight="50dp"
                     android:layout_weight="1"
                     android:background="@drawable/video_btn_prev"
                     android:contentDescription="@string/app_name" />
@@ -126,7 +130,7 @@
                     android:id="@+id/video_view_play"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="35dp"
+                    android:layout_marginRight="50dp"
                     android:layout_weight="1"
                     android:background="@drawable/video_btn_start"
                     android:contentDescription="@string/app_name"
@@ -136,7 +140,7 @@
                     android:id="@+id/video_view_pause"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="35dp"
+                    android:layout_marginRight="50dp"
                     android:layout_weight="1"
                     android:background="@drawable/video_btn_pause"
                     android:contentDescription="@string/app_name" />
@@ -145,7 +149,7 @@
                     android:id="@+id/video_view_stop"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="35dp"
+                    android:layout_marginRight="50dp"
                     android:layout_weight="1"
                     android:background="@drawable/video_btn_stop"
                     android:contentDescription="@string/app_name" />
@@ -154,51 +158,18 @@
                     android:id="@+id/video_view_next"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginRight="50dp"
                     android:layout_weight="1"
                     android:background="@drawable/video_btn_next"
                     android:contentDescription="@string/app_name" />
+
+                <ImageView
+                    android:id="@+id/video_view_mute"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/app_name" />
             </LinearLayout>
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/video_view_sound_layout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@id/video_view_bottom_layout"
-            android:layout_below="@id/video_view_top_layout" >
-
-            <ImageView
-                android:id="@+id/video_view_mute"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentRight="true"
-                android:layout_marginBottom="5dp"
-                android:layout_marginRight="5dp"
-                android:background="@drawable/music_icon_sound"
-                android:contentDescription="@string/app_name" />
-
-            <RelativeLayout
-                android:layout_width="19dp"
-                android:layout_height="wrap_content"
-                android:layout_above="@id/video_view_mute"
-                android:layout_alignParentRight="true"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="3dp"
-                android:layout_marginRight="18dp"
-                android:background="@drawable/music_sound_bg" >
-
-                <com.archermind.ashare.ui.control.VerticalSeekBar
-                    android:id="@+id/video_view_sound_seekbar"
-                    android:layout_width="12dp"
-                    android:layout_height="match_parent"
-                    android:layout_alignParentRight="true"
-                    android:layout_centerHorizontal="true"
-                    android:layout_marginRight="4dp"
-                    android:progressDrawable="@drawable/vertical_seekbar_img"
-                    android:thumb="@drawable/music_sound_point"
-                    android:thumbOffset="2dip" />
-            </RelativeLayout>
         </RelativeLayout>
 
         <TextView

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:drawable="@drawable/remote_bth_home_select" android:state_pressed="true"/>
-    <item android:drawable="@drawable/remote_bth_home_normal" />
+    <item android:drawable="@drawable/sky_mouse_bth_home_select" android:state_pressed="true"/>
+    <item android:drawable="@drawable/sky_mouse_bth_home_normal" />
 
 </selector>

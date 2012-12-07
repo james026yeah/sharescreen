@@ -23,7 +23,7 @@
         android:textColor="#4a5666"
         android:gravity="center"
         android:layout_gravity="center_horizontal"
-        android:layout_marginTop="-32dp"
+        android:layout_marginTop="-35dp"
         android:layout_marginLeft="4dp"
         android:textSize="14sp" />
     
@@ -37,6 +37,8 @@
         android:layout_gravity="center_horizontal"
         android:textColor="#3887d7"
         android:layout_marginTop="5dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginRight="5dp"
         android:textSize="15sp" />
 
 </LinearLayout>

@@ -25,7 +25,7 @@
             android:layout_height="24dp"
             android:layout_centerHorizontal="true"
             android:gravity="center"
-            android:text="遥 控"
+            android:text="@string/tab_remote_controller_indicator"
             android:textColor="@android:color/darker_gray" />
 
         <TextView
@@ -40,11 +40,12 @@
 
     <ImageView
         android:id="@+id/air_mouse_area"
-        android:layout_width="288dp"
-        android:layout_height="378dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_below="@+id/remote_top_bar"
+        android:layout_above="@+id/bottom_bar"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="8dp"
+        android:layout_margin="8dp"
         android:background="@drawable/two_dimensional_code_bg"
         android:gravity="center"
         android:scaleType="center" />
@@ -57,59 +58,151 @@
         android:clickable="true"
         android:src="@drawable/remote_btn_ok_sel" />
 
-    <!--
-         <TextView
-        android:id="@+id/touch_area"
-        android:layout_width="288dp"
-        android:layout_height="378dp"
-        android:layout_below="@+id/remote_top_bar"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/two_dimensional_code_bg"
-        android:gravity="center"
-        android:text="遥控" />
-    -->
-
     <AbsoluteLayout
         android:id="@+id/touch_area"
-        android:layout_width="288dp"
-        android:layout_height="378dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_below="@+id/remote_top_bar"
+        android:layout_above="@+id/bottom_bar"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="8dp"
+        android:layout_margin="8dp"
         android:background="@drawable/two_dimensional_code_bg" >
 
         <TextView
             android:id="@+id/touch_point1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:background="@drawable/touch_point" />
+            android:background="@drawable/touch_point"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/touch_point2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:background="@drawable/touch_point" />
+            android:background="@drawable/touch_point"
+            android:visibility="gone" />
     </AbsoluteLayout>
 
-    <!--
-         <TextView 
-        android:id="@+id/btn_left"
-        android:layout_width="120dp"
-        android:layout_height="48dp"
-        android:layout_below="@+id/touch_area"
-        android:layout_alignLeft="@+id/touch_area"
-        android:background="#ffff0000"
-        android:gravity="center"
-        android:text="LEFT" />
-    -->
+    <RelativeLayout
+        android:id="@+id/controller_area"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/remote_top_bar"
+        android:layout_above="@+id/bottom_bar"
+        android:layout_margin="8dp"
+        android:background="@drawable/two_dimensional_code_bg" >
+
+        <ImageView
+            android:id="@+id/btn_background"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/remote_control_bth_circle_normal" />
+
+        <ImageView
+            android:id="@+id/btn_switcher_up"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_alignTop="@+id/btn_background"
+            android:layout_centerHorizontal="true" />
+
+        <ImageView
+            android:id="@+id/btn_switcher_ok"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_alignLeft="@+id/btn_switcher_up"
+            android:layout_below="@+id/btn_switcher_up" />
+
+        <ImageView
+            android:id="@+id/btn_switcher_left"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_alignBottom="@+id/btn_switcher_ok"
+            android:layout_toLeftOf="@+id/btn_switcher_ok" />
+
+        <ImageView
+            android:id="@+id/btn_switcher_right"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_alignBottom="@+id/btn_switcher_ok"
+            android:layout_toRightOf="@+id/btn_switcher_ok" />
+
+        <ImageView
+            android:id="@+id/btn_switcher_down"
+            android:layout_width="76dp"
+            android:layout_height="76dp"
+            android:layout_alignLeft="@+id/btn_switcher_up"
+            android:layout_below="@+id/btn_switcher_ok" />
+
+        <ImageView
+            android:id="@+id/btn_controller_play"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/btn_background"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="24dp"
+            android:src="@drawable/remote_control_bth_play_sel" />
+
+        <ImageView
+            android:id="@+id/btn_controller_front"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/btn_controller_play"
+            android:layout_centerHorizontal="true"
+            android:layout_marginRight="24dp"
+            android:layout_toLeftOf="@+id/btn_controller_play"
+            android:src="@drawable/remote_control_bth_front_sel" />
+
+        <ImageView
+            android:id="@+id/btn_controller_after"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/btn_controller_play"
+            android:layout_centerHorizontal="true"
+            android:layout_marginLeft="24dp"
+            android:layout_toRightOf="@+id/btn_controller_play"
+            android:src="@drawable/remote_control_bth_after_sel" />
+
+        <ImageView
+            android:id="@+id/btn_controller_vol_down"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/btn_controller_play"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="12dp"
+            android:src="@drawable/remote_control_bth_decrease_sel"
+            android:clickable="true" />
+
+        <ImageView
+            android:id="@+id/btn_controller_mute"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/btn_controller_vol_down"
+            android:layout_centerHorizontal="true"
+            android:layout_marginRight="24dp"
+            android:layout_toLeftOf="@+id/btn_controller_vol_down"
+            android:src="@drawable/remote_control_bth_mute_sel"
+            android:clickable="true" />
+
+        <ImageView
+            android:id="@+id/btn_controller_vol_up"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/btn_controller_vol_down"
+            android:layout_centerHorizontal="true"
+            android:layout_marginLeft="24dp"
+            android:layout_toRightOf="@+id/btn_controller_vol_down"
+            android:src="@drawable/remote_control_bth_increase_sel"
+            android:clickable="true" />
+    </RelativeLayout>
 
     <LinearLayout
+        android:id="@+id/bottom_bar"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_below="@+id/air_mouse_area"
-        android:layout_marginTop="8dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/photo_bth_bar"
         android:gravity="center" >
 
         <TextView
@@ -138,7 +231,7 @@
             android:background="@drawable/remote_btn_back_sel"
             android:clickable="true"
             android:gravity="center" />
-        
+
         <TextView
             android:id="@+id/btn_sleep"
             android:layout_width="wrap_content"
