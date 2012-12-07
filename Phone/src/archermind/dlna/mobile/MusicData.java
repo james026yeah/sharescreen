@@ -13,47 +13,33 @@ public class MusicData{
 	private static ArrayList<MusicItem> sMusicPlayList;
 	private static ArrayList<MusicItem> sMusicShowList;
 	
-	public MusicData(ArrayList<MusicItem> allMusicItem,ArrayList<Artist> musicArtistItem,ArrayList<Album> musicAlbumItem) {
-		// TODO Auto-generated constructor stub
-		sAllMusic = allMusicItem;
-		sMusicArtist = musicArtistItem;
-		sMusicAlbum = musicAlbumItem;
-	};
 	
-	public MusicData() {
-		// TODO Auto-generated constructor stub
-		sAllMusic = null;
-		sMusicArtist = null;
-		sMusicAlbum = null;
-		sMusicPlayList = null;
-	};
-	
-	public void setMusicPlayList(ArrayList<MusicItem> musicPlayList) {
+	public static void setMusicPlayList(ArrayList<MusicItem> musicPlayList) {
 		sMusicPlayList = musicPlayList;
 	}
 	
-	public ArrayList<MusicItem> getMusicPlayList() {
+	public static ArrayList<MusicItem> getMusicPlayList() {
 		return sMusicPlayList;
 	}
 	
-	public void setMusicShowList(ArrayList<MusicItem> musicPlayList) {
+	public static void setMusicShowList(ArrayList<MusicItem> musicPlayList) {
 		sMusicShowList = musicPlayList;
 	}
 	
-	public ArrayList<MusicItem> getMusicShowList() {
+	public static ArrayList<MusicItem> getMusicShowList() {
 		return sMusicShowList;
 	}
 	
-	public void setAllMusic(ArrayList<MusicItem> allMusic) {
+	public static void setAllMusic(ArrayList<MusicItem> allMusic) {
 		sAllMusic = allMusic;
 	}
 	
-	public ArrayList<MusicItem> getAllMusicData() {
+	public static ArrayList<MusicItem> getAllMusicData() {
 		return sAllMusic;
 	}
 	
 	
-	public void setMusicArtist(ArrayList<Artist> musicArtist) {
+	public static void setMusicArtist(ArrayList<Artist> musicArtist) {
 		sMusicArtist = musicArtist;
 	}
 	
@@ -61,11 +47,11 @@ public class MusicData{
 		return sMusicArtist;
 	}
 	
-	public void setMusicAlbum(ArrayList<Album> musicAlbum) {
+	public static void setMusicAlbum(ArrayList<Album> musicAlbum) {
 		sMusicAlbum = musicAlbum;
 	}
 	
-	public ArrayList<Album> getMusicAlbumData() {
+	public static ArrayList<Album> getMusicAlbumData() {
 		return sMusicAlbum;
 	}
 	

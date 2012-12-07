@@ -132,17 +132,14 @@ public class LocalMediaActivity extends BaseActivity {
 	private ArtistListAdapter mArtistListAdapter = null;
 	private MusicListAdapter mAllMusicAdapter = null;
 
-	private static ArrayList<MusicItem> sAllMusicItem;
-	private static ArrayList<MusicCategoryInfo> sMusicCateInfoItem;
-	private static ArrayList<Artist> sMusicArtistItem;
-	private static ArrayList<Album> sMusicAlbumItem;
-	private static ArrayList<String> sAllMusicList = new ArrayList<String>();
-	public MusicData mMusicData;
+	
+	public static MusicData mMusicData;
 	private boolean mOnGetMusicFinished = false;
 	private boolean mOnGetMusicCateInfoFinished = false;
 	private boolean mOnGetMusicArtistFinished = false;
 	private boolean mOnGetMusicAlbumFinished = false;
 	private IMusicPlayService mMusicPlaySer = null;
+	
 	private TextView mAllMusicNum;
 	private TextView mAlbumNum;
 	private TextView mAritistNum;
@@ -185,16 +182,16 @@ public class LocalMediaActivity extends BaseActivity {
 		};
 	};
 
-	@Override
-	protected void onGetMusicCategoryData(ArrayList<MusicCategoryInfo> musicCategory) {
-		mOnGetMusicCateInfoFinished = true;
-		if (musicCategory == null || musicCategory.size() == 0) {
-			log("no musicCategory");
-		} else {
-			sMusicCateInfoItem = musicCategory;
-			log("musics number = " + sMusicCateInfoItem.size());
-		}
-	}
+//	@Override
+//	protected void onGetMusicCategoryData(ArrayList<MusicCategoryInfo> musicCategory) {
+//		mOnGetMusicCateInfoFinished = true;
+//		if (musicCategory == null || musicCategory.size() == 0) {
+//			log("no musicCategory");
+//		} else {
+//			sMusicCateInfoItem = musicCategory;
+//			log("musics number = " + sMusicCateInfoItem.size());
+//		}
+//	}
 
 	@Override
 	protected void onGetMusicArtistsData(ArrayList<Artist> artists) {
@@ -202,7 +199,7 @@ public class LocalMediaActivity extends BaseActivity {
 		if (artists == null || artists.size() == 0) {
 //			log("no artists exists");
 		} else {
-			mMusicData.setMusicArtist(artists);
+			MusicData.setMusicArtist(artists);
 //			sMusicArtistItem = artists;
 //			log("artists number = " + sMusicArtistItem.size());
 			initMusicArtistList();
@@ -216,13 +213,14 @@ public class LocalMediaActivity extends BaseActivity {
 	protected void onGetMusicAlbumsData(ArrayList<Album> albums) {
 		mOnGetMusicAlbumFinished = true;
 		if (albums == null || albums.size() == 0) {
-			log("no albums");
+//			log("no albums");
 		} else {
-			sMusicAlbumItem = albums;
-			log("albums number = " + sMusicAlbumItem.size());
+//			sMusicAlbumItem = albums;
+//			log("albums number = " + sMusicAlbumItem.size());
+		    MusicData.setMusicAlbum(albums);
 			initMusicAlbumList();
 			mAlbumNum = (TextView) findViewById(R.id.albumcount);
-			mAlbumNum.setText(getResources().getString(R.string.lable_album) + "(" + sMusicAlbumItem.size()
+			mAlbumNum.setText(getResources().getString(R.string.lable_album) + "(" + albums.size()
 					+ ")");
 		}
 	}
@@ -233,15 +231,16 @@ public class LocalMediaActivity extends BaseActivity {
 		if (musics == null || musics.size() == 0) {
 			log("no musics");
 		} else {
-			sAllMusicItem = musics;
-			for (int position = 0; position < sAllMusicItem.size(); position++) {
-				sAllMusicList.add(sAllMusicItem.get(position).getFilePath());
-			}
-			log("musics number = " + sAllMusicItem.size());
+//			sAllMusicItem = musics;
+//			for (int position = 0; position < sAllMusicItem.size(); position++) {
+//				sAllMusicList.add(sAllMusicItem.get(position).getFilePath());
+//			}
+//			log("musics number = " + sAllMusicItem.size());
+		    MusicData.setAllMusic(musics);
 			initMusicList();
 			mAllMusicNum = (TextView) findViewById(R.id.allmusiccount);
 			mAllMusicNum.setText(getResources().getString(R.string.lable_all_music) + "("
-					+ sAllMusicItem.size() + ")");
+					+ musics.size() + ")");
 		}
 	}
 
@@ -554,12 +553,12 @@ public class LocalMediaActivity extends BaseActivity {
 		// get the data from the service
 		if (mOnGetMusicFinished) {
 			// the data is null
-			if (sAllMusicItem == null) {
+			if (MusicData.getAllMusicData() == null) {
 				mAllMusicAdapter = null;
 			}
 			// have the music list
 			else {
-				mAllMusicAdapter = new MusicListAdapter(sAllMusicItem);
+				mAllMusicAdapter = new MusicListAdapter(MusicData.getAllMusicData());
 			}
 		}
 	}
@@ -569,12 +568,12 @@ public class LocalMediaActivity extends BaseActivity {
 		// get the data from the service
 		if (mOnGetMusicAlbumFinished) {
 			// the data is null
-			if (sMusicAlbumItem == null) {
+			if (MusicData.getMusicAlbumData() == null) {
 				mAlbumListAdapter = null;
 			}
 			// have the music album list
 			else {
-				mAlbumListAdapter = new AlbumListAdapter(sMusicAlbumItem);
+				mAlbumListAdapter = new AlbumListAdapter(MusicData.getMusicAlbumData());
 			}
 		}
 	}
@@ -1186,7 +1185,7 @@ public class LocalMediaActivity extends BaseActivity {
 				Intent intent = new Intent();
 				intent.setClass(getApplicationContext(), MusicPlayActivity.class);
 				startActivity(intent);
-				LocalMediaActivity.this.getParent().overridePendingTransition(R.anim.pull_right_in, R.anim.pull_left_out);
+				getParent().overridePendingTransition(R.anim.pull_right_in, R.anim.pull_left_out);
 			} else {
 				Toast.makeText(getApplicationContext(), R.string.no_music_playing, Toast.LENGTH_SHORT).show();
 			}
@@ -1196,15 +1195,15 @@ public class LocalMediaActivity extends BaseActivity {
 
 				Intent intent = new Intent();
 				intent.putExtra("title", getResources().getString(R.string.lable_all_music));
-				ArrayList<MusicItem> music = sAllMusicItem;
-				try {
-					mMusicPlaySer.setMusicShowList(music);
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
+				ArrayList<MusicItem> music = MusicData.getAllMusicData();
+//				try {
+//					mMusicPlaySer.setMusicShowList(music);
+//				} catch (RemoteException e) {
+//					e.printStackTrace();
+//				}
 				intent.setClass(getApplicationContext(), MusicListActivity.class);
 				startActivity(intent);
-				LocalMediaActivity.this.getParent().overridePendingTransition(R.anim.pull_right_in, R.anim.pull_left_out);
+				getParent().overridePendingTransition(R.anim.pull_right_in, R.anim.pull_left_out);
 			} else {
 				Toast.makeText(getApplicationContext(), R.string.music_data_not_init, Toast.LENGTH_SHORT)
 						.show();
@@ -1212,19 +1211,14 @@ public class LocalMediaActivity extends BaseActivity {
 			break;
 		case R.id.album_btn:
 			if (mOnGetMusicAlbumFinished) {
-				if (sMusicAlbumItem != null){
+				if (MusicData.getMusicAlbumData() != null){
 					mIsMusicList = true;
 					mMusicListTitle = (TextView) findViewById(R.id.list_title);
 					mMusicList = (ListView) findViewById(R.id.music_list);
 					mMusicList.setAdapter(mAlbumListAdapter);
 					mMusicListTitle.setText(getResources().getString(R.string.lable_album) + "（"
-							+ sMusicAlbumItem.size() + "）");
-					Animation mTransAniHid = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.pull_left_out);
-					Animation mTransAniSho = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.pull_right_in);
-					mTransAniHid.setDuration(500);
-					mTransAniSho.setDuration(500);
-					mMainView.setAnimation(mTransAniHid);
-					mMusicListView.setAnimation(mTransAniSho);
+							+ MusicData.getMusicAlbumData().size() + "）");
+					setAnimation();
 					mMainView.setVisibility(View.GONE);
 					mMusicListView.setVisibility(View.VISIBLE);
 					mMusicList.setOnItemClickListener(new OnItemClickListener() {
@@ -1232,13 +1226,13 @@ public class LocalMediaActivity extends BaseActivity {
 						@Override
 						public void onItemClick(AdapterView<?> arg0, View arg1, int position, long arg3) {
 							Intent intent = new Intent();
-							intent.putExtra("title", sMusicAlbumItem.get(position).getName());
-							ArrayList<MusicItem> music = sMusicAlbumItem.get(position).getMusicsList();
-							try {
-								mMusicPlaySer.setMusicShowList(music);
-							} catch (RemoteException e) {
-								e.printStackTrace();
-							}
+							intent.putExtra("title", MusicData.getMusicAlbumData().get(position).getName());
+							ArrayList<MusicItem> music = MusicData.getMusicAlbumData().get(position).getMusicsList();
+//							try {
+//								mMusicPlaySer.setMusicShowList(music);
+//							} catch (RemoteException e) {
+//								e.printStackTrace();
+//							}
 							intent.setClass(getApplicationContext(), MusicListActivity.class);
 							startActivity(intent);
 							LocalMediaActivity.this.getParent().overridePendingTransition(R.anim.pull_right_in, R.anim.pull_left_out);
@@ -1246,45 +1240,33 @@ public class LocalMediaActivity extends BaseActivity {
 					});
 					mViewPagerAdapter.notifyDataSetChanged();
 				} else {
-					Toast.makeText(getApplicationContext(), "当前没有歌曲", Toast.LENGTH_SHORT)
-					.show();
+					Toast.makeText(getApplicationContext(), "当前没有歌曲", Toast.LENGTH_SHORT).show();
 				}
 			} else {
-				Toast.makeText(getApplicationContext(), R.string.music_data_not_init, Toast.LENGTH_SHORT)
-						.show();
+				Toast.makeText(getApplicationContext(), R.string.music_data_not_init, Toast.LENGTH_SHORT).show();
 			}
 			break;
 		case R.id.artist_btn:
 			if (mOnGetMusicArtistFinished) {
-				if (mMusicData.getMusicArtistsData() != null) {
+				if (MusicData.getMusicArtistsData() != null) {
 					mIsMusicList = true;
 					mMusicListTitle = (TextView) findViewById(R.id.list_title);
 					mMusicList = (ListView) findViewById(R.id.music_list);
 					mMusicList.setAdapter(mArtistListAdapter);
-					mMusicListTitle.setText(getResources().getString(
-							R.string.lable_artist)
-							+ "（" + mMusicData.getMusicArtistsData().size() + "）");
-					Animation mTransAniHid = AnimationUtils.loadAnimation(
-							getApplicationContext(), R.anim.pull_left_out);
-					Animation mTransAniSho = AnimationUtils.loadAnimation(
-							getApplicationContext(), R.anim.pull_right_in);
-					mTransAniHid.setDuration(500);
-					mTransAniSho.setDuration(500);
-					mMainView.setAnimation(mTransAniHid);
-					mMusicListView.setAnimation(mTransAniSho);
+					mMusicListTitle.setText(getResources().getString(R.string.lable_artist) + "（" + MusicData.getMusicArtistsData().size() + "）");
+					setAnimation();
 					mMainView.setVisibility(View.GONE);
 					mMusicListView.setVisibility(View.VISIBLE);
 					mMusicList.setOnItemClickListener(new OnItemClickListener() {
-
 								@Override
 								public void onItemClick(AdapterView<?> arg0,
 										View arg1, int position, long arg3) {
 									Intent intent = new Intent();
-									intent.putExtra("title", mMusicData.getMusicArtistsData()
+									intent.putExtra("title", MusicData.getMusicArtistsData()
 											.get(position).getName());
-									ArrayList<MusicItem> music = mMusicData.getMusicArtistsData()
+									ArrayList<MusicItem> music = MusicData.getMusicArtistsData()
 											.get(position).getMusicsList();
-									mMusicData.setMusicShowList(music);
+									MusicData.setMusicShowList(music);
 //									try {
 //										mMusicPlaySer.setMusicShowList(music);
 //									} catch (RemoteException e) {
@@ -1293,10 +1275,7 @@ public class LocalMediaActivity extends BaseActivity {
 									intent.setClass(getApplicationContext(),
 											MusicListActivity.class);
 									startActivity(intent);
-									LocalMediaActivity.this.getParent()
-											.overridePendingTransition(
-													R.anim.pull_right_in,
-													R.anim.pull_left_out);
+									getParent().overridePendingTransition(R.anim.pull_right_in,R.anim.pull_left_out);
 								}
 							});
 					mViewPagerAdapter.notifyDataSetChanged();
@@ -1421,6 +1400,15 @@ public class LocalMediaActivity extends BaseActivity {
 			return mDuration;
 		}
 
+	}
+	
+	private void setAnimation() {
+	    Animation mTransAniHid = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.pull_left_out);
+        Animation mTransAniSho = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.pull_right_in);
+        mTransAniHid.setDuration(500);
+        mTransAniSho.setDuration(500);
+        mMainView.setAnimation(mTransAniHid);
+        mMusicListView.setAnimation(mTransAniSho);
 	}
 
 }
