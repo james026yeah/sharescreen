@@ -102,11 +102,10 @@ public class MusicListActivity extends Activity {
 						@Override
 						public void onItemClick(AdapterView<?> arg0, View arg1, int position,
 								long arg3) {
-							// TODO Auto-generated method stub
 							try {
 								if (mMusicPlaySer.getPlayOnPhone()) {
 								    MusicData.setMusicPlayList(MusicData.getMusicShowList());
-									mMusicPlaySer.setPlayList(MusicData.getMusicShowList());
+//									mMusicPlaySer.setPlayList(MusicData.getMusicShowList());
 									mMusicPlaySer.playFrom(position);
 									mMusicPlaySer.play();
 								}
@@ -132,11 +131,11 @@ public class MusicListActivity extends Activity {
 		}
 	};
 
-	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (requestCode == 0) {
-			finish();
-		}
-	};
+//	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+//		if (requestCode == 0) {
+//			finish();
+//		}
+//	};
 	
 	class MusicListAdapter extends BaseAdapter {
 		private List<MusicItem> mAllMusic;
@@ -217,6 +216,7 @@ public class MusicListActivity extends Activity {
 	    unbindService(mMusicSerConn);
 	    super.onDestroy();
 	}
+	
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if (keyCode == KeyEvent.KEYCODE_BACK) {
