@@ -92,7 +92,7 @@ public class MusicListActivity extends Activity {
 			switch (msg.what) {
 			case 0:
 				try {
-					adapter = new MusicListAdapter(mMusicData.getMusicShowList());
+					adapter = new MusicListAdapter(MusicData.getMusicShowList());
 					mMusicList.setAdapter(adapter);
 					if (getIntent().getBooleanExtra("scrollto", false)) {
 						mMusicList.setSelection((int) mMusicPlaySer.getQueuePosition());
@@ -210,6 +210,12 @@ public class MusicListActivity extends Activity {
 		}
 	}
 	
+	@Override
+	protected void onDestroy() {
+	    // TODO Auto-generated method stub
+	    unbindService(mMusicSerConn);
+	    super.onDestroy();
+	}
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if (keyCode == KeyEvent.KEYCODE_BACK) {
