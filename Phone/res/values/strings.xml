@@ -82,6 +82,17 @@
     <string name="setting_local_service_name">settingLocalServiceName</string>
     <!-- Setting layout -->
 
+	<!-- Remote Control -->
+	<string name="remote_control_not_support">Hardware not support</string>
+	<string name="remote_control_tip_touch">The blue dashed area can be touched</string>
+	<string name="remote_control_tip_mouse">Please shake your phone to choose content and click OK botton to opreation</string>
+	<string name="remote_control_tip_game1">Touch Screen status for games</string>
+	<string name="remote_control_tip_game2">Click Back botton to return to other controller status</string>
+	<string name="remote_control_title_touch">Touch pad</string>
+	<string name="remote_control_title_mouse">Air mouse</string>
+	<string name="remote_control_title_game">Touch screen</string>
+	<string name="remote_control_title_tran">Tranditional remote</string>
+	<!-- Remote Control -->
 
     <!-- Gesture guide layout -->
     <string name="gesture_guide_tip1">Move cursor to realize location</string>

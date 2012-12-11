@@ -31,7 +31,7 @@ public class AirtunesProcess extends HandlerThread {
 	public static boolean available = false;
 
 	private Handler.Callback mCb = new Handler.Callback() {
-		@Override
+
 		public boolean handleMessage(Message msg) {
 			boolean ret = false;
 			switch(msg.what) {
@@ -126,6 +126,8 @@ public class AirtunesProcess extends HandlerThread {
 			map.put("sr", "44100");            
 			map.put("pw","false");                                  
 			map.put("vn", "3");
+			map.put("da", "true");
+			map.put("md", "0,1,2");
 			map.put("txtvers", "1"); 
      		boolean ok = mBAR.registerBonjourService(BonjourAgentRegister.AIRTUNES_SERVICE_TYPE, macAddr+"@"+BonjourAgentRegister.AIRTUNES_SERVICE_NAME, BonjourAgentRegister.AIRTUNES_SERVICE_PORT, map);
      		if (ok) {
@@ -137,6 +139,35 @@ public class AirtunesProcess extends HandlerThread {
      }; 
      thread.start();
     }
+    
+	 public void setAlbum(String album_name, int length)
+	 {
+		 Log.d("AIRTUNES_JAVA","album_name = "+album_name);
+	 }
+	 public void setTitle(String song_name, int length)
+	 {
+		 Log.d("AIRTUNES_JAVA","song_name = "+song_name);
+	 }
+	 public void setArtist(String singer_name, int length)
+	 {
+		 Log.d("AIRTUNES_JAVA","singer_name = "+singer_name);
+	 }
+	 public void setAlbumThumb(byte[] buf, int length)
+	 {
+		 Log.d("AIRTUNES_JAVA","set artwork is be called");
+	 }
+	 public void setPlayStatus(int state)
+	 {
+		 Log.d("AIRTUNES_JAVA","playStatus = "+state);
+	 }
+	 public void setVolume(float vol)
+	 {
+		 Log.d("AIRTUNES_JAVA","volume = "+vol);
+	 }
+	 public void setDeviceTab(String deviceId, int length)
+	 {
+		 Log.d("AIRTUNES_JAVA","deviceId = "+deviceId);
+	 }
     
 	 public synchronized void  writeBuf(byte[] buf,int length)
 	 {    

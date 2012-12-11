@@ -81,7 +81,7 @@ public class ImageTag {
 	public String getFilePath() {
 		return mFilePath;
 	}
-
+	
 	public String getThumbnailPath() {
 		return mThumbnailPath;
 	}

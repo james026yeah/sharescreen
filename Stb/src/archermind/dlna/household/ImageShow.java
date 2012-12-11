@@ -23,6 +23,7 @@ import android.os.RemoteException;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.ImageView;
+import archermind.airplay.AirplayProcess;
 import archermind.ashare.R;
 
 import com.archermind.ashare.TypeDefs;
@@ -41,15 +42,17 @@ public class ImageShow extends Activity {
     private float mScaling = 1;
     private Handler mHandler = new IncomingHandler(this);
     DisplayMetrics mDm;
-    private DownloadPhotoBackground mPhotoDownloadTask;
-    private final Messenger mMessenger = new Messenger(mHandler);
+	private DownloadPhotoBackground mPhotoDownloadTask;
+	private final Messenger mMessenger = new Messenger(mHandler);
 
-    static class IncomingHandler extends Handler {
-        ImageShow mImageShow;
-        public IncomingHandler(ImageShow imageShow) {
-            mImageShow = imageShow;
-        }
-        @Override
+	class IncomingHandler extends Handler {
+		ImageShow mImageShow;
+
+		public IncomingHandler(ImageShow imageShow) {
+			mImageShow = imageShow;
+		}
+
+		@Override
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
 			case TypeDefs.MSG_DMR_AV_TRANS_SEEK:
@@ -71,6 +74,10 @@ public class ImageShow extends Activity {
                     }
                 }
                 break;
+            case TypeDefs.MSG_DMR_AV_TRANS_STOP:
+            case AirplayProcess.MSG_AIRPLAY_STOP:
+				finish();
+				break;
             default:
                 super.handleMessage(msg);
                 break;

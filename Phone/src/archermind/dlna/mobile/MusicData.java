@@ -8,11 +8,17 @@ import com.archermind.ashare.dlna.localmedia.Artist;
 import com.archermind.ashare.dlna.localmedia.MusicItem;
 
 public class MusicData{
+	
 	private static ArrayList<MusicItem> sAllMusic;
 	private static ArrayList<Artist> sMusicArtist;
 	private static ArrayList<Album> sMusicAlbum;
 	private static List<MusicItem> sMusicPlayList;
 	private static ArrayList<MusicItem> sMusicShowList;
+	
+	private static MusicItem sNowPlayingMusic = null;
+	private static int sMusicPlayItemInList;
+	
+	private static boolean sIsMusicPosted = false;
 	
 	public static void setMusicPlayList(List<MusicItem> musicPlayList) {
 		sMusicPlayList = musicPlayList;
@@ -28,6 +34,22 @@ public class MusicData{
 	
 	public static ArrayList<MusicItem> getMusicShowList() {
 		return sMusicShowList;
+	}
+	
+	public static void setNowPlayingMusic(MusicItem item) {
+		sNowPlayingMusic = item;
+	}
+	
+	public static MusicItem getNowPlayingMusic() {
+		return sNowPlayingMusic;
+	}
+	
+	public static void setNowPlayPositionInList(int position) {
+		sMusicPlayItemInList = position;
+	}
+	
+	public static int getNowPlayPositionInList() {
+		return sMusicPlayItemInList;
 	}
 	
 	public static void setAllMusic(ArrayList<MusicItem> allMusic) {
@@ -55,6 +77,11 @@ public class MusicData{
 		return sMusicAlbum;
 	}
 	
+	public void setMusicPosted(boolean status) {
+		sIsMusicPosted = status;
+	}
 	
-	
+	public boolean getMusicPosted() {
+		return sIsMusicPosted;
+	}
 }

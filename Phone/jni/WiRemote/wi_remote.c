@@ -51,7 +51,11 @@ static void gyro_to_mouse(struct sensor_event *event)
 	z = event->data[2];
 	y = -x * 9;
 	x = -z * 16;
-	send_mouse_move((int)x, (int)y);
+	if((int)x == 0 && (int)y == 0)
+		return;
+	else
+		send_mouse_move((int)x, (int)y);
+
 }
 
 static void sensor_data_cb(struct sensor_event *event, int count)
@@ -115,11 +119,9 @@ int send_multi_touch_event(int *x, int *y, int *press)
 	LOGD("touch press1 = %d, press2 = %d\n", press[0], press[1]);
 	if(press[0] || press[1])
 	{
-		LOGD("%s start at %d line\n", __func__, __LINE__);
 		touch_client_send_data_udp(handle, 2, x, y, press);
 	}
 	else{
-		LOGD("%s start at %d line\n", __func__, __LINE__);
 		touch_client_send_data(handle, 2, x, y, press);
 	}
 	return 0;

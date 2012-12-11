@@ -263,8 +263,8 @@ public class DeviceConfigActivity extends BaseActivity {
 	
 	@Override
 	protected void onPause() {
-		super.onPause();
 		mPaused = true;
+		super.onPause();
 		unregisterReceiver(mNetworkReceiver);
 	}
 

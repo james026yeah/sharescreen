@@ -57,7 +57,6 @@ public class RendererService extends Service {
 	private String mMediaURI;
 	private int mCurrentMediaType;
 	private MediaItem mCurrMediaInfo;
-	private MediaItem mNextMediaInfo;
 	
 	private MulticastLock mMulticastLock;
 	private ArrayList<Messenger> mClients = new ArrayList<Messenger>();
@@ -97,26 +96,16 @@ public class RendererService extends Service {
 			case AirplayProcess.MSG_AIRPLAY_PREPARED:
 				//mAirplayProc.startAirplay();
 				break;
-			case TypeDefs.MSG_DMR_AV_TRANS_SET_URI:			
-				mCurrentMediaType = msg.arg1;
-				mCurrMediaInfo = (MediaItem)msg.obj;
-				mMediaURI = mCurrMediaInfo.getItemUri();
-				break;
 			case AirplayProcess.MSG_AIRPLAY_SET_URI:
 				mCurrentMediaType = msg.arg1;
 				mMediaURI = (String)msg.obj;
 				break;
+			case TypeDefs.MSG_DMR_AV_TRANS_SET_URI:	
 			case TypeDefs.MSG_DMR_AV_TRANS_SET_NEXT_URI:
 				mCurrentMediaType = msg.arg1;
-				mNextMediaInfo = (MediaItem) msg.obj;
-				if (mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO) {
-					DLNAPlayer.mNextAudioUrl = mNextMediaInfo.getItemUri();
-					break;
-				} else {
-					mMediaURI = mNextMediaInfo.getItemUri();
-					mCurrMediaInfo = mNextMediaInfo;
-					break;
-				}
+				mCurrMediaInfo = (MediaItem)msg.obj;
+				mMediaURI = mCurrMediaInfo.getItemUri();
+				break;
 			case TypeDefs.MSG_DMR_AV_TRANS_PLAY:
 			case AirplayProcess.MSG_AIRPLAY_PLAY:
 				if (null == mMediaURI) {
@@ -146,8 +135,6 @@ public class RendererService extends Service {
 					if (mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO) {
 						tostart.putExtra(TypeDefs.KEY_CURR_MEDIA_INFO,
 								(MusicItem) mCurrMediaInfo);
-						tostart.putExtra(TypeDefs.KEY_NEXT_MEDIA_INFO,
-								(MusicItem) mNextMediaInfo);
 					} else if (mCurrentMediaType == TypeDefs.MEDIA_TYPE_DLNA_VIDEO) {
 						tostart.putExtra(TypeDefs.KEY_CURR_MEDIA_INFO,
 								(VideoItem) mCurrMediaInfo);
@@ -450,7 +437,7 @@ public class RendererService extends Service {
 	
 	private void startProcs() {
 		if(mRendererProc == null) {
-			mRendererProc = new RendererProcess(mHandler);
+			mRendererProc = new RendererProcess(mHandler, this);
 			mRendererProc.start();
 		}
 		if(mAirplayProc == null) {

@@ -56,6 +56,10 @@ public final class WiRemoteCmdClient {
 	public void sendWifiDisconnectedCmd() {
 		sendMessage(WiRemoteCmdComposer.obtainDisconnectWifiCmd());
 	}
+	
+	public void sendNewFriendlyNameCmd(String friendlyName) {
+	    sendMessage(WiRemoteCmdComposer.obtainRenameRendererCmd(friendlyName));
+	}
 
 	private void onMessageArrived(String message) {
 		WiRemoteCmdParser cmdParser = new WiRemoteCmdParser(message);

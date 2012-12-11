@@ -63,6 +63,10 @@ public:
   static void StopServer(bool bWait);
   static void SetMetadataFromBuffer(const char *buffer, unsigned int size);
   static void SetCoverArtFromBuffer(const char *buffer, unsigned int size);
+  static void SetProgress(const char *buffer, unsigned int size);
+  static void SetPlayStatus(int state);
+  static void SetVolume(float vol);
+  static void SetDeviceTab(const char *deviceId, int length);
   static void *Run(void *arg); 
 protected:
   void Process();
@@ -91,8 +95,8 @@ private:
 #if defined(TARGET_WINDOWS)
       static void* audio_init(void *cls, int bits, int channels, int samplerate);
       static void  audio_set_volume(void *cls, void *session, float volume);
-	    static void  audio_set_metadata(void *cls, void *session, const void *buffer, int buflen);
-	    static void  audio_set_coverart(void *cls, void *session, const void *buffer, int buflen);
+	  static void  audio_set_metadata(void *cls, void *session, const void *buffer, int buflen);
+	  static void  audio_set_coverart(void *cls, void *session, const void *buffer, int buflen);
       static void  audio_process(void *cls, void *session, const void *buffer, int buflen);
       static void  audio_flush(void *cls, void *session);
       static void  audio_destroy(void *cls, void *session);
@@ -108,7 +112,11 @@ private:
       static void ao_free_options(ao_option *options);
       static char* ao_get_option(ao_option *options, const char* key);
       static void ao_set_metadata(const char *buffer, unsigned int size);
-      static void ao_set_metadata_coverart(const char *buffer, unsigned int size);      
+      static void ao_set_metadata_coverart(const char *buffer, unsigned int size); 
+      static void ao_set_progress(const char *buffer, unsigned int size);	 
+	  static void ao_set_play_status(int state); 
+	  static void ao_set_volume(float vol);
+	  static void ao_set_device_tab(const char *deviceId, int length);
 #endif
     };
    bool m_stop;

@@ -30,5 +30,6 @@
     
     <!-- add by bin.yang -->
     <color name="app_main_bg">#FFEBEFF3</color>
+    <color name="progress_bg">#CC000000</color>
     <!-- add by bin.yang -->
 </resources>

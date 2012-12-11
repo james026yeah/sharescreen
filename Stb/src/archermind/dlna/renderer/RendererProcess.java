@@ -1,7 +1,5 @@
 package archermind.dlna.renderer;
 
-import java.util.UUID;
-
 import org.cybergarage.upnp.Action;
 import org.cybergarage.upnp.Argument;
 import org.cybergarage.upnp.control.ActionListener;
@@ -11,15 +9,18 @@ import org.cybergarage.upnp.std.av.renderer.ConnectionManager;
 import org.cybergarage.upnp.std.av.renderer.MediaRenderer;
 import org.cybergarage.upnp.std.av.renderer.RenderingControl;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
+import archermind.ashare.R;
 import archermind.dlna.household.DLNAPlayer;
 import archermind.dlna.media.MediaInfoUtil;
 import archermind.dlna.media.MediaItem;
-import archermind.dlna.media.VideoItem;
 import archermind.dlna.media.MediaItem.MediaType;
+import archermind.dlna.media.VideoItem;
 
 import com.archermind.ashare.TypeDefs;
 
@@ -73,6 +74,7 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 	private final static int MSG_STOP_PROCESS = 2;
 	private int mMediaType = TypeDefs.MEDIA_TYPE_INVALID;
 	private MediaRenderer mRenderer;
+	private Context mCtx;
 	private Handler mHandler;
 	private Handler mUIHandler;
 	private Handler.Callback mCb = new Handler.Callback() {
@@ -83,7 +85,17 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 			case MSG_START_RENDERER:
 				String uuid = (String)msg.obj;
 				mRenderer.setUDN("uuid:" + uuid);
-				mRenderer.setFriendlyName(generateDMRFriendlyName("TV Dongle", uuid));
+				
+				// Get default friendly name
+				String defaultFriendlyName = mCtx.getString(R.string.default_friendly_name);
+				Log.v(TAG, "onStartRenderer, default friendlyName:" + defaultFriendlyName);
+				// Get shared preferences for friendly name
+				SharedPreferences sp = mCtx.getSharedPreferences(Preferences.NAME,
+				        Context.MODE_PRIVATE);
+				String friendlyName = sp.getString(
+				        Preferences.KEY_FRIENDLY_NAME, defaultFriendlyName);
+				Log.v(TAG, "onStartRenderer, final friendlyName:" + friendlyName);
+				mRenderer.setFriendlyName(generateDMRFriendlyName(friendlyName, uuid));
 				mRenderer.start();
 				
 				Message renderMsg = new Message();
@@ -106,9 +118,10 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 		}		
 	};
 	
-	public RendererProcess(Handler uiHandler) {
+	public RendererProcess(Handler uiHandler, Context ctx) {
 		super(TAG);
 		mUIHandler = uiHandler;
+		mCtx = ctx;
 		try {
 			mRenderer = new MediaRenderer(
 					RENDERER_DESCRIPTION, RenderingControl.SCPD,

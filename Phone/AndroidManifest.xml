@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="archermind.dlna.mobile"
     android:versionCode="0"
-    android:versionName="2.1" >
+    android:versionName="2.2" >
 
     <uses-sdk android:minSdkVersion="10" />
 
@@ -39,36 +39,38 @@
         android:name="android.hardware.touchscreen"
         android:required="false" />
     <!-- end by wenyan -->
-    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <application
         android:icon="@drawable/app_icon"
         android:label="@string/app_name"
-        android:persistent="true"
         android:theme="@android:style/Theme.Light.NoTitleBar" >
-        <activity android:name=".WelcomeActivity"
+        <activity
+            android:name=".WelcomeActivity"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
             android:name=".MobileDLNAActivity"
-            android:label="@string/app_name"
-            android:theme="@android:style/Theme.NoTitleBar"
             android:configChanges="orientation|keyboardHidden|fontScale"
-            android:screenOrientation="portrait" >
+            android:label="@string/app_name"
+            android:screenOrientation="portrait"
+            android:theme="@android:style/Theme.NoTitleBar" >
         </activity>
         <activity
             android:name=".LocalMediaActivity"
-            android:label="@string/app_name"/>
+            android:label="@string/app_name" />
         <activity
             android:name=".ImageViewActivity"
             android:configChanges="orientation|keyboardHidden"
-            android:label="@string/app_name"/>
+            android:label="@string/app_name" />
         <activity
             android:name=".ImageSettingsActivity"
-             android:label="@string/app_name"/>
+            android:label="@string/app_name" />
         <activity
             android:name=".VideoViewActivity"
             android:configChanges="orientation|keyboardHidden"
@@ -79,9 +81,11 @@
             android:configChanges="orientation|keyboardHidden"
             android:label="@string/app_name"
             android:launchMode="singleTask"
-            android:screenOrientation="behind" >
+            android:screenOrientation="portrait" >
         </activity>
-        <activity android:name=".OnlineMediaActivity" />
+        <activity
+            android:name=".OnlineMediaActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".RemoteControllerActivity"
             android:screenOrientation="portrait" />
@@ -96,10 +100,13 @@
             </intent-filter>
         </service>
 
-        <activity android:name=".MusicListActivity"
-            android:launchMode="singleTask" />
+        <activity
+            android:name=".MusicListActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".SettingActivity"
+            android:screenOrientation="portrait"
             android:theme="@android:style/Theme.NoTitleBar" />
         <!-- add by wenyan -->
         <activity
@@ -174,15 +181,23 @@
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.NoTitleBar" >
         </activity>
-        <activity android:name="GestureGuideActivity"
+        <activity
+            android:name="GestureGuideActivity"
+            android:screenOrientation="portrait"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-        <activity android:name="FeedbackActivity"
+        <activity
+            android:name="FeedbackActivity"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
-        <activity android:name="AboutActivity" />
-        <activity android:name="ConfigTVActivity"
+        <activity
+            android:name="AboutActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="ConfigTVActivity"
             android:screenOrientation="portrait"
             android:theme="@android:style/Theme.NoTitleBar" />
-        <activity android:name="GameControllerActivity"
+        <activity
+            android:name="GameControllerActivity"
             android:screenOrientation="landscape"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
     </application>

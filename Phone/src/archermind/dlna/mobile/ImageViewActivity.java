@@ -56,7 +56,8 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 	
 	private static final int START_SLIDE = 0;
 	private static final int END_SLIDE = 1;
-	private static final int POST_IMAGE = 2;
+	private static final int POST_PREV_IMAGE = 2;
+	private static final int POST_NEXT_IMAGE = 3;
 	
 	private HashMap<Integer, ImageTag> mImageTagMaps = new HashMap<Integer, ImageTag>();
 	
@@ -76,6 +77,7 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 
 	private int mScreenWidth;
 	private int mScreenHeight;
+	private int mOldIndex;
 	private int mCurrentIndex;
 	private int mImageListMaxSize;
 	private int mPostIntervalTime;
@@ -83,7 +85,6 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 	
 	private float mRotateAngle;
 	
-	private boolean mIsFirst = true;
 	private boolean mIsShowZoomView;
 	private boolean mIsShowCoverView;
 	private boolean mIsPushed;
@@ -106,6 +107,7 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 		super.onCreate(savedInstanceState);
 
 		mCurrentIndex = getIntent().getIntExtra(IMAGE_INDEX, 0);
+		mOldIndex = mCurrentIndex;
 		mImageListMaxSize = sImageItemList.size();
 
 		setContentView(R.layout.local_media_image_view);
@@ -136,7 +138,7 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 			pushImage();
 		}
 	}
-	
+
 	
 	private void pushImage() {
 		if (!mIsPushed) {
@@ -210,18 +212,26 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 		
 		@Override
 		public void onPageSelected(int position) {
-			mCurrentIndex = position;
+			mHandler.removeMessages(POST_PREV_IMAGE);
+			mHandler.removeMessages(POST_NEXT_IMAGE);
+			if(mOldIndex > position) {
+				mOldIndex = mCurrentIndex;
+				mCurrentIndex = position;
+				mHandler.sendEmptyMessageDelayed(POST_PREV_IMAGE, mPostIntervalTime);
+			} else {
+				mOldIndex = mCurrentIndex;
+				mCurrentIndex = position;
+				mHandler.sendEmptyMessageDelayed(POST_NEXT_IMAGE, mPostIntervalTime);
+			}
 			setImageName(position);
 			mViewPagerBitmap = null;
-			if(position == 0) {
-				Toast.makeText(ImageViewActivity.this, R.string.image_first_number_toast_message,
-						Toast.LENGTH_SHORT).show();
-			} else if(position == mImageListMaxSize - 1) {
-				Toast.makeText(ImageViewActivity.this, R.string.image_last_number_toast_message,
-						Toast.LENGTH_SHORT).show();
-			}
-			mHandler.removeMessages(POST_IMAGE);
-			mHandler.sendEmptyMessageDelayed(POST_IMAGE, mPostIntervalTime);
+//			if(position == 0) {
+//				Toast.makeText(ImageViewActivity.this, R.string.image_first_number_toast_message,
+//						Toast.LENGTH_SHORT).show();
+//			} else if(position == mImageListMaxSize - 1) {
+//				Toast.makeText(ImageViewActivity.this, R.string.image_last_number_toast_message,
+//						Toast.LENGTH_SHORT).show();
+//			}
 		}
 		
 		@Override
@@ -254,13 +264,9 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 			if(mIsShowZoomView) {
 				showViewPagerView();
 			}
-			mViewPagerBitmap = null;
 			mCurrentIndex--;
 			setImageName(mCurrentIndex);
 			mViewPager.setCurrentItem(mCurrentIndex);
-			if(mIsPushed) {
-				postPlay(sImageItemList.get(mCurrentIndex).getItemUri(), sImageItemList.get(mCurrentIndex).metaData);
-			}
 		}
 	}
 
@@ -275,13 +281,10 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 			if(mIsShowZoomView) {
 				showViewPagerView();
 			}
-			mViewPagerBitmap = null;
+			mOldIndex = mCurrentIndex;
 			mCurrentIndex++;
 			setImageName(mCurrentIndex);
 			mViewPager.setCurrentItem(mCurrentIndex);
-			if(mIsPushed) {
-				postPlay(sImageItemList.get(mCurrentIndex).getItemUri(), sImageItemList.get(mCurrentIndex).metaData);
-			}
 		}
 	}
 
@@ -291,18 +294,19 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 	 */
 	private void rotateLeftImage() {
 		ImageTag tag = mImageTagMaps.get(mCurrentIndex);
-		if(tag != null) {
-			if(tag.getMaxScale() > 0) {
-				if(mIsShowZoomView) {
-					rotateZoomViewImage(tag, -mRotateAngle);
-				} else {
-					rotateViewPagerImage(tag, -mRotateAngle);
-				}
-				if(mIsPushed) {
-					postFlipImage(tag.getRotateValue() + "");
-				}
-			}
+		if (tag == null || tag.getScale() == 0) {
+			createBitmap(mCurrentIndex);
 		}
+		tag = mImageTagMaps.get(mCurrentIndex);
+		if (mIsShowZoomView) {
+			rotateZoomViewImage(tag, -mRotateAngle);
+		} else {
+			rotateViewPagerImage(tag, -mRotateAngle);
+		}
+		if (mIsPushed) {
+			postFlipImage(tag.getRotateValue() + "");
+		}
+
 	}
 	
 	
@@ -311,17 +315,17 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 	 */
 	private void rotateRightImage() {
 		ImageTag tag = mImageTagMaps.get(mCurrentIndex);
-		if(tag != null) {
-			if(tag.getMaxScale() > 0) {
-				if(mIsShowZoomView) {
-					rotateZoomViewImage(tag, mRotateAngle);
-				} else {
-					rotateViewPagerImage(tag, mRotateAngle);
-				}
-				if(mIsPushed) {
-					postFlipImage(tag.getRotateValue() + "");
-				}
-			}
+		if(tag == null || tag.getScale() == 0) {
+			createBitmap(mCurrentIndex);
+		}
+		tag = mImageTagMaps.get(mCurrentIndex);
+		if(mIsShowZoomView) {
+			rotateZoomViewImage(tag, mRotateAngle);
+		} else {
+			rotateViewPagerImage(tag, mRotateAngle);
+		}
+		if(mIsPushed) {
+			postFlipImage(tag.getRotateValue() + "");
 		}
 	}
 	
@@ -331,17 +335,17 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 	 */
 	private void zoomInImage() {
 		ImageTag tag = mImageTagMaps.get(mCurrentIndex);
-		if(tag != null) {
-			if(tag.getMaxScale() > 0) {
-				if(tag.getIsBigImage()) {
-					zoomInBigImage(tag);
-				} else {
-					zoomInSmallImage(tag);
-				}
-				if(mIsPushed) {
-					postScalingImage(tag.getScale() + "");
-				}
-			}
+		if (tag == null || tag.getScale() == 0) {
+			createBitmap(mCurrentIndex);
+		}
+		tag = mImageTagMaps.get(mCurrentIndex);
+		if (tag.getIsBigImage()) {
+			zoomInBigImage(tag);
+		} else {
+			zoomInSmallImage(tag);
+		}
+		if (mIsPushed) {
+			postScalingImage(tag.getScale() + "");
 		}
 	}
 	
@@ -351,17 +355,17 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 	 */
 	private void zoomOutImage() {
 		ImageTag tag = mImageTagMaps.get(mCurrentIndex);
-		if(tag != null) {
-			if(tag.getMaxScale() > 0) {
-				if(tag.getIsBigImage()) {
-					zoomOutBigImage(tag);
-				} else {
-					zoomOutSmallImage(tag);
-				}
-				if(mIsPushed) {
-					postScalingImage(tag.getScale() + "");
-				}
-			}
+		if (tag == null || tag.getScale() == 0) {
+			createBitmap(mCurrentIndex);
+		}
+		tag = mImageTagMaps.get(mCurrentIndex);
+		if (tag.getIsBigImage()) {
+			zoomOutBigImage(tag);
+		} else {
+			zoomOutSmallImage(tag);
+		}
+		if (mIsPushed) {
+			postScalingImage(tag.getScale() + "");
 		}
 	}
 	
@@ -383,7 +387,9 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 		}
 		mImageZoomView.setImage(mZoomBitmap);
 		mImageZoomState.setControlType(ControlType.ZOOM);
-		mImageZoomState.setZoom(scale);
+		mImageZoomState.setMaxScale(tag.getMaxScale());
+		mImageZoomState.setMinScale(tag.getMinScale());
+		mImageZoomState.setScale(scale);
 		mImageZoomState.setPanX(0.5f);
 		mImageZoomState.setPanY(0.5f);
 		mImageZoomState.notifyObservers();
@@ -407,7 +413,7 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 		}
 		mImageZoomView.setImage(mZoomBitmap);
 		mImageZoomState.setControlType(ControlType.ZOOM);
-		mImageZoomState.setZoom(scale);
+		mImageZoomState.setScale(scale);
 		mImageZoomState.setPanX(0.5f);
 		mImageZoomState.setPanY(0.5f);
 		mImageZoomState.notifyObservers();
@@ -462,7 +468,7 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 				mZoomBitmap.getHeight(), matrix, true);
 		mImageZoomView.setImage(mZoomBitmap);
 		mImageZoomState.setControlType(ControlType.ZOOM);
-		mImageZoomState.setZoom(tag.getScale());
+		mImageZoomState.setScale(tag.getScale());
 		mImageZoomState.setPanX(0.5f);
 		mImageZoomState.setPanY(0.5f);
 		mImageZoomState.notifyObservers();
@@ -541,15 +547,20 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 						mViewPager.setCurrentItem(mCurrentIndex);
 					}
 					if(mIsPushed) {
-						postPlay(sImageItemList.get(mCurrentIndex).getItemUri(), sImageItemList.get(mCurrentIndex).metaData);
+						postNext(sImageItemList.get(mCurrentIndex).getItemUri(), sImageItemList.get(mCurrentIndex).metaData);
 					}
 					break;
 				case END_SLIDE:
 					hideCoverView();
 					break;
-				case POST_IMAGE:
+				case POST_PREV_IMAGE:
 					if(mIsPushed) {
-						postPlay(sImageItemList.get(mCurrentIndex).getItemUri(), sImageItemList.get(mCurrentIndex).metaData);
+						postPrevious(sImageItemList.get(mCurrentIndex).getItemUri(), sImageItemList.get(mCurrentIndex).metaData);
+					}
+					break;
+				case POST_NEXT_IMAGE:
+					if(mIsPushed) {
+						postNext(sImageItemList.get(mCurrentIndex).getItemUri(), sImageItemList.get(mCurrentIndex).metaData);
 					}
 					break;
 				}
@@ -577,34 +588,29 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 					|| (options.outHeight / scale > mScreenHeight * 2)) {
 				scale *= 2;
 			}
-
 			options.inJustDecodeBounds = false;
 			options.inSampleSize = scale;
 			Bitmap bitmap = BitmapFactory.decodeFile(filePath, options);
 
 			if (bitmap != null) {
+				
 				int width = bitmap.getWidth();
 				int height = bitmap.getHeight();
 				Matrix matrix = new Matrix();
-				ImageTag tag;
-
-				if(mIsFirst) {
+				ImageTag tag = mImageTagMaps.get(mCurrentIndex);
+				
+				if(tag == null || tag.getScale() == 0) {
+					/**
+					 * Into the application for the first time or Currently displayed thumbnail_image
+					 */
 					tag = new ImageTag();
 					tag.setFilePath(filePath);
 					tag.setThumbnailPath(thumbnailPath);
-					tag.setRotateValue(ROTATE_DEFAULT_VALUE);
 					tag.setType(ImageTag.IMAGE_FULL);
 					tag.setScreenWidth(mScreenWidth);
 					tag.setScreenHeigh(mScreenHeight);
 					tag.setPosition(mCurrentIndex);
-					
-//					float scaleWidth;
-//					float scaleHeight;
-
 					if (width > tag.getScreenWidth() || height > tag.getScreenHeight()) {
-//						scaleWidth = (float) width / (float) tag.getScreenWidth();
-//						scaleHeight = (float) height / (float) tag.getScreenHeight();
-//						maxScale = Math.max(scaleWidth, scaleHeight);
 						tag.setIsBigImage(true);
 						tag.setMaxScale(3.0f);
 						tag.setMinScale(1.0f);
@@ -618,9 +624,6 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 						tag.setScale(1.0f);
 					}
 					mImageTagMaps.put(mCurrentIndex, tag);
-					mIsFirst = false;
-				} else {
-					tag = mImageTagMaps.get(mCurrentIndex);
 				}
 				matrix.setScale(tag.getScale(), tag.getScale());
 				bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
@@ -662,7 +665,7 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 				" " + mSlideIntervalTime + " " + getResources().getString(R.string.image_start_show_slide_after);
 		Toast.makeText(this, value, Toast.LENGTH_SHORT).show();
 		if(mIsPushed) {
-			postPlay(sImageItemList.get(mCurrentIndex).getItemUri(), sImageItemList.get(mCurrentIndex).metaData);
+			postNext(sImageItemList.get(mCurrentIndex).getItemUri(), sImageItemList.get(mCurrentIndex).metaData);
 		}
 	}
 
@@ -762,6 +765,7 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 			mHandler.removeMessages(START_SLIDE);
 			mHandler.removeMessages(END_SLIDE);
 			cancelTask();
+			poststop();
 			finish();
 			overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);
 			break;
@@ -795,6 +799,7 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 			mHandler.removeMessages(START_SLIDE);
 			mHandler.removeMessages(END_SLIDE);
 			cancelTask();
+			poststop();
 			finish();
 			overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);
 			break;
@@ -855,21 +860,22 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 			super(context);
 			
 //			ScrollZoomImageView image = new ScrollZoomImageView(context);
-			ImageView image = new ImageView(context);
 			String filePath = sImageItemList.get(position).getFilePath();
 			String thumbnailPath = sImageItemList.get(position).getThumbFilePath();
+			
 			ImageTag tag = mImageTagMaps.get(position);
 			if(tag == null) {
 				tag = new ImageTag();
 				tag.setFilePath(filePath);
 				tag.setThumbnailPath(thumbnailPath);
-				tag.setRotateValue(ROTATE_DEFAULT_VALUE);
 				tag.setType(ImageTag.IMAGE_FULL);
 				tag.setScreenWidth(mScreenWidth);
 				tag.setScreenHeigh(mScreenHeight);
 				tag.setPosition(position);
 				mImageTagMaps.put(position, tag);
 			}
+			
+			ImageView image = new ImageView(context);
 			image.setTag(tag);
 			mImageLoadManager.loadImage(image);
 //			LinearLayout layout = new LinearLayout(context);

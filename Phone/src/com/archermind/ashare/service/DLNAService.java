@@ -36,6 +36,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import archermind.dlna.mobile.LocalMediaActivity;
 import archermind.dlna.mobile.MessageDefs;
@@ -458,7 +459,7 @@ public class DLNAService extends Service {
 				Log.d(TAG, "After Merge:" + dev.getUDN());
 				if(this.mCurrentRenderer == null && dev.getUDN().equals(savedUDN)) {
 				    Log.v(TAG, "onSearchResponse--> auto connect device: " + dev.getUDN());
-				    mCurrentRenderer = dev;
+				    setCurrentRenderer(dev, false);
 				}
 			}
 			sendDeviceChangedMessage();
@@ -483,7 +484,7 @@ public class DLNAService extends Service {
             Log.v(TAG, "onDeviceAdd--> saved udn:" + savedUDN);
             if(this.mCurrentRenderer == null && dev.getUDN().equals(savedUDN)) {
                 Log.v(TAG, "onDeviceAdd--> auto connect device: " + dev.getUDN());
-                mCurrentRenderer = dev;
+                setCurrentRenderer(dev, false);
             }
 			sendDeviceChangedMessage();
 		}
@@ -502,8 +503,7 @@ public class DLNAService extends Service {
 			if(mCurrentRenderer != null && 
 					mCurrentRenderer.getUDN().equals(dev.getUDN())) {
 				Log.v(TAG, "onDeviceRemoved--> current renderer removed");
-				mCurrentRenderer = null;
-				WiRemoteCmdClient.getInstance().stop();
+				setCurrentRenderer(null, false);
 			}
 			Log.v(TAG, "onDeviceRemoved--> renderer removed udn:" + dev.getUDN());
 			removeFromDeviceList(mRendererList, dev);
@@ -646,6 +646,12 @@ public class DLNAService extends Service {
 	}
 
 	private void showNotification() {
+		
+		SharedPreferences preference = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+		if (!preference.getBoolean(getString(R.string.setting_use_notification_key), false)) {
+			return;
+		}
+		
 		// In this sample, we'll use the same text for the ticker and the expanded notification
 		CharSequence text = getText(R.string.notification_content_txt);
 
@@ -687,8 +693,7 @@ public class DLNAService extends Service {
 		mLocalMDMS = null;
 		onLocalMDMSStatusChanged();
 		mRendererList.clear();
-		mCurrentRenderer = null;	
-		WiRemoteCmdClient.getInstance().stop();
+		setCurrentRenderer(null, false);
 		sendDeviceChangedMessage();
 
 		if(mMDMCProc != null && mMDMCProc.isAlive()) {
@@ -782,16 +787,7 @@ public class DLNAService extends Service {
     		if(dev.getUDN().equals(info.mUDN)) {
     			Log.v(TAG, "onConnectDeviceMessage---------------> found the dev location:" +
     					dev.getLocation());
-    			mCurrentRenderer = dev;
-    			
-    			// save the renderer we connected
-    			SharedPreferences sp = DLNAService.this.getSharedPreferences(SHARED_PREFERENCES_NAME,
-    			        MODE_PRIVATE);
-    			SharedPreferences.Editor editor = sp.edit();
-    			editor.putString(SP_KEY_UDN, mCurrentRenderer.getUDN());
-    			editor.commit();
-    			
-    			WiRemoteCmdClient.getInstance().start(getIPAddrOfCurrntRenderer());
+    			setCurrentRenderer(dev, true);
     			info.mState = DeviceInfo.DEV_STATE_CONNECTED;
     			break;
     		}
@@ -875,6 +871,7 @@ public class DLNAService extends Service {
 		@Override
 		public void onServerConnected() {
 			Log.v(TAG, "-------------------> onServerConnected");
+			WiRemoteCmdClient.getInstance().sendNewFriendlyNameCmd("客厅电视");
 			if(mLastMessage == MessageDefs.MSG_SERVICE_RENDERER_DISCONNECT_WIFI) {
 				Log.v(TAG, "-------------------> send disconnected wifi cmd");
 				WiRemoteCmdClient.getInstance().sendWifiDisconnectedCmd();
@@ -904,5 +901,25 @@ public class DLNAService extends Service {
 			Log.v(TAG, "------------------> startIndex ip:" + ipAddr);
 		}
 		return ipAddr;
+	}
+	
+	private void setCurrentRenderer(Device renderer, boolean saveSharedPreferences) {
+	    mCurrentRenderer = renderer;
+	    if(mCurrentRenderer == null) {
+	        WiRemoteCmdClient.getInstance().stop();
+	    } else {
+	        // restart WI-REMOTE client with the new renderer device
+	        WiRemoteCmdClient.getInstance().stop();
+            WiRemoteCmdClient.getInstance().start(getIPAddrOfCurrntRenderer());
+	    }
+	    
+	    if(saveSharedPreferences) {
+            // save the renderer we connected
+            SharedPreferences sp = DLNAService.this.getSharedPreferences(SHARED_PREFERENCES_NAME,
+                    MODE_PRIVATE);
+            SharedPreferences.Editor editor = sp.edit();
+            editor.putString(SP_KEY_UDN, mCurrentRenderer.getUDN());
+            editor.commit();
+	    }
 	}
 }

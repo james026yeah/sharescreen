@@ -187,9 +187,8 @@ public class LocalMediaDbHelper {
 				MediaStore.Audio.Media.MIME_TYPE,
 				MediaStore.Audio.Media.ALBUM_ID, MediaStore.Audio.Media.ARTIST,
 				MediaStore.Audio.Media.ALBUM };
-		Cursor cursor = cr.query(
-				MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-				str, where, args, MediaStore.Audio.Media.DEFAULT_SORT_ORDER);
+		Cursor cursor = cr.query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, 
+				str, MediaStore.Audio.Media.IS_MUSIC + "=1", null, null);
 		if (null == cursor) {
 			return null;
 		}

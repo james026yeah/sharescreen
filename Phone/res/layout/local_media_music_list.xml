@@ -12,13 +12,20 @@
         <ImageButton
             android:id="@+id/back_arrow"
             android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
+            android:layout_height="match_parent"
             android:layout_gravity="center_vertical"
-            android:layout_marginLeft="10dip"
-            android:background="#00000000"
+            android:paddingLeft="15dp"
+            android:paddingRight="15dp"
+            android:background="@drawable/image_right_top_bg_sel"
             android:onClick="doClick"
             android:contentDescription="@string/app_name"
             android:src="@drawable/bth_back_arrow_normal" />
+        
+        <ImageView
+            android:id="@+id/top_bar_left_line"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:src="@drawable/music_top_bar_line" />
 
         <TextView
             android:id="@+id/list_title"

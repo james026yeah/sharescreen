@@ -27,7 +27,8 @@
         android:dependency="@string/setting_use_local_service"
         android:key="@string/setting_find_local_service"
         android:layout="@layout/preference_checkbox"
-        android:title="@string/setting_find_local_service_title" />
+        android:title="@string/setting_find_local_service_title"
+        android:widgetLayout="@layout/custom_checkbox" />
 
     <EditTextPreference
         android:defaultValue="@string/setting_local_service_name_default"

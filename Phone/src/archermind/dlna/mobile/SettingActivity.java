@@ -1,5 +1,6 @@
 package archermind.dlna.mobile;
 
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -13,6 +14,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
+import android.widget.VideoView;
 
 public class SettingActivity extends PreferenceActivity implements
 		OnSharedPreferenceChangeListener {
@@ -30,6 +32,8 @@ public class SettingActivity extends PreferenceActivity implements
 		// Load the preferences from an XML resource
 		addPreferencesFromResource(R.xml.preferences);
 		setContentView(R.layout.set_preference_main);
+		
+		findViewById(R.id.top_bar_right_line).setVisibility(View.GONE);
 
 		findViewById(R.id.image_left_top).setOnClickListener(new OnClickListener() {
 			@Override
@@ -62,6 +66,10 @@ public class SettingActivity extends PreferenceActivity implements
 		if (key.equals(getResources().getString(R.string.setting_local_service_name))) {
 			mLocalServiceName.setSummary(sharedPreferences.getString(key, 
 					getResources().getString(R.string.setting_local_service_name_default)));
+		}
+		if (key.equals(getResources().getString(R.string.setting_use_notification_key))) {
+			NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+			nm.cancel(R.string.notification_content_txt);
 		}
 	}
 

@@ -23,7 +23,17 @@ public class ImageZoomState extends Observable {
 	/**
 	 * Zoom level A value of 1.0 means the content fits the view.
 	 */
-	private float mZoom;
+	private float mScale;
+	
+	/**
+	 * The maximum magnification of the picture can be scaled
+	 */
+	private float mMaxScale;
+	
+	/**
+	 * The smallest multiple of the picture can be scaled
+	 */
+	private float mMinScale = 1.0f;
 
 	/**
 	 * Pan position x-coordinate X-coordinate of zoom window center position,
@@ -82,8 +92,8 @@ public class ImageZoomState extends Observable {
 	 * 
 	 * @return Current zoom value
 	 */
-	public float getZoom() {
-		return mZoom;
+	public float getScale() {
+		return mScale;
 	}
 
 	public float getMaxPanX() {
@@ -102,6 +112,14 @@ public class ImageZoomState extends Observable {
 		return mMinPanY;
 	}
 	
+	public float getMaxScale() {
+		return mMaxScale;
+	}
+	
+	public float getMinScale() {
+		return mMinScale;
+	}
+	
 	public ControlType getControlType() {
 		return mControlType;
 	}
@@ -113,8 +131,8 @@ public class ImageZoomState extends Observable {
 	 *            (Aspect ratio content) / (Aspect ratio view)
 	 * @return Current zoom value in x-dimension
 	 */
-	public float getZoomX(float aspectQuotient) {
-		return Math.min(mZoom, mZoom * aspectQuotient);
+	public float getScaleX(float aspectQuotient) {
+		return Math.min(mScale, mScale * aspectQuotient);
 	}
 
 	/**
@@ -124,8 +142,8 @@ public class ImageZoomState extends Observable {
 	 *            (Aspect ratio content) / (Aspect ratio view)
 	 * @return Current zoom value in y-dimension
 	 */
-	public float getZoomY(float aspectQuotient) {
-		return Math.min(mZoom, mZoom / aspectQuotient);
+	public float getScaleY(float aspectQuotient) {
+		return Math.min(mScale, mScale / aspectQuotient);
 	}
 
 	/**
@@ -160,9 +178,9 @@ public class ImageZoomState extends Observable {
 	 * @param zoom
 	 *            Zoom value to set
 	 */
-	public void setZoom(float zoom) {
-		if(zoom != mZoom) {
-			mZoom = zoom;
+	public void setScale(float scale) {
+		if(scale != mScale) {
+			mScale = scale;
 			setChanged();
 		}
 	}
@@ -191,6 +209,14 @@ public class ImageZoomState extends Observable {
 	
 	public void setMinPanY(float minPanY) {
 		mMinPanY = minPanY;
+	}
+	
+	public void setMaxScale(float maxScale) {
+		mMaxScale = maxScale;
+	}
+	
+	public void setMinScale(float minScale) {
+		mMinScale = minScale;
 	}
 	
 }

@@ -534,7 +534,8 @@ static void handleClient(int pSock, char *pPassword, char *pHWADDR)
     while(1 == tMoreDataNeeded)
     { 
       tError = readDataFromClient(pSock, &(tConn.recv));
-      if(!tError && strlen(tConn.recv.data) > 0)
+      //if(!tError && strlen(tConn.recv.data) > 0)
+	  if(!tError && tConn.recv.current > 0)
       { 
         __shairport_xprintf("Finished Reading some data from client\n");
 	LOGD("Finished Reading some data from client\n");
@@ -790,7 +791,8 @@ static int parseMessage(struct connection *pConn, unsigned char *pIpBin, unsigne
   if(tContent != NULL)
   {
     unsigned int tContentSize = atoi(tContent);
-    if(pConn->recv.marker == 0 || strlen(pConn->recv.data+pConn->recv.marker) != tContentSize)
+    //if(pConn->recv.marker == 0 || strlen(pConn->recv.data+pConn->recv.marker) != tContentSize)
+	if(pConn->recv.marker == 0 || pConn->recv.current-pConn->recv.marker != tContentSize)
     {
       if(isLogEnabledFor(HEADER_LOG_LEVEL))
       {
@@ -798,9 +800,8 @@ static int parseMessage(struct connection *pConn, unsigned char *pIpBin, unsigne
 	LOGD("Content-Length: %s value -> %d\n", tContent, tContentSize);
         if(pConn->recv.marker != 0)
         {
-          __shairport_xprintf("ContentPtr has %d, but needs %d\n",
-                  strlen(pConn->recv.data+pConn->recv.marker), tContentSize);
-	  LOGD("ContentPtr has %d, but needs %d\n",strlen(pConn->recv.data+pConn->recv.marker), tContentSize);
+     	  //LOGD("ContentPtr has %d, but needs %d\n",strlen(pConn->recv.data+pConn->recv.marker), tContentSize);
+		  LOGD("ContentPtr has %d, but needs %d\n",(pConn->recv.current-pConn->recv.marker), tContentSize);
         }
       }
       // check if value in tContent > 2nd read from client.
@@ -848,6 +849,12 @@ static int parseMessage(struct connection *pConn, unsigned char *pIpBin, unsigne
   }
   else if(!strncmp(pConn->recv.data, "ANNOUNCE", 8))
   {
+	int deviceIdSize = 0;
+	char *tApple_deviceId = getFromContent(pConn->recv.data, "X-Apple-Device-ID", &deviceIdSize);
+	if (deviceIdSize > 0)
+	{
+	  __shairport_hairtunes_set_device_tab(tApple_deviceId,deviceIdSize);
+	}
     char *tContent = pConn->recv.data + pConn->recv.marker;
     int tSize = 0;
     char *tHeaderVal = getFromContent(tContent, "a=aesiv", &tSize); // Not allocated memory, just pointing
@@ -1039,6 +1046,7 @@ static int parseMessage(struct connection *pConn, unsigned char *pIpBin, unsigne
     write(pConn->hairtunes->in[1], "flush\n", 6);
 #else
     __shairport_hairtunes_flush();
+	__shairport_hairtunes_set_play_status(0);
 #endif
     propogateCSeq(pConn);
   }
@@ -1046,22 +1054,92 @@ static int parseMessage(struct connection *pConn, unsigned char *pIpBin, unsigne
   {
     propogateCSeq(pConn);
     int tSize = 0;
-    char *tVol = getFromHeader(pConn->recv.data, "volume", &tSize);
-    __shairport_xprintf("About to write [vol: %.*s] data to hairtunes\n", tSize, tVol);
-    LOGD("About to write [vol: %.*s] data to hairtunes\n", tSize, tVol);
+
+   char *buffer = NULL;
+	char *contentType = getFromHeader(pConn->recv.data, "Content-Type", &tSize);
+	char *tContent = getFromHeader(pConn->recv.data, "Content-Length", NULL);
+	int iContentSize = 0;
+	int isJpg = 0;
+
+	if(tContent != NULL)
+	{
+	  iContentSize = atoi(tContent);
+	}
+
+	if( tSize > 1 &&
+		((strncmp(contentType, "application/x-dmap-tagged", tSize) == 0) ||
+		(strncmp(contentType, "image/jpeg", tSize) == 0))                 )
+	{
+	  if( (pConn->recv.current - pConn->recv.marker) == iContentSize && pConn->recv.marker != 0)
+	  {
+	    if(strncmp(contentType, "image/jpeg", tSize) == 0)
+		{
+		  isJpg = 1;
+		}
+		buffer = (char *)malloc(iContentSize * sizeof(char));
+		memcpy(buffer, pConn->recv.data + pConn->recv.marker, iContentSize);
+	  }
+      else
+	  {
+	    iContentSize = 0;
+	  }
+	}
+	else
+	{
+	  iContentSize = 0;
+	}
+    
+    //Volume and Progress Content-Type is text/parameters
+	char *tVol = getFromHeader(pConn->recv.data, "volume", &tSize);
+	char *tProgress = getFromHeader(pConn->recv.data, "progress", &tSize);
+    //LOGD("About to write [vol: %.*s] data to hairtunes\n", tSize, tVol);
+	if(tVol)
+	{
+		LOGD("About to write [vol: %.*s] data to hairtunes\n", tSize, tVol);
+	}
+	if(tProgress)
+	{
+	    LOGD("About to wirte [progress: %.*s] data to hairtunes\n",tSize, tVol);
+	}
     // TBD VOLUME
 #ifndef XBMC
     write(pConn->hairtunes->in[1], "vol: ", 5);
     write(pConn->hairtunes->in[1], tVol, tSize);
     write(pConn->hairtunes->in[1], "\n", 1);
 #else
-    __shairport_hairtunes_setvolume(atof(tVol));
+    //__shairport_hairtunes_setvolume(atof(tVol));
+	if(tVol)
+	{
+	  __shairport_hairtunes_setvolume(atof(tVol));
+	  __shairport_hairtunes_set_volume(atof(tVol));//only update volume progress
+	}
+	if(tProgress)
+	{
+	  __shairport_hairtunes_set_progress(tProgress,tSize);
+	}
+
+	if(iContentSize)
+	{
+	  if(isJpg)
+	  {
+		__shairport_hairtunes_set_metadata_coverart(buffer, iContentSize);
+	  }
+	  else
+	  {
+		__shairport_hairtunes_set_metadata(buffer, iContentSize);
+	  }
+	  free(buffer);
+	}
 #endif
     __shairport_xprintf("Finished writing data write data to hairtunes\n");
     LOGD("Finished writing data write data to hairtunes\n");
   }
   else
   {
+	if(!strncmp(pConn->recv.data, "RECORD",6))
+	{
+	  __shairport_hairtunes_set_play_status(1);
+	}
     __shairport_xprintf("\n\nUn-Handled recv: %s\n", pConn->recv.data);
     LOGD("\n\nUn-Handled recv: %s\n", pConn->recv.data);
     propogateCSeq(pConn);

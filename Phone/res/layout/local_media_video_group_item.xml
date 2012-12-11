@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:paddingRight="20dp"
-    android:paddingLeft="10dp">
+    android:paddingLeft="10dp"
+    android:background="@drawable/more_list_sel">
 
     <TextView
         android:id="@+id/video_group_item_text"
@@ -11,7 +12,7 @@
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
         android:textColor="#3887d7"
-        android:textSize="18sp"/>
+        android:textSize="20sp"/>
     
     <ImageView
         android:id="@+id/video_group_item_image"

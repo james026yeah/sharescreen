@@ -3,6 +3,7 @@ package archermind.dlna.mobile;
 import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -20,16 +21,16 @@ public class ImageZoomListener implements OnTouchListener {
 
 	/** Y-coordinate of previously handled touch event */
 	private float mY;
-	
+
 	/** State being controlled by touch events */
 	private ImageZoomState mState;
 
 	private GestureDetector mGestureDetector;
-	
+
 	private static final int PREV_IMAGE = 0;
 	private static final int NEXT_IMAGE = 1;
 	private static final int CHANGE_IMAGE_TIME = 50;
-	
+
 	private ImageViewActivity mImageViewActivity;
 
 	public void setmGestureDetector(GestureDetector gestureDetector) {
@@ -49,42 +50,68 @@ public class ImageZoomListener implements OnTouchListener {
 	public void setActivity(ImageViewActivity activity) {
 		mImageViewActivity = activity;
 	}
-	
+
 	// implements View.OnTouchListener
 	public boolean onTouch(View v, MotionEvent event) {
 		if (mGestureDetector != null && mGestureDetector.onTouchEvent(event)) {
 			return true;
 		}
-
-		mState.setControlType(ControlType.PAN);
 		
-		final float x = event.getX();
-		final float y = event.getY();
+		mState.setControlType(ControlType.PAN);
+		// single point event
+		float x = event.getX();
+		float y = event.getY();
+		
+		// multiple point event
+//		if(event.getPointerCount() > 1) {
+//			
+//			mState.setControlType(ControlType.ZOOM);
+//			
+//			float point1_x = event.getX(0);
+//			float point1_y = event.getY(0);
+//			
+//			float point2_x = event.getX(1);
+//			float point2_y = event.getY(1);
+//			
+//			Log.e("ImageViewActivity", "point1 x = " + point1_x);
+//			Log.e("ImageViewActivity", "point1 y = " + point1_y);
+//			Log.e("ImageViewActivity", "point2 x = " + point2_x);
+//			Log.e("ImageViewActivity", "point2 y = " + point2_y);
+//		}
 
-		final int action = event.getAction();
+		int action = event.getAction();
 		switch (action) {
-			case MotionEvent.ACTION_DOWN:
-				mX = x;
-				mY = y;
-				break;
-	
-			case MotionEvent.ACTION_MOVE:
-	
-				mHandler.removeMessages(PREV_IMAGE);
-				mHandler.removeMessages(NEXT_IMAGE);
-				
-				final float dx = (x - mX) / v.getWidth();
-				final float dy = (y - mY) / v.getHeight();
-	
-				// if (mControlType == ControlType.ZOOM) {
-				// mState.setZoom(mState.getZoom() * (float) Math.pow(20, -dy));
-				// mState.notifyObservers();
-				// } else {
-				// }
-	
+		case MotionEvent.ACTION_DOWN:
+			mX = x;
+			mY = y;
+			break;
+
+		case MotionEvent.ACTION_MOVE:
+
+			mHandler.removeMessages(PREV_IMAGE);
+			mHandler.removeMessages(NEXT_IMAGE);
+
+			float dx = (x - mX) / v.getWidth();
+			float dy = (y - mY) / v.getHeight();
+
+//			if (mState.getControlType() == ControlType.ZOOM) {
+//				float scale = mState.getScale() * (float) Math.pow(20, -dy);
+//				if(scale < mState.getMinScale()) {
+//					scale = mState.getMinScale();
+//				}
+//				if(scale > mState.getMaxScale()) {
+//					scale = mState.getMaxScale();
+//				}
+////				mImageViewActivity.setScale(scale);
+//				mState.setScale(scale);
+////				Log.e("ImageViewActivity", "scale = " + mState.getScale());
+//				mState.notifyObservers();
+////				mImageViewActivity.zoomImage();
+//			} else {
+
 				float panX = mState.getPanX() - dx;
 				float panY = mState.getPanY() - dy;
-				
+
 				if (panX < mState.getMinPanX()) {
 					panX = mState.getMinPanX();
 //					mHandler.sendEmptyMessageDelayed(PREV_IMAGE, CHANGE_IMAGE_TIME);
@@ -99,35 +126,36 @@ public class ImageZoomListener implements OnTouchListener {
 				if (panY > mState.getMaxPanY()) {
 					panY = mState.getMaxPanY();
 				}
-				
+
 				mState.setPanX(panX);
 				mState.setPanY(panY);
 				mState.notifyObservers();
-				
-				mX = x;
-				mY = y;
-				break;
+//			}
+
+			mX = x;
+			mY = y;
+			break;
 		}
 		return true;
 	}
 
 	Handler mHandler = new Handler() {
 		public void handleMessage(Message msg) {
-			switch(msg.what) {
-				case PREV_IMAGE:
-					if(mImageViewActivity != null) {
-						mImageViewActivity.prevImage();
-						mImageViewActivity = null;
-					}
-					break;
-				case NEXT_IMAGE:
-					if(mImageViewActivity != null) {
-						mImageViewActivity.nextImage();
-						mImageViewActivity = null;
-					}
-					break;
+			switch (msg.what) {
+			case PREV_IMAGE:
+				if (mImageViewActivity != null) {
+					mImageViewActivity.prevImage();
+					mImageViewActivity = null;
+				}
+				break;
+			case NEXT_IMAGE:
+				if (mImageViewActivity != null) {
+					mImageViewActivity.nextImage();
+					mImageViewActivity = null;
+				}
+				break;
 			}
 		};
 	};
-	
+
 }

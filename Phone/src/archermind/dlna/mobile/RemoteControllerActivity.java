@@ -1,9 +1,5 @@
 package archermind.dlna.mobile;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,10 +10,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Display;
 import android.view.MotionEvent;
-import android.view.OrientationEventListener;
-import android.view.Surface;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
@@ -27,10 +20,8 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.archermind.ashare.mirror.AShareJniCallBack;
+
 import com.archermind.ashare.mirror.AshareProcess;
-import com.archermind.ashare.mirror.NativeAshare;
-import com.archermind.ashare.mirror.AShareJniCallBack.AShareJniCallBackListener;
 import com.archermind.ashare.misc.DeviceInfo;
 import com.archermind.ashare.wiremote.natives.WiRemoteAgent;
 
@@ -52,8 +43,8 @@ public class RemoteControllerActivity extends BaseActivity {
 
 	private List<TextView> mPoints;
 
-	private TextView mTopLeftBtn;
-	private TextView mTopRightBtn;
+	private ImageView mTopLeftBtn;
+	private ImageView mTopRightBtn;
 
 	private ImageView mOkBtn;
 	private TextView mMenuBtn;
@@ -182,10 +173,10 @@ public class RemoteControllerActivity extends BaseActivity {
 				}
 			}
 			switch (v.getId()) {
-			case R.id.top_left_btn:
+			case R.id.image_left_top:
 				finish();
 				break;
-			case R.id.top_right_btn:
+			case R.id.image_right_top:
 				if (mTouchArea.getVisibility() == View.VISIBLE) {
 					showDialog(TOUCH_DLG_ID);
 				} else {
@@ -245,9 +236,12 @@ public class RemoteControllerActivity extends BaseActivity {
 
 		setContentView(R.layout.remote_controller);
 
-		mTopLeftBtn = (TextView) findViewById(R.id.top_left_btn);
+		mTopLeftBtn = (ImageView) findViewById(R.id.image_left_top);
+		mTopLeftBtn.setImageResource(R.drawable.remote_btn_close_sel);
 		mTopLeftBtn.setOnClickListener(mClickListener);
-		mTopRightBtn = (TextView) findViewById(R.id.top_right_btn);
+		mTopRightBtn = (ImageView) findViewById(R.id.image_right_top);
+		mTopRightBtn.setImageResource(R.drawable.remote_btn_switch_sel);
+		mTopRightBtn.setVisibility(View.VISIBLE);
 		mTopRightBtn.setOnClickListener(mClickListener);
 
 		mOkBtn = (ImageView) findViewById(R.id.btn_ok);
@@ -345,6 +339,11 @@ public class RemoteControllerActivity extends BaseActivity {
 	}
 	
 	private void showMouse() {
+		if (!mHasGyroscope) {
+			Toast.makeText(this, R.string.remote_control_not_support, Toast.LENGTH_SHORT).show();
+			return;
+		}
+		((TextView)findViewById(R.id.title)).setText(R.string.remote_control_title_mouse);
 		mIsMouseMode = true;
 		mTouchArea.setVisibility(View.GONE);
 		mControllerArea.setVisibility(View.GONE);
@@ -352,6 +351,7 @@ public class RemoteControllerActivity extends BaseActivity {
 	}
 
 	private void showTouch() {
+		((TextView)findViewById(R.id.title)).setText(R.string.remote_control_title_touch);
 		mIsMouseMode = false;
 		mTouchArea.setVisibility(View.VISIBLE);
 		mControllerArea.setVisibility(View.GONE);
@@ -359,6 +359,7 @@ public class RemoteControllerActivity extends BaseActivity {
 	}
 
 	private void showController() {
+		((TextView)findViewById(R.id.title)).setText(R.string.remote_control_title_tran);
 		mIsMouseMode = false;
 		mTouchArea.setVisibility(View.GONE);
 		mControllerArea.setVisibility(View.VISIBLE);

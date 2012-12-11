@@ -104,6 +104,8 @@ static void deinit_timer_trigger(void)
 
 void tp2all(int x1, int y1, int x2, int y2, int action)
 {
+	int tempx[2], tempy[2],temp_action, press[2];
+
 	g_action = action;
 	action = update_state(action);
 
@@ -136,7 +138,11 @@ void tp2all(int x1, int y1, int x2, int y2, int action)
 			if(finger2_status && (finger_count != 2))
 			{
 				finger2_status = 0;
-				send_touch_event(x1, y1, 0);
+				press[0] = 0;
+				press[1] = 0;
+				tempx[0] = tempx[1] = 0;
+				tempy[0] = tempy[1] = 0;
+				send_multi_touch_event(tempx, tempy, press);
 			}
 			break;
 
@@ -170,7 +176,13 @@ void tp2all(int x1, int y1, int x2, int y2, int action)
 			else if(finger_count == 2)
 			{
 				finger2_status = 1;
-				send_touch_event((x1+x2)/2, (y1+y2)/2, 1);
+				press[0] = 1;
+				press[1] = 1;
+				tempx[0] = 6 * x1;
+				tempx[1] = 6 * x2;
+				tempy[0] = 4 * y1;
+				tempy[1] = 4 * y2;
+				send_multi_touch_event(tempx, tempy, press);
 			}
 			break;
 

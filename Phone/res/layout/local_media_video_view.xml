@@ -158,17 +158,16 @@
                     android:id="@+id/video_view_next"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="50dp"
                     android:layout_weight="1"
                     android:background="@drawable/video_btn_next"
                     android:contentDescription="@string/app_name" />
 
-                <ImageView
+                <!-- <ImageView
                     android:id="@+id/video_view_mute"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:contentDescription="@string/app_name" />
+                    android:contentDescription="@string/app_name"/> -->
             </LinearLayout>
         </RelativeLayout>
 

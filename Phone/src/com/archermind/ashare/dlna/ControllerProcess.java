@@ -735,7 +735,6 @@ public class ControllerProcess extends HandlerThread
 	// 下一首
 	private Boolean next(Device dev, String uri, String type) {
 		Log.d("yexiaoyan", "next init uri=" + uri);
-		stop(dev);
 		if (setNextAVTransportURI(dev, uri, type)) {
 			Service avTrans = dev.getService(AVTransport.SERVICE_TYPE);
 			if (null != avTrans) {
@@ -753,7 +752,6 @@ public class ControllerProcess extends HandlerThread
 
 	// 上一首
 	private Boolean previous(Device dev, String uri, String type) {
-		stop(dev);
 		if (setNextAVTransportURI(dev, uri, type)) {
 			Service avTrans = dev.getService(AVTransport.SERVICE_TYPE);
 			if (null != avTrans) {

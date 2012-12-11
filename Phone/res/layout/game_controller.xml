@@ -10,18 +10,44 @@
         android:layout_height="match_parent"
         android:background="@drawable/two_dimensional_code_bg" >
 
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" >
+
+            <TextView
+                android:id="@+id/tip1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="128dp"
+                android:text="@string/remote_control_tip_game1"
+                android:textColor="#868c95"
+                android:textSize="21dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tip1"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="24dp"
+                android:text="@string/remote_control_tip_game2"
+                android:textColor="#868c95"
+                android:textSize="18dp" />
+        </RelativeLayout>
+
         <TextView
             android:id="@+id/touch_point1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:background="@drawable/touch_point" />
+            android:background="@drawable/touch_point"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/touch_point2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:background="@drawable/touch_point" />
+            android:background="@drawable/touch_point"
+            android:visibility="gone" />
     </AbsoluteLayout>
 
 </RelativeLayout>

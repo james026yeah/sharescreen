@@ -25,6 +25,7 @@ import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.RadioGroup.OnCheckedChangeListener;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.archermind.ashare.ui.control.ScrollLayout;
@@ -47,6 +48,11 @@ public class OnlineMediaActivity extends Activity {
 		this.requestWindowFeature(Window.FEATURE_NO_TITLE);
 		mContext = this;
 		setContentView(R.layout.online_media);
+		
+		findViewById(R.id.image_left_top).setVisibility(View.GONE);
+		findViewById(R.id.top_bar_left_line).setVisibility(View.GONE);
+		findViewById(R.id.top_bar_right_line).setVisibility(View.GONE);
+		((TextView)findViewById(R.id.title)).setText(R.string.bottom_tab_online_media);
 
 		mScrollLayout = (ScrollLayout) findViewById(R.id.media_scroll);
 		mScrollLayout.setOnPageChangeListener(new PageChangeListener() {
@@ -86,7 +92,7 @@ public class OnlineMediaActivity extends Activity {
 				activityInfo.packageName = name;
 				info.resolvePackageName = "archermind.dlna.mobile";
 				info.activityInfo = activityInfo;
-				info.icon = R.drawable.app_default_sel;
+				info.icon = R.drawable.app_add;
 				info.labelRes = R.string.app_name;
 				apps.add(info);
 			}
@@ -99,7 +105,8 @@ public class OnlineMediaActivity extends Activity {
 			GridView appPage = new GridView(this);
 			// get the "i" page data
 			appPage.setAdapter(new AppAdapter(this, apps, i));
-
+			appPage.setSelector(android.R.color.transparent);
+			
 			appPage.setNumColumns(4);
 			appPage.setOnItemClickListener(listener);
 			mScrollLayout.addView(appPage);
@@ -144,8 +151,8 @@ public class OnlineMediaActivity extends Activity {
 			if (appInfo.resolvePackageName != null) {
 				Toast.makeText(mContext, "无法找到文件",
 						Toast.LENGTH_SHORT).show();
-				UpdateManager manager = new UpdateManager(OnlineMediaActivity.this);
-				manager.checkUpdate();
+//				UpdateManager manager = new UpdateManager(OnlineMediaActivity.this);
+//				manager.checkUpdate();
 				return;
 			}
 

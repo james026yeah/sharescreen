@@ -16,6 +16,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#define HAVE_STRUCT_AUDIOOUTPUT_AO_SET_METADATA
 
 #if !defined(TARGET_WINDOWS)
 #pragma GCC diagnostic ignored "-Wwrite-strings"
@@ -78,7 +79,6 @@ pthread_mutex_t airtunes_mutex;
 //parse daap metadata - thx to project MythTV
 std::map<std::string, std::string> decodeDMAP(const char *buffer, unsigned int size)
 {
-LOGE("Enter %s:%d",__func__,__LINE__); 
   std::map<std::string, std::string> result;
   unsigned int offset = 8;
   while (offset < size)
@@ -98,33 +98,35 @@ LOGE("Enter %s:%d",__func__,__LINE__);
 
 void CAirTunesServer::SetMetadataFromBuffer(const char *buffer, unsigned int size)
 {
-LOGE("Enter %s:%d",__func__,__LINE__);
  // MUSIC_INFO::CMusicInfoTag tag;
   std::map<std::string, std::string> metadata = decodeDMAP(buffer, size);
   if(metadata["asal"].length())
   {
-   // tag.SetAlbum(metadata["asal"]);//album
+	LOGD("asal = %s",metadata["asal"].c_str());
+    setAlbum(metadata["asal"].c_str(),metadata["asal"].length());//album
   }
   if(metadata["minm"].length())
   {	  
-    //tag.SetTitle(metadata["minm"]);//title
+	LOGD("minm = %s",metadata["minm"].c_str());
+    setTitle(metadata["minm"].c_str(),metadata["minm"].length());//title
   }
   if(metadata["asar"].length())
   {	  
-    //tag.SetArtist(metadata["asar"]);//artist
+	LOGD("asar = %s",metadata["asar"].c_str());
+    setArtist(metadata["asar"].c_str(),metadata["asar"].length());//artist
   }
   //CApplicationMessenger::Get().SetCurrentSongTag(tag);*/
 }
 
 void CAirTunesServer::SetCoverArtFromBuffer(const char *buffer, unsigned int size)
 {
-LOGD("Enter %s:%d",__func__,__LINE__);
 //  XFILE::CFile tmpFile;
-  const char *tmpFileName = "special://temp/airtunes_album_thumb.jpg";
+  //const char *tmpFileName = "special://temp/airtunes_album_thumb.jpg";
 
   if(!size)
     return;
-
+  setAlbumThumb(buffer, size);
+  //TODO give buffer to AudioTrack
   /*if (tmpFile.OpenForWrite(tmpFileName, true))
   {
     int writtenBytes=0;
@@ -142,6 +144,74 @@ LOGD("Enter %s:%d",__func__,__LINE__);
       g_windowManager.SendThreadMessage(msg);
     }
   }*xx*/
+}
+
+void CAirTunesServer::SetProgress(const char *buffer, unsigned int size)
+{
+  LOGD("progress = %s\n",buffer);
+#define POSITION_BUF_SIZE 11
+  // find '/' is found
+  char startBuf[POSITION_BUF_SIZE],currBuf[POSITION_BUF_SIZE],endBuf[POSITION_BUF_SIZE];
+  int tIdx = 0;
+  int index = 0;
+  int flag = 0;     //record '/' count 
+  for(tIdx = 0; tIdx < size; tIdx++)
+  { 
+	if(buffer[tIdx] == '/')
+	{  
+      if (flag == 0)
+	  {
+		strncpy(startBuf, buffer, tIdx);
+		startBuf[POSITION_BUF_SIZE - 1] = '\0';
+		flag += 1;
+		index = tIdx + 1;
+	  }
+	  else if (flag == 1)
+	  {
+		strncpy(currBuf, buffer + index, tIdx - index);
+		currBuf[POSITION_BUF_SIZE - 1] = '\0';
+		flag += 1;
+		index = tIdx + 1;
+	  }
+	  else
+	  {
+		LOGD("get progress position error !");
+	  }
+	} 
+  }
+  strncpy(endBuf, buffer + index, size - index);
+  endBuf[POSITION_BUF_SIZE -1] = '\0';
+  LOGD("start = %lld, curr = %lld, end = %lld",atoll(startBuf),atoll(currBuf),atoll(endBuf));
+  //setStartPosition(atoll(startBuf));
+  //setCurrentPosition(atoll(currBuf));
+  //setEndPosition(atoll(endBuf));
+}
+
+void CAirTunesServer::SetPlayStatus(int state)
+{
+  if (state)
+  {
+	LOGD("Audio is playing");
+  }
+  else
+  {
+	LOGD("Audio is pause");
+  }
+  setPlayStatus(state);
+}
+
+void CAirTunesServer::SetVolume(float vol)
+{
+	LOGD("volume = %f",vol);
+	setVolume(vol);
+}
+
+void CAirTunesServer::SetDeviceTab(const char *deviceId, int length)
+{
+   char *mac = (char*)malloc(sizeof(char)*length);
+   memcpy(mac, deviceId, length);
+   LOGD("mac = %s",mac);
+   setDeviceTab(mac, length);
 }
 
 #if defined(TARGET_WINDOWS)
@@ -172,20 +242,16 @@ LAuE4Pu13aKiJnfft7hIjbK+5kyb3TysZvoyDnb3HOKvInK7vXbKuU4ISgxB2bB3HcYzQMGsz1qJ\
 
 void CAirTunesServer::AudioOutputFunctions::audio_set_metadata(void *cls, void *session, const void *buffer, int buflen)
 {
-#error 444444444444444444444444444444
   CAirTunesServer::SetMetadataFromBuffer((char *)buffer, buflen);
 }
 
 void CAirTunesServer::AudioOutputFunctions::audio_set_coverart(void *cls, void *session, const void *buffer, int buflen)
 {
-#error 5555555555555555555555555555555555555555555
   CAirTunesServer::SetCoverArtFromBuffer((char *)buffer, buflen);
 }
 
 void* CAirTunesServer::AudioOutputFunctions::audio_init(void *cls, int bits, int channels, int samplerate)
 {
-#error 66666666666666666666666666666666666
-LOGE("Enter %s:%d",__func__,__LINE__); 
 /*  XFILE::CPipeFile *pipe=(XFILE::CPipeFile *)cls;
   pipe->OpenForWrite(XFILE::PipesManager::GetInstance().GetUniquePipeName());
   pipe->SetOpenThreashold(300);
@@ -218,8 +284,6 @@ LOGE("Enter %s:%d",__func__,__LINE__);
 
 void  CAirTunesServer::AudioOutputFunctions::audio_set_volume(void *cls, void *session, float volume)
 {
-#error 7777777777777777777777777
-LOGE("Enter %s:%d",__func__,__LINE__);
   //volume from -144 - 0
   float volPercent = 1 - volume/-144;
 //  g_application.SetVolume(volPercent, false);//non-percent volume 0.0-1.0
@@ -227,8 +291,6 @@ LOGE("Enter %s:%d",__func__,__LINE__);
 
 void  CAirTunesServer::AudioOutputFunctions::audio_process(void *cls, void *session, const void *buffer, int buflen)
 {
-#error 888888888888888888888888888888888
-LOGE("Enter %s:%d",__func__,__LINE__); 
   #define NUM_OF_BYTES 64
 //  XFILE::CPipeFile *pipe=(XFILE::CPipeFile *)cls;
   int sentBytes = 0;
@@ -248,16 +310,12 @@ LOGE("Enter %s:%d",__func__,__LINE__);
 
 void  CAirTunesServer::AudioOutputFunctions::audio_flush(void *cls, void *session)
 {
-#error 999999999999999999999999999999
-LOGE("Enter %s:%d",__func__,__LINE__);
  //XFILE::CPipeFile *pipe=(XFILE::CPipeFile *)cls;
  //pipe->Flush();
 }
 
 void  CAirTunesServer::AudioOutputFunctions::audio_destroy(void *cls, void *session)
 {
-#error 1010101010101101010
-LOGE("Enter %s:%d",__func__,__LINE__); 
 //  XFILE::CPipeFile *pipe=(XFILE::CPipeFile *)cls;
  // pipe->SetEof();
  // pipe->Close();
@@ -280,8 +338,6 @@ LOGE("Enter %s:%d",__func__,__LINE__);
 
 void shairplay_log(int level, const char *msg)
 {
-#error 121212121212121212
-LOGE("Enter %s:%d",__func__,__LINE__);
   int xbmcLevel = LOGINFO;
   switch(level)
   {
@@ -490,15 +546,33 @@ LOGD("Enter %s:%d",__func__,__LINE__);
   return 0;
 }
 
+void CAirTunesServer::AudioOutputFunctions::ao_set_device_tab(const char *deviceId, int length)
+{
+	CAirTunesServer::SetDeviceTab(deviceId, length);
+}
+
+void CAirTunesServer::AudioOutputFunctions::ao_set_volume(float vol)
+{
+   CAirTunesServer::SetVolume(vol);
+}
+
+void CAirTunesServer::AudioOutputFunctions::ao_set_play_status(int state)
+{
+   CAirTunesServer::SetPlayStatus(state);
+}
+
+void CAirTunesServer::AudioOutputFunctions::ao_set_progress(const char *buffer, unsigned int size)
+{
+  CAirTunesServer::SetProgress(buffer, size);
+}
+
 void CAirTunesServer::AudioOutputFunctions::ao_set_metadata(const char *buffer, unsigned int size)
 {
-LOGD("Enter %s:%d",__func__,__LINE__);
   CAirTunesServer::SetMetadataFromBuffer(buffer, size);
 }
 
 void CAirTunesServer::AudioOutputFunctions::ao_set_metadata_coverart(const char *buffer, unsigned int size)
 {
-LOGD("Enter %s:%d",__func__,__LINE__);
   CAirTunesServer::SetCoverArtFromBuffer(buffer, size);
 }
 
@@ -859,12 +933,15 @@ LOGD("Enter %s:%d",__func__,__LINE__);
     ao.ao_append_option = AudioOutputFunctions::ao_append_option;
     ao.ao_free_options = AudioOutputFunctions::ao_free_options;
     ao.ao_get_option = AudioOutputFunctions::ao_get_option;
-/*#ifdef HAVE_STRUCT_AUDIOOUTPUT_AO_SET_METADATA
+#ifdef HAVE_STRUCT_AUDIOOUTPUT_AO_SET_METADATA
     ao.ao_set_metadata = AudioOutputFunctions::ao_set_metadata;
     ao.ao_set_metadata_coverart = AudioOutputFunctions::ao_set_metadata_coverart;
-#endif by gao*/
-    //xx struct printfPtr funcPtr;
-    //funcPtr.extprintf = shairport_log;
+#endif
+    ao.ao_set_progress = AudioOutputFunctions::ao_set_progress;
+    ao.ao_set_play_status = AudioOutputFunctions::ao_set_play_status;
+    ao.ao_set_volume = AudioOutputFunctions::ao_set_volume;	
+    ao.ao_set_device_tab = AudioOutputFunctions::ao_set_device_tab;
+
 #if DLL_ON_OFF
     m_pLibShairport->EnableDelayedUnload(false);
     m_pLibShairport->shairport_set_ao(&ao);

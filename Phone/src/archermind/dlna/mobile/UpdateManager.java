@@ -30,7 +30,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ProgressBar;
 
-
 public class UpdateManager {
 	/* 下载中 */
 	private static final int DOWNLOAD = 1;
@@ -80,17 +79,18 @@ public class UpdateManager {
 	 * 检测软件更新
 	 */
 	public void checkUpdate() {
-		new AsyncTask<Void, Void, Boolean>(){
+		new AsyncTask<Void, Void, Boolean>() {
 			@Override
 			protected Boolean doInBackground(Void... params) {
 				return isUpdate();
 			}
-			
+
 			@Override
 			protected void onPostExecute(Boolean result) {
 				if (result) {
 					showNoticeDialog();
 				}
+				((MoreOptionsActivity) mContext).dismissProgress();
 			}
 		}.execute();
 	}
@@ -118,7 +118,8 @@ public class UpdateManager {
 		if (null != mHashMap) {
 			int serviceCode = Integer.valueOf(mHashMap.get("version"));
 			mRemoteVersion = serviceCode;
-			SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(mContext);
+			SharedPreferences settings = PreferenceManager
+					.getDefaultSharedPreferences(mContext);
 			int ignoreVersion = settings.getInt(
 					SettingActivity.PREFS_IGNORE_VERSION, 0);
 			// 版本判断
@@ -171,7 +172,7 @@ public class UpdateManager {
 		AlertDialog.Builder builder = new Builder(mContext);
 		builder.setTitle(R.string.soft_update_title);
 		// builder.setMessage(R.string.soft_update_info);
-		builder.setMultiChoiceItems(choices, chsBool, multiClick);
+		// builder.setMultiChoiceItems(choices, chsBool, multiClick);
 		// 更新
 		builder.setPositiveButton(R.string.soft_update_updatebtn,
 				new OnClickListener() {
@@ -189,9 +190,11 @@ public class UpdateManager {
 					public void onClick(DialogInterface dialog, int which) {
 						dialog.dismiss();
 						if (mIsChecked) {
-							SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(mContext);
+							SharedPreferences settings = PreferenceManager
+									.getDefaultSharedPreferences(mContext);
 							SharedPreferences.Editor editor = settings.edit();
-							editor.putInt(SettingActivity.PREFS_IGNORE_VERSION, mRemoteVersion);
+							editor.putInt(SettingActivity.PREFS_IGNORE_VERSION,
+									mRemoteVersion);
 							editor.commit();
 						}
 					}

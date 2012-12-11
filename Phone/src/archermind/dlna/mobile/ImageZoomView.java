@@ -90,14 +90,14 @@ public class ImageZoomView extends View implements Observer {
 			
 			final float panX = mState.getPanX();
 			final float panY = mState.getPanY();
-			final float zoomX = mState.getZoomX(mAspectQuotient) * vWidth / bWidth;
-			final float zoomY = mState.getZoomY(mAspectQuotient) * vHeight / bHeight;
+			final float scaleX = mState.getScaleX(mAspectQuotient) * vWidth / bWidth;
+			final float scaleY = mState.getScaleY(mAspectQuotient) * vHeight / bHeight;
 
 			// Setup source and destination rectangles
-			mRectSrc.left = (int) (panX * bWidth - vWidth / (zoomX * 2));
-			mRectSrc.top = (int) (panY * bHeight - vHeight / (zoomY * 2));
-			mRectSrc.right = (int) (mRectSrc.left + vWidth / zoomX);
-			mRectSrc.bottom = (int) (mRectSrc.top + vHeight / zoomY);
+			mRectSrc.left = (int) (panX * bWidth - vWidth / (scaleX * 2));
+			mRectSrc.top = (int) (panY * bHeight - vHeight / (scaleY * 2));
+			mRectSrc.right = (int) (mRectSrc.left + vWidth / scaleX);
+			mRectSrc.bottom = (int) (mRectSrc.top + vHeight / scaleY);
 			mRectDst.left = getLeft();
 			mRectDst.top = getTop();
 			mRectDst.right = getRight();
@@ -112,28 +112,28 @@ public class ImageZoomView extends View implements Observer {
 			
 			// Adjust source rectangle so that it fits within the source image.
 			if (mRectSrc.left < 0) {
-				mRectDst.left += -mRectSrc.left * zoomX;
+				mRectDst.left += -mRectSrc.left * scaleX;
 				mRectSrc.left = 0;
 				if(mState.getControlType() == ControlType.PAN) {
 					mState.setMinPanX(mState.getPanX());
 				}
 			}
 			if (mRectSrc.right > bWidth) {
-				mRectDst.right -= (mRectSrc.right - bWidth) * zoomX;
+				mRectDst.right -= (mRectSrc.right - bWidth) * scaleX;
 				mRectSrc.right = bWidth;
 				if(mState.getControlType() == ControlType.PAN) {
 					mState.setMaxPanX(mState.getPanX());
 				}
 			}
 			if (mRectSrc.top < 0) {
-				mRectDst.top += -mRectSrc.top * zoomY;
+				mRectDst.top += -mRectSrc.top * scaleY;
 				mRectSrc.top = 0;
 				if(mState.getControlType() == ControlType.PAN) {
 					mState.setMinPanY(mState.getPanY());
 				}
 			}
 			if (mRectSrc.bottom > bHeight) {
-				mRectDst.bottom -= (mRectSrc.bottom - bHeight) * zoomY;
+				mRectDst.bottom -= (mRectSrc.bottom - bHeight) * scaleY;
 				mRectSrc.bottom = bHeight;
 				if(mState.getControlType() == ControlType.PAN) {
 					mState.setMaxPanY(mState.getPanY());

@@ -72,6 +72,7 @@ public class DLNAPlayer extends Activity {
 	private RelativeLayout mVideoTopLayout;
 	private RelativeLayout mVideoBottomLayout;
 	private RelativeLayout mMusicBottomLayout;
+	private RelativeLayout mVideoStartPauseLayout;
 	private Handler mDismissHandler;
 	private ImageView mCdView;
 	private ImageView mArmartImageView;
@@ -85,12 +86,14 @@ public class DLNAPlayer extends Activity {
 	private final static float DEFAULE_SCALE = 1920 / 1080l;
 	private final static int HIDE_CONTROL_LAYOUT = 100;
 	private final static int DEFAULT_HIDE_TIME = 4000;
+	private final float UP_VOLUME = 1;
+	private final float DOWN_VOLUME = -1;
 	private int mMediaType;
 	private MusicItem mCurrAudioInfo;
-	private MusicItem mNextAudioInfo;
 	private VideoItem mVideoInfo;
+	private AudioManager mAudioManager;
+	private float mMaxVolume = 0;
 
-	public static String mNextAudioUrl = "";
 	public static boolean mIsPlay = false;
 	public static boolean mIsPause = false;
 	public static float mVolume = 0.5f;
@@ -126,9 +129,11 @@ public class DLNAPlayer extends Activity {
 				finish();
 				break;
 			case TypeDefs.MSG_DMR_AV_TRANS_SET_VOLUME:
-				setvolume(Float.parseFloat(msg.obj.toString()),
-						Float.parseFloat(msg.obj.toString()));
-				mVolume = Float.parseFloat(msg.obj.toString());
+				setvolume(Float.parseFloat(msg.obj.toString()));
+				if (mAudioManager != null) {
+					mVolume = mAudioManager
+							.getStreamVolume(AudioManager.STREAM_MUSIC);
+				}
 				break;
 			case AirplayProcess.MSG_AIRPLAY_PAUSE_TO_PLAY:
 			case TypeDefs.MSG_DMR_AV_TRANS_PAUSE_TO_PLAY:
@@ -141,7 +146,7 @@ public class DLNAPlayer extends Activity {
 				Updatedata();
 				break;
 			case TypeDefs.MSG_DMR_AV_TRANS_SET_MUTE:
-				setvolume((float) msg.arg1, (float) msg.arg1);
+				setvolume((float) msg.arg1);
 				break;
 			default:
 				super.handleMessage(msg);
@@ -203,7 +208,6 @@ public class DLNAPlayer extends Activity {
 			}
 			mMediaType = data.getInt(TypeDefs.KEY_MEDIA_TYPE);
 			if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO) {
-				mNextAudioInfo = data.getParcelable(TypeDefs.KEY_NEXT_MEDIA_INFO);
 				mCurrAudioInfo = data.getParcelable(TypeDefs.KEY_CURR_MEDIA_INFO);
 				setContentView(R.layout.music_player);
 				mStartView = (ImageView) findViewById(R.id.music_view_start);
@@ -233,6 +237,7 @@ public class DLNAPlayer extends Activity {
 				mVideoName = (TextView) findViewById(R.id.video_view_name);
 				mVideoTopLayout = (RelativeLayout) findViewById(R.id.video_view_top_layout);
 				mVideoBottomLayout = (RelativeLayout) findViewById(R.id.video_view_bottom_layout);
+				mVideoStartPauseLayout = (RelativeLayout) findViewById(R.id.video_start_pause_layout);
 			}
 			mSeekBar.setMax(DEFAULT_MAX);
 			if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO) {
@@ -241,6 +246,8 @@ public class DLNAPlayer extends Activity {
 					|| mMediaType == TypeDefs.MEDIA_TYPE_AIRPLAY_VIDEO) {
 				mVPlayer = (android.widget.VideoView) findViewById(R.id.surface_view_p);
 			}
+			mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+			mVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 			play(mUri);
 			initInfo();
 		}
@@ -249,19 +256,13 @@ public class DLNAPlayer extends Activity {
 
 	private OnCompletionListener mAudioCompletionListener = new OnCompletionListener() {
 		public void onCompletion(android.media.MediaPlayer mp) {
-			if (mNextAudioUrl.isEmpty()) {
-				mIsPlayCompletion = true;
-				finish();
-			} else {
-				stop();
-				play(mNextAudioUrl);
-				mNextAudioUrl = "";
-			}
+			stop();
+			finish();
 		}
 	};
-	
+
 	private OnCompletionListener mVideoCompletionListener = new OnCompletionListener() {
-		
+
 		@Override
 		public void onCompletion(MediaPlayer mp) {
 			stop();
@@ -389,14 +390,27 @@ public class DLNAPlayer extends Activity {
 		mIsPlay = false;
 	}
 
-	public void setvolume(float lvolume, float rvolume) {
+	public void setvolume(float volume) {
 		if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO) {
 			if (mMediaPlayer != null) {
-				mMediaPlayer.setVolume(lvolume, rvolume);
+
 			}
 		} else if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_VIDEO
 				|| mMediaType == TypeDefs.MEDIA_TYPE_AIRPLAY_VIDEO) {
 
+		}
+		if (mAudioManager != null) {
+			float curvolume;
+			mMaxVolume = mAudioManager
+					.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+			curvolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+			curvolume += volume;
+			if(curvolume < 0)
+				curvolume = 0;
+			else if(curvolume > mMaxVolume)
+				curvolume = mMaxVolume;
+			mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC,
+					(int) curvolume, 0);
 		}
 	}
 
@@ -553,10 +567,17 @@ public class DLNAPlayer extends Activity {
 
 		Updatedata();
 		if (isVideo()) {
-			mVideoName.setText((null != mVideoInfo.getTitle()) ? mVideoInfo.getTitle() : DEFAULT_VIDEO_NAME);
+			if (mVideoInfo != null) {
+				mVideoName.setText((null != mVideoInfo.getTitle()) ? mVideoInfo
+						.getTitle() : DEFAULT_VIDEO_NAME);
+			}
 		} else {
-			mMusicName.setText((null != mCurrAudioInfo.getTitle()) ? mCurrAudioInfo.getTitle() : DEFAULT_MUSIC_NAME);
-			mAuthorName.setText((null != mCurrAudioInfo.getArtist()) ? mCurrAudioInfo.getArtist() : DEFAULT_AUTHOR_NAME);
+			mMusicName
+					.setText((null != mCurrAudioInfo.getTitle()) ? mCurrAudioInfo
+							.getTitle() : DEFAULT_MUSIC_NAME);
+			mAuthorName
+					.setText((null != mCurrAudioInfo.getArtist()) ? mCurrAudioInfo
+							.getArtist() : DEFAULT_AUTHOR_NAME);
 			cdHandler.postDelayed(new Runnable() {
 				public void run() {
 					startCd();
@@ -622,6 +643,7 @@ public class DLNAPlayer extends Activity {
 			}
 			if (null != mVideoBottomLayout) {
 				mVideoBottomLayout.setVisibility(View.VISIBLE);
+				mVideoStartPauseLayout.setVisibility(View.VISIBLE);
 			}
 		} else {
 			if (null != mMusicBottomLayout) {
@@ -640,6 +662,7 @@ public class DLNAPlayer extends Activity {
 			}
 			if (null != mVideoBottomLayout) {
 				mVideoBottomLayout.setVisibility(View.GONE);
+				mVideoStartPauseLayout.setVisibility(View.GONE);
 			}
 		} else {
 			if (null != mMusicBottomLayout) {

@@ -11,7 +11,7 @@ struct airplay_callback {
 	void (*setVolume)(int volume);
 	int (*getVolume)(void);
 
-	void (*playVideo)(const char *url, int length, float startPositon);
+	void (*playVideo)(const char *url, int length, float startPositon, const char *apple_deviceId);
 
 	float (*getTotalTime)(void);
 	float (*getCurrentPosition)(void);

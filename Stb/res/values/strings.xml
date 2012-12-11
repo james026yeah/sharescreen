@@ -8,4 +8,7 @@
     <string name="on_find_target_ap_subfix">Trying to connect.</string>
     <string name="on_ap_connected_prefix">WiFi Connected to:</string>
     <string name="on_ap_disconnected">Wifi is disconnected!</string>
+
+    <!-- default friendly name of renderer -->
+    <string name="default_friendly_name">AShare Renderer</string>
 </resources>

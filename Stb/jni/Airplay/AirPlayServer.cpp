@@ -50,6 +50,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <string.h>
+#include <errno.h>
 #include "md5.h"
 //#include "DllLibPlist.h"
 #include <plist/plist.h>
@@ -332,15 +334,21 @@ bool CAirPlayServer::Initialize()
     myaddr.sin_addr.s_addr = INADDR_ANY;
   else
     inet_pton(AF_INET, "127.0.0.1", &myaddr.sin_addr.s_addr);
-
+  
   m_ServerSocket = socket(PF_INET, SOCK_STREAM, 0);
 
   if (m_ServerSocket == INVALID_SOCKET)
   {
-
+	close(m_ServerSocket);
     LOGE("AIRPLAY Server: Failed to create serversocket");
     return false;
   }
+
+  if (setsockopt(m_ServerSocket, SOL_SOCKET, SO_REUSEADDR, &myaddr, sizeof(myaddr)) != 0 ) {
+    LOGE("AIRPLAY Server: %s", strerror(errno));
+    return false;
+  }
+
 
   if (bind(m_ServerSocket, (struct sockaddr*)&myaddr, sizeof myaddr) < 0)
   {
@@ -763,6 +771,7 @@ void Encode(CStdString& strURLData)
   strURLData = strResult;
 }
 
+
 int CAirPlayServer::CTCPClient::ProcessRequest( CStdString& responseHeader,
                                                 CStdString& responseBody,
                                                 CStdString& reverseHeader,
@@ -776,8 +785,10 @@ int CAirPlayServer::CTCPClient::ProcessRequest( CStdString& responseHeader,
   CStdString contentType = m_httpParser->getValue("content-type");
   sessionId = m_httpParser->getValue("x-apple-session-id");
   CStdString authorization = m_httpParser->getValue("authorization");
+  CStdString apple_deviceId = m_httpParser->getValue("x-apple-device-id");
   int status = AIRPLAY_STATUS_OK;
   bool needAuth = false;
+  static int flag = 0;// signal start play photo
 
   if (ServerInstance->m_usePassword && !m_bAuthenticated)
   {
@@ -946,9 +957,11 @@ LOGD("location = %s", tmpStr);
       CStdString userAgent="AppleCoreMedia/1.0.0.8F455 (AppleTV; U; CPU OS 4_3 like Mac OS X; de_de)";
       Encode(userAgent);
       //location += "|User-Agent=" + userAgent;
-
-      airplay_cb.playVideo(location, strlen(location), position * 100.0f);
-      ComposeReverseEvent(reverseHeader, reverseBody, sessionId, EVENT_PLAYING);
+      if(apple_deviceId)
+	  {
+        airplay_cb.playVideo(location, strlen(location), position * 100.0f, apple_deviceId.c_str());
+        ComposeReverseEvent(reverseHeader, reverseBody, sessionId, EVENT_PLAYING);
+	  }
     }
   }
 
@@ -966,7 +979,7 @@ LOGD("location = %s", tmpStr);
       if (airplay_cb.getTotalTime())
       {
         float position = (airplay_cb.getCurrentPosition())/1000;
-	float duration =  (airplay_cb.getTotalTime())/1000;
+	    float duration =  (airplay_cb.getTotalTime())/1000;
         responseBody.Format("duration: %f\r\nposition: %f", duration, position);
       }
       else
@@ -981,8 +994,9 @@ LOGD("location = %s", tmpStr);
       if (found)
       {
         float position = atof(found + strlen("position="));
-	airplay_cb.seekPosition(position*1000);
+	    airplay_cb.seekPosition(position*1000);
         LOGD("AIRPLAY: got POST request %s with pos %f", uri.c_str(), position*1000);
+		LOGD("########################################################### POST position = %f",position);
       }
     }
   }
@@ -996,15 +1010,16 @@ LOGD("location = %s", tmpStr);
       status = AIRPLAY_STATUS_NEED_AUTH;
     }
     else
-    {
+    { 
       if (IsPlaying()) //only stop player if we started him
       {
         airplay_cb.stopVideo();
         CAirPlayServer::m_isPlaying--;
+		flag = 0;
       }
       else //if we are not playing and get the stop request - we just wanna stop picture streaming
       {
-	airplay_cb.closeWindow();
+	    airplay_cb.closeWindow();
       }
       ComposeReverseEvent(reverseHeader, reverseBody, sessionId, EVENT_STOPPED);
     }
@@ -1012,7 +1027,7 @@ LOGD("location = %s", tmpStr);
 
   // RAW JPEG data is contained in the request body
   else if (uri == "/photo")
-  {
+  { 
     LOGD("AIRPLAY: got request %s", uri.c_str());
     if (needAuth && !checkAuthorization(authorization, method, uri))
     {
@@ -1020,6 +1035,11 @@ LOGD("location = %s", tmpStr);
     }
     else if (m_httpParser->getContentLength() > 0)
     {
+	  if(!flag)
+	  {
+		flag++;
+		CAirPlayServer::m_isPlaying++;
+	  }
       airplay_cb.showPhoto(m_httpParser->getBody(), m_httpParser->getContentLength());
     }
   }
@@ -1046,7 +1066,7 @@ LOGD("location = %s", tmpStr);
         playing = !airplay_cb.IsPaused();
         cachePosition = airplay_cb.getCachPosition();
       }
-
+      LOGD("##################################### send /playback-info position = %f",position);
       responseBody.Format(PLAYBACK_INFO, duration, cachePosition, position, (playing ? 1 : 0), duration);
       responseHeader = "Content-Type: text/x-apple-plist+xml\r\n";
 

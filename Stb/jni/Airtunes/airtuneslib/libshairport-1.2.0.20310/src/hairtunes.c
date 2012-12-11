@@ -52,7 +52,7 @@
 #include <math.h>
 #include <sys/stat.h>
 
-//gao #include <sys/signal.h>
+//#include <sys/signal.h>
 #include <fcntl.h>
 
 #ifdef FANCY_RESAMPLING
@@ -270,6 +270,36 @@ void __shairport_hairtunes_setvolume(float f)
       LOGD("VOL: %lf\n", f);
   volume = pow(10.0,0.05*f);
   fix_volume = 65536.0 * volume;
+}
+
+void __shairport_hairtunes_set_metadata(const char *buffer, unsigned int size)
+{
+  g_ao.ao_set_metadata(buffer, size);
+}
+
+void __shairport_hairtunes_set_metadata_coverart(const char *buffer, unsigned int size)
+{
+  g_ao.ao_set_metadata_coverart(buffer, size);
+}
+
+void __shairport_hairtunes_set_progress(const char *buffer, unsigned int size)
+{
+  g_ao.ao_set_progress(buffer, size);
+}
+
+void __shairport_hairtunes_set_play_status(int state)
+{
+  g_ao.ao_set_play_status(state);
+}
+
+void __shairport_hairtunes_set_volume(float vol)
+{
+  g_ao.ao_set_volume(vol);
+}
+
+void __shairport_hairtunes_set_device_tab(const char *deviceId, int length)
+{
+  g_ao.ao_set_device_tab(deviceId, length);
 }
 
 void __shairport_hairtunes_flush(void)

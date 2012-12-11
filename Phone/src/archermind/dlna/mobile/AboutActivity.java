@@ -22,6 +22,8 @@ public class AboutActivity extends Activity {
 		
 		setContentView(R.layout.about_layout);
 		
+		findViewById(R.id.top_bar_right_line).setVisibility(View.GONE);
+		
 		findViewById(R.id.image_left_top).setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {

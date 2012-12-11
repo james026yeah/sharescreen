@@ -76,15 +76,15 @@ int getVolume()
     return volume;
 }
 
-void playVideo(const char * url,int length,float startPositon)
+void playVideo(const char * url,int length,float startPositon,const char * apple_deviceId)
 {
     LOGD("This %s be call!\n", __func__);
     LOGD("startPositon = %f\n", startPositon);
     JNIEnv *env;
     g_javavm->AttachCurrentThread(&env, NULL);
     jclass notifier_class = env->GetObjectClass(g_notify_obj);
-    jmethodID m_id_callback = env->GetMethodID(notifier_class, "playVideo", "(Ljava/lang/String;IF)V");
-    env->CallVoidMethod(g_notify_obj, m_id_callback, env->NewStringUTF(url), length, startPositon);
+    jmethodID m_id_callback = env->GetMethodID(notifier_class, "playVideo", "(Ljava/lang/String;IFLjava/lang/String;)V");
+    env->CallVoidMethod(g_notify_obj, m_id_callback, env->NewStringUTF(url), length, startPositon, apple_deviceId);
     g_javavm->DetachCurrentThread();
     return;
 }
@@ -229,21 +229,17 @@ float getCachPosition()
 
 char* getDeviceId()
 {
-   /* LOGD("This %s be call!\n", __func__);
+    LOGD("This %s be call!\n", __func__);
     JNIEnv *env;
     jstring deviceid;
     char * str;
     g_javavm->AttachCurrentThread(&env, NULL);
     jclass notifier_class = env->GetObjectClass(g_notify_obj);
-    jmethodID m_id_callback = env->GetMethodID(notifier_class, "getDeviceId", "()Ljava/lang/String");
-    LOGD("jmethodID %s be call!\n", __func__);
+    jmethodID m_id_callback = env->GetMethodID(notifier_class, "getDeviceId", "()Ljava/lang/String;");
     deviceid = (jstring)env->CallObjectMethod(g_notify_obj, m_id_callback);
-    LOGD("deviceid %s be call!\n", __func__);
-    jstringTostring(env, deviceid);
-    LOGD("jstringTostring %s be call!\n", __func__);
-    g_javavm->DetachCurrentThread();
-    return j2c_string;*/
-	return "11:22:33:44:55:66";
+    str = jstringTostring(env, deviceid);
+    //g_javavm->DetachCurrentThread();
+    return str;
 }
 
 JNIEXPORT jint JNICALL JNIDEFINE(doCallBackWork)(JNIEnv * env, jclass obj, jobject notifier_obj)

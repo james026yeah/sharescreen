@@ -44,7 +44,7 @@ public class AirplayProcess extends HandlerThread {
 	private Context mContext;
 	BonjourAgentRegister mBAR;
 	private Handler.Callback mCb = new Handler.Callback() {
-		@Override
+	
 		public boolean handleMessage(Message msg) {
 			boolean ret = false;
 			switch(msg.what) {
@@ -185,7 +185,7 @@ public class AirplayProcess extends HandlerThread {
     	return (int) DLNAPlayer.mVolume;
     }
     
-    public void playVideo(String url,int length,float startPositon)
+    public void playVideo(String url,int length,float startPositon, String deviceId)
     {
     	Log.v("EagleTag","Callback java function:"+Thread.currentThread().getStackTrace()[2].getMethodName());
     	Log.v("EagleTag","Callback java function:"+url+startPositon);
@@ -221,8 +221,6 @@ public class AirplayProcess extends HandlerThread {
 
     public void stopVideo()
     {
-    	if(DLNAPlayer.mIsPlayCompletion)
-    		return;
     	Log.v("EagleTag","Callback java function:"+Thread.currentThread().getStackTrace()[2].getMethodName());
     	DLNAPlayer.mIsPlayCompletion = true;
     	mUIHandler.sendEmptyMessage(MSG_AIRPLAY_STOP);

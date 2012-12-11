@@ -6,6 +6,8 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent" >
+        
+        
 
         <SurfaceView
             android:id="@+id/video_view_surface_dlna"
@@ -17,6 +19,32 @@
             android:layout_height="match_parent"
             android:layout_centerInParent="true" />
 
+        <RelativeLayout
+            android:id="@+id/video_start_pause_layout"
+            android:layout_centerInParent="true"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"            
+            >
+            <ImageView
+                    android:id="@+id/video_view_start"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/video_btn_start"
+                    android:clickable="true"
+                    android:visibility="gone"
+                    android:contentDescription="@string/app_name" />
+
+                <ImageView
+                    android:id="@+id/video_view_pause"
+                    android:visibility="gone"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/video_btn_pause"
+                    android:clickable="true"
+                    android:contentDescription="@string/app_name" />           
+            
+        </RelativeLayout>
+        
         <RelativeLayout
             android:id="@+id/video_view_top_layout"
             android:layout_width="match_parent"
@@ -35,6 +63,7 @@
 
             <ImageView
                 android:id="@+id/video_view_sound"
+                android:visibility="gone"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
@@ -136,26 +165,26 @@
                     android:clickable="true"
                     android:contentDescription="@string/app_name" />
 
-                <ImageView
-                    android:id="@+id/video_view_start"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="60dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/video_btn_start"
-                    android:clickable="true"
-                    android:contentDescription="@string/app_name"
-                    android:visibility="gone" />
+<!--                 <ImageView -->
+<!--                     android:id="@+id/video_view_start" -->
+<!--                     android:layout_width="0dp" -->
+<!--                     android:layout_height="wrap_content" -->
+<!--                     android:layout_marginRight="60dp" -->
+<!--                     android:layout_weight="1" -->
+<!--                     android:background="@drawable/video_btn_start" -->
+<!--                     android:clickable="true" -->
+<!--                     android:contentDescription="@string/app_name" -->
+<!--                     android:visibility="gone" /> -->
 
-                <ImageView
-                    android:id="@+id/video_view_pause"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="60dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/video_btn_pause"
-                    android:clickable="true"
-                    android:contentDescription="@string/app_name" />
+<!--                 <ImageView -->
+<!--                     android:id="@+id/video_view_pause" -->
+<!--                     android:layout_width="0dp" -->
+<!--                     android:layout_height="wrap_content" -->
+<!--                     android:layout_marginRight="60dp" -->
+<!--                     android:layout_weight="1" -->
+<!--                     android:background="@drawable/video_btn_pause" -->
+<!--                     android:clickable="true" -->
+<!--                     android:contentDescription="@string/app_name" /> -->
 
                 <ImageView
                     android:id="@+id/video_view_stop"

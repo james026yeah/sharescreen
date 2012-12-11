@@ -36,6 +36,7 @@
         android:src="@drawable/more_options_top_left_btn_sel" />
 
     <ImageView
+        android:id="@+id/top_bar_left_line"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_alignParentLeft="true"
@@ -62,6 +63,7 @@
         android:visibility="gone" />
 
     <ImageView
+        android:id="@+id/top_bar_right_line"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_alignParentRight="true"
@@ -73,6 +75,7 @@
         android:layout_width="56dp"
         android:layout_height="match_parent"
         android:layout_alignParentRight="true"
+        android:background="@drawable/image_right_top_bg_sel"
         android:clickable="true"
         android:gravity="center"
         android:scaleType="center"

@@ -83,6 +83,19 @@
     <!-- Setting layout -->
 
 
+    <!-- Remote Control -->
+    <string name="remote_control_not_support">手机硬件不支持</string>
+    <string name="remote_control_tip_touch">蓝色实线为可触摸点击区域</string>
+    <string name="remote_control_tip_mouse">请晃动手机并且点击OK键选中内容</string>
+    <string name="remote_control_tip_game1">游戏触摸屏模式</string>
+    <string name="remote_control_tip_game2">单击手机返回按键返回到其他控制模式</string>
+    <string name="remote_control_title_touch">触摸板</string>
+    <string name="remote_control_title_mouse">空中鼠标</string>
+    <string name="remote_control_title_game">游戏触摸屏</string>
+    <string name="remote_control_title_tran">标准遥控器</string>
+    <!-- Remote Control -->
+
+
     <!-- Gesture guide layout -->
     <string name="gesture_guide_tip1">移动光标进行定位</string>
     <string name="gesture_guide_tip2">单击打开当前区域应用</string>
@@ -195,16 +208,18 @@
     <string name="wifi_scan_result">扫描结果：%1$d 条</string>
     <!-- End by yuanhong.dai -->
 
+
     <!-- Software Update -->
-    <string name="soft_update_no">No Update</string>
-    <string name="soft_update_title">Software Update</string>
-    <string name="soft_update_info">Update Now?</string>
-    <string name="soft_update_updatebtn">Update</string>
-    <string name="soft_update_later">Cancel</string>
-    <string name="soft_updating">Updating</string>
-    <string name="soft_update_cancel">Cancel</string>
-    <string name="soft_update_ignore">Ignore this version</string>
+    <string name="soft_update_no">已是最新版本</string>
+    <string name="soft_update_title">应用更新</string>
+    <string name="soft_update_info">是否升级?</string>
+    <string name="soft_update_updatebtn">升级</string>
+    <string name="soft_update_later">取消</string>
+    <string name="soft_updating">升级中</string>
+    <string name="soft_update_cancel">取消</string>
+    <string name="soft_update_ignore">忽略此版本</string>
     <!-- Software Update -->
+
 
     <!-- add by dongyu -->
     <string name="bottom_tab_local_media">本地媒体</string>
@@ -238,6 +253,8 @@
     <string name="soft_copy_right">"©2012 诚迈科技，版权所有"</string>
     <!-- end of music string define -->
 
+
     <!-- Notification Text -->
     <string name="notification_content_txt">AShare is Running</string>
+
 </resources>

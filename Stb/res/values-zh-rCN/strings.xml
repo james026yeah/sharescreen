@@ -9,4 +9,6 @@
     <string name="on_ap_connected_prefix">WiFi连接至:</string>
     <string name="on_ap_disconnected">WiFi连接断开！</string>
 
+    <!-- default friendly name of renderer -->
+    <string name="default_friendly_name">爱多屏</string>
 </resources>
