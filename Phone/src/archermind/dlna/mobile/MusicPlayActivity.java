@@ -246,10 +246,10 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 			if (LocalMediaUtil.getWhichOnRemote() == LocalMediaUtil.Defs.MUSIC) {
 				poststop();
 				LocalMediaUtil.setWhichOnRemote(LocalMediaUtil.Defs.NOT_ANY_ONE);
-//				mIsPlayOnLocal = true;
 				mIsOnRemotePause = true;
 			}
 			mMusicPlayService.stop();
+			MusicData.setNowPlayingMusic(null);
 			mMusicPlayService.setInitialed(false);
 			finish();
 			overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);

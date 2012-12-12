@@ -44,6 +44,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.ExpandableListView;
+import android.widget.FrameLayout;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -151,6 +152,8 @@ public class LocalMediaActivity extends BaseActivity {
 				mMusicSerConn, Context.BIND_AUTO_CREATE);
 		getScreenWidth();
 		initMainUI();
+		mMusicListTitle = (TextView) mMusicListView.findViewById(R.id.list_title);
+        mMusicList = (ListView) mMusicListView.findViewById(R.id.music_list);
 		initTab();
 		initViewPager();
 		initCurrentTabImage(TAB_IMAGE);
@@ -170,6 +173,12 @@ public class LocalMediaActivity extends BaseActivity {
 
 	}
 
+	protected void onResume() {
+	    super.onResume();
+	    if(mCurrentTabIndex == TAB_MUSIC  && mIsMusicList) {
+	        mMusicList.invalidateViews();
+	    }
+	};
 	Handler mHandler = new Handler() {
 		public void handleMessage(Message msg) {
 			switch (msg.what) {
@@ -321,7 +330,7 @@ public class LocalMediaActivity extends BaseActivity {
 		mImageThumbnailView = (LinearLayout) findViewById(R.id.local_media_image_thumbnail);
 		mImageThumbnailView.setVisibility(View.GONE);
 		mMusicListView = (LinearLayout) findViewById(R.id.local_media_music_list);
-		mMusicListView.setVisibility(View.GONE);
+		mMusicListView.setVisibility(View.INVISIBLE);
 	}
 
 	private void initTab() {
@@ -753,6 +762,7 @@ public class LocalMediaActivity extends BaseActivity {
 			TextView titlesec;
 			TextView detail;
 			ImageView statusAroundImg;
+			FrameLayout statusImg;
 
 			if (convertView == null) {
 				view = getLayoutInflater().inflate(R.layout.music_list_item, null);
@@ -766,6 +776,17 @@ public class LocalMediaActivity extends BaseActivity {
 
 			statusAroundImg = (ImageView) view.findViewById(R.id.list_play_status_around);
 			statusAroundImg.startAnimation(mProgressBarAnim);
+			
+			statusImg = (FrameLayout) view.findViewById(R.id.list_play_status);
+            statusImg.setVisibility(View.GONE);
+            if (MusicData.getNowPlayingMusic() != null) {
+                Log.e("james","listitem:" + MusicData.getMusicAlbumData().get(position).getName() + "\n" + "now Play album:" + MusicData.getNowPlayingMusic().getAlbum());
+            }
+            String album = MusicData.getMusicAlbumData().get(position).getName();
+//            album.equalsIgnoreCase(MusicData.getNowPlayingMusic().getAlbum())
+            if (MusicData.getNowPlayingMusic() != null && album.equalsIgnoreCase(MusicData.getNowPlayingMusic().getAlbum())) {
+                statusImg.setVisibility(View.VISIBLE);
+            }
 			
 			titlemain.setText(mMusicAlbum.get(position).getName());
 			titlesec.setText(mMusicAlbum.get(position).getMusicsList().size()
@@ -802,6 +823,7 @@ public class LocalMediaActivity extends BaseActivity {
 			TextView titlesec;
 			TextView detail;
 			ImageView statusAroundImg;
+            FrameLayout statusImg;
 
 			if (convertView == null) {
 				view = getLayoutInflater().inflate(R.layout.music_list_item, null);
@@ -815,7 +837,15 @@ public class LocalMediaActivity extends BaseActivity {
 			
 			statusAroundImg = (ImageView) view.findViewById(R.id.list_play_status_around);
 			statusAroundImg.startAnimation(mProgressBarAnim);
+			
+			statusImg = (FrameLayout) view.findViewById(R.id.list_play_status);
+            statusImg.setVisibility(View.GONE);
 
+            String artist = MusicData.getMusicArtistsData().get(position).getName();
+//          album.equalsIgnoreCase(MusicData.getNowPlayingMusic().getAlbum())
+          if (MusicData.getNowPlayingMusic() != null && artist.equalsIgnoreCase(MusicData.getNowPlayingMusic().getArtist())) {
+              statusImg.setVisibility(View.VISIBLE);
+          }
 			titlemain.setText(mMusicArtist.get(position).getName());
 			titlesec.setText(mMusicArtist.get(position).getMusicsList().size()
 					+ getResources().getString(R.string.music_num));
@@ -1184,8 +1214,7 @@ public class LocalMediaActivity extends BaseActivity {
 			if (mOnGetMusicAlbumFinished) {
 				if (MusicData.getMusicAlbumData() != null) {
 					mIsMusicList = true;
-					mMusicListTitle = (TextView) findViewById(R.id.list_title);
-					mMusicList = (ListView) findViewById(R.id.music_list);
+					
 					mMusicList.setAdapter(mAlbumListAdapter);
 					mMusicListTitle.setText(getResources().getString(R.string.lable_album) + "（"
 							+ MusicData.getMusicAlbumData().size() + "）");
@@ -1223,8 +1252,6 @@ public class LocalMediaActivity extends BaseActivity {
 			if (mOnGetMusicArtistFinished) {
 				if (MusicData.getMusicArtistsData() != null) {
 					mIsMusicList = true;
-					mMusicListTitle = (TextView) findViewById(R.id.list_title);
-					mMusicList = (ListView) findViewById(R.id.music_list);
 					mMusicList.setAdapter(mArtistListAdapter);
 					mMusicListTitle.setText(getResources().getString(R.string.lable_artist) + "（"
 							+ MusicData.getMusicArtistsData().size() + "）");
@@ -1285,7 +1312,7 @@ public class LocalMediaActivity extends BaseActivity {
 		mTransAniSho.setDuration(500);
 		out.setAnimation(mTransAniHid);
 		in.setAnimation(mTransAniSho);
-		out.setVisibility(View.GONE);
+		out.setVisibility(View.INVISIBLE);
 		in.setVisibility(View.VISIBLE);
 	}
 

@@ -1,22 +1,21 @@
 package archermind.dlna.mobile;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.lang.ref.WeakReference;
-import java.util.List;
+import com.archermind.ashare.dlna.localmedia.MusicItem;
+import com.archermind.ashare.service.IMusicPlayService;
 
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,8 +29,10 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.archermind.ashare.dlna.localmedia.MusicItem;
-import com.archermind.ashare.service.IMusicPlayService;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.lang.ref.WeakReference;
+import java.util.List;
 
 public class MusicListActivity extends BaseActivity {
 
@@ -84,6 +85,11 @@ public class MusicListActivity extends BaseActivity {
 			mMusicList.setSelection((int) MusicData.getNowPlayPositionInList());
 		}
 		mProgressBarAnim = AnimationUtils.loadAnimation(this, R.anim.progress_bar_anim);
+		
+		IntentFilter filter = new IntentFilter();
+        filter.addAction(MusicUtils.Defs.MUSIC_STOP);
+        filter.addAction(MusicUtils.Defs.MUSIC_INFO_REFRESH);
+        registerReceiver(mReceiver, filter);
 //		Message msg = new Message();
 //		msg.what = 0;
 //		handler.sendMessageDelayed(msg, 100);
@@ -169,30 +175,6 @@ public class MusicListActivity extends BaseActivity {
 			TextView detail;
 			ImageView statusAroundImg;
 			FrameLayout statusImg;
-			
-//			Bitmap bm = null;
-
-//			ContentResolver res = getApplicationContext().getContentResolver();
-//			Uri uri = Uri.parse(mAllMusic.get(position).getAlbumArtURI());
-//			BitmapFactory.Options sBitmapOptions = new BitmapFactory.Options();
-//			bm = BitmapFactory.decodeFile(uri);
-//			if (uri != null) {
-//				InputStream in = null;
-//				try {
-//					Log.e("james","goin");
-//					in = res.openInputStream(uri);
-//					bm = BitmapFactory.decodeStream(in);
-//				} catch (FileNotFoundException ex) {
-//					Log.e("james","fileNotfound");
-//				} finally {
-//					try {
-//						if (in != null) {
-//							in.close();
-//						}
-//					} catch (IOException ex) {
-//					}
-//				}
-//			}
 			
 			if (convertView == null) {
 				view = getLayoutInflater().inflate(R.layout.music_list_item, null);
@@ -280,6 +262,18 @@ public class MusicListActivity extends BaseActivity {
 		return null;
 	}
 	
+	private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.e("james","onreceive stop");
+            mMusicList.invalidateViews();
+        }
+    };
+	
+    protected void onResume() {
+        super.onResume();
+        mMusicList.invalidateViews();
+    };
 //	public List<MusicItem> getMusicShowItem() {
 //		int which = mMusicData.getShowList();
 //		switch (which) {
