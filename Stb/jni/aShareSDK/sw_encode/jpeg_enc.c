@@ -264,7 +264,7 @@ int hw_jpeg_init(struct display_info *di)
 	ret = hw_encode_func(&g_param);
 	if(g_param.platform_type == QUALCOMM_PLAT)
 	{
-		g_param.quality = QUALITY_LEVEL2;
+		g_param.quality = QUALITY_LEVEL1;//leve2 --> level1 wenhuan
 		if (ret){
 			g_param.preference = JPEG_ENCODER_SOFTWARE_ONLY;
 			LOGE("Hardware encoder engine is not supported!\n");

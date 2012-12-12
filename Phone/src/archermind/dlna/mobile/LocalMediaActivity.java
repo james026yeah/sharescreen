@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.List;
 
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
@@ -27,7 +26,6 @@ import android.os.RemoteException;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.view.ViewPager.OnPageChangeListener;
-import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -90,7 +88,7 @@ public class LocalMediaActivity extends BaseActivity {
 	private RelativeLayout mMainView;
 
 	private LinearLayout mImageThumbnailView;
-	private LinearLayout mImageThumbnailBackView;
+	private RelativeLayout mImageThumbnailBackView;
 	private TextView mImageThumbnailNameView;
 
 	private LinearLayout mMusicListView;
@@ -126,6 +124,7 @@ public class LocalMediaActivity extends BaseActivity {
 	private ImageThumbnailAdapter mImageThumbnailAdapter;
 	private VideoListViewAdapter mVideoListViewAdapter;
 	private ExpandableListView mExpandableListView;
+	private ImageLoadManager mImageLoadManager;
 
 	private AlbumListAdapter mAlbumListAdapter = null;
 	private ArtistListAdapter mArtistListAdapter = null;
@@ -155,6 +154,9 @@ public class LocalMediaActivity extends BaseActivity {
 		initTab();
 		initViewPager();
 		initCurrentTabImage(TAB_IMAGE);
+		mImageLoadManager = new ImageLoadManager();
+		mImageLoadManager.setScreenWidth(mScreenWidth);
+		mImageLoadManager.setScreenHeight(mScreenHeight);
 		try {
 			Field mField = ViewPager.class.getDeclaredField("mScroller");
 			mField.setAccessible(true);
@@ -471,7 +473,7 @@ public class LocalMediaActivity extends BaseActivity {
 
 		setInAnimation(mImageThumbnailView, mMainView);
 
-		mImageThumbnailBackView = (LinearLayout) findViewById(R.id.image_thumbnail_back);
+		mImageThumbnailBackView = (RelativeLayout) findViewById(R.id.image_thumbnail_back);
 		mImageThumbnailBackView.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -665,6 +667,7 @@ public class LocalMediaActivity extends BaseActivity {
 		@Override
 		public void destroyItem(ViewGroup container, int position, Object object) {
 			((ViewPager) container).removeView(list.get(position));
+			mImageLoadManager.clearBitmaps();
 		}
 
 		@Override
@@ -749,6 +752,7 @@ public class LocalMediaActivity extends BaseActivity {
 			TextView titlemain;
 			TextView titlesec;
 			TextView detail;
+			ImageView statusAroundImg;
 
 			if (convertView == null) {
 				view = getLayoutInflater().inflate(R.layout.music_list_item, null);
@@ -760,6 +764,9 @@ public class LocalMediaActivity extends BaseActivity {
 			titlesec = (TextView) view.findViewById(R.id.title_sec);
 			detail = (TextView) view.findViewById(R.id.detail);
 
+			statusAroundImg = (ImageView) view.findViewById(R.id.list_play_status_around);
+			statusAroundImg.startAnimation(mProgressBarAnim);
+			
 			titlemain.setText(mMusicAlbum.get(position).getName());
 			titlesec.setText(mMusicAlbum.get(position).getMusicsList().size()
 					+ getResources().getString(R.string.music_num));
@@ -794,6 +801,7 @@ public class LocalMediaActivity extends BaseActivity {
 			TextView titlemain;
 			TextView titlesec;
 			TextView detail;
+			ImageView statusAroundImg;
 
 			if (convertView == null) {
 				view = getLayoutInflater().inflate(R.layout.music_list_item, null);
@@ -804,6 +812,9 @@ public class LocalMediaActivity extends BaseActivity {
 			titlemain = (TextView) view.findViewById(R.id.title_main);
 			titlesec = (TextView) view.findViewById(R.id.title_sec);
 			detail = (TextView) view.findViewById(R.id.detail);
+			
+			statusAroundImg = (ImageView) view.findViewById(R.id.list_play_status_around);
+			statusAroundImg.startAnimation(mProgressBarAnim);
 
 			titlemain.setText(mMusicArtist.get(position).getName());
 			titlesec.setText(mMusicArtist.get(position).getMusicsList().size()
@@ -817,7 +828,6 @@ public class LocalMediaActivity extends BaseActivity {
 	private class ImageFrameAdapter extends BaseAdapter {
 
 		private ArrayList<PhotoAlbum> mPhotoAlbums;
-		private ImageLoadManager mImageLoadManager;
 		private PhotoItem mPhotoItem;
 		private ImageTag mImageTag;
 		private int mItemWidth;
@@ -829,7 +839,6 @@ public class LocalMediaActivity extends BaseActivity {
 		
 		public ImageFrameAdapter(ArrayList<PhotoAlbum> photoAlbums) {
 			mPhotoAlbums = photoAlbums;
-			mImageLoadManager = new ImageLoadManager();
 			mItemWidth = mScreenWidth / 2;
 			mImageFrameGridView.setColumnWidth(mItemWidth);
 		}
@@ -851,11 +860,9 @@ public class LocalMediaActivity extends BaseActivity {
 
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
-
 			if (convertView == null) {
 				convertView = getLayoutInflater().inflate(R.layout.local_media_image_frame_item, null);
 			}
-
 			mImage = (ImageFrameItem) convertView.findViewById(R.id.frame_thumbnail);
 			mImage.setLayoutParams(new LinearLayout.LayoutParams(mItemWidth, mItemWidth));
 			mImage.setBackgroundDrawable(null);
@@ -868,9 +875,6 @@ public class LocalMediaActivity extends BaseActivity {
 			mImageTag.setFilePath(mFilePath);
 			mImageTag.setThumbnailPath(mThumbnailPath);
 			mImageTag.setType(ImageTag.IMAGE_THUMBNAIL);
-			mImageTag.setScreenWidth(mScreenWidth);
-			mImageTag.setScreenHeigh(mScreenHeight);
-			mImageTag.setPosition(position);
 			mImage.setTag(mImageTag);
 			mImageLoadManager.loadImage(mImage);
 
@@ -882,13 +886,11 @@ public class LocalMediaActivity extends BaseActivity {
 			
 			return convertView;
 		}
-
 	}
 
 	private class ImageThumbnailAdapter extends BaseAdapter {
 
 		private ArrayList<PhotoItem> mPhotoItems;
-		private ImageLoadManager mImageLoadManager;
 		private ImageThumbnailItem mImage;
 		private PhotoItem mPhotoItem;
 		private ImageTag mImageTag;
@@ -898,7 +900,6 @@ public class LocalMediaActivity extends BaseActivity {
 
 		public ImageThumbnailAdapter(ArrayList<PhotoItem> photoItems) {
 			mPhotoItems = photoItems;
-			mImageLoadManager = new ImageLoadManager();
 			mItemWidth = mScreenWidth / 3;
 			mImageThumbnailGridView.setColumnWidth(mItemWidth);
 		}
@@ -920,11 +921,9 @@ public class LocalMediaActivity extends BaseActivity {
 
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
-
 			if (convertView == null) {
 				convertView = getLayoutInflater().inflate(R.layout.local_media_image_thumbnail_item, null);
 			}
-
 			mImage = (ImageThumbnailItem) convertView.findViewById(R.id.image_thumbnail_item);
 			mImage.setLayoutParams(new LinearLayout.LayoutParams(mItemWidth, mItemWidth));
 			mImage.setBackgroundDrawable(null);
@@ -937,65 +936,82 @@ public class LocalMediaActivity extends BaseActivity {
 			mImageTag.setFilePath(mFilePath);
 			mImageTag.setThumbnailPath(mThumbnailPath);
 			mImageTag.setType(ImageTag.IMAGE_THUMBNAIL);
-			mImageTag.setScreenWidth(mScreenWidth);
-			mImageTag.setScreenHeigh(mScreenHeight);
-			mImageTag.setPosition(position);
 			mImage.setTag(mImageTag);
 			mImageLoadManager.loadImage(mImage);
 			
 			return convertView;
 		}
-
 	}
 
 	private class VideoListViewAdapter extends BaseExpandableListAdapter {
 
-		public static final int ITEM_HEIGHT = 50;
+		private static final int ITEM_HEIGHT = 60;
+		private static final int CHILD_COUNT = 1;
 
-		private VideoGridView mVideoGridView;
+		private VideoThumbnailGridView mVideoGridView;
 		private ArrayList<VideoCategory> mVideoCategories;
-		private List<TreeNode> treeNodes = new ArrayList<TreeNode>();
 		private Context mContext;
 		private int mGroupPosition;
-
+		private TextView mGroupName;
+		private ImageView mGroupImage;
+		
 		public VideoListViewAdapter(Context context, ArrayList<VideoCategory> videoCategory) {
 			mContext = context;
 			mVideoCategories = videoCategory;
-			setTreeNode();
 		}
 
-		private void setTreeNode() {
-			for (int i = 0; i < mVideoCategories.size(); i++) {
-				TreeNode node = new TreeNode();
-				node.parent = mVideoCategories.get(i).getName();
-				node.childs.add(mVideoCategories.get(i).getVideosList());
-				treeNodes.add(node);
-			}
+		public VideoCategory getGroup(int groupPosition) {
+			return mVideoCategories.get(groupPosition);
 		}
 
-		@SuppressWarnings("unused")
-		public void RemoveAll() {
-			treeNodes.clear();
+		public int getGroupCount() {
+			return mVideoCategories.size();
 		}
 
-		public Object getChild(int groupPosition, int childPosition) {
-			return treeNodes.get(groupPosition).childs.get(childPosition);
+		public long getGroupId(int groupPosition) {
+			return groupPosition;
+		}
+
+		public VideoItem getChild(int groupPosition, int childPosition) {
+			return mVideoCategories.get(groupPosition).getVideosList().get(childPosition);
 		}
 
 		public int getChildrenCount(int groupPosition) {
-			return treeNodes.get(groupPosition).childs.size();
+			return CHILD_COUNT;
+		}
+		
+		public long getChildId(int groupPosition, int childPosition) {
+			return childPosition;
 		}
 
+		public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
+			if(convertView == null) {
+				convertView = (RelativeLayout) getLayoutInflater().inflate(R.layout.local_media_video_group_item, null);
+				AbsListView.LayoutParams lp = new AbsListView.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, ITEM_HEIGHT);
+				convertView.setLayoutParams(lp);
+			}
+			mGroupName = (TextView) convertView.findViewById(R.id.video_group_item_text);
+			mGroupName.setText(getGroup(groupPosition).getName());
+			mGroupImage = (ImageView) convertView.findViewById(R.id.video_group_item_image);
+			if (isExpanded) {
+				mGroupImage.setBackgroundResource(R.drawable.video_arrow_close);
+			} else {
+				mGroupImage.setBackgroundResource(R.drawable.video_arrow_open);
+			}
+			return convertView;
+		}
+		
 		public View getChildView(int groupPosition, int childPosition, boolean isLastChild, View convertView,
 				ViewGroup parent) {
-			convertView = getLayoutInflater().inflate(R.layout.local_media_video_gridview, null);
-			mVideoGridView = (VideoGridView) convertView.findViewById(R.id.video_gridview);
+			if(convertView == null) {
+				convertView = getLayoutInflater().inflate(R.layout.local_media_video_gridview, null);
+			}
+			mVideoGridView = (VideoThumbnailGridView) convertView.findViewById(R.id.video_gridview);
 			mVideoGridView.setNumColumns(3);
 			mVideoGridView.setGravity(Gravity.CENTER);
 			mVideoGridView.setHorizontalSpacing(15);
 			ArrayList<VideoItem> videoItem = mVideoCategories.get(groupPosition).getVideosList();
-			final VideoGridViewAdapter adapter = new VideoGridViewAdapter(mVideoGridView, videoItem,
-					groupPosition);
+			final VideoGridViewAdapter adapter = new VideoGridViewAdapter(mVideoGridView, videoItem, groupPosition);
 			mVideoGridView.setAdapter(adapter);
 			mVideoGridView.setOnItemClickListener(new OnItemClickListener() {
 
@@ -1013,39 +1029,6 @@ public class LocalMediaActivity extends BaseActivity {
 			return convertView;
 		}
 
-		public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
-			AbsListView.LayoutParams lp = new AbsListView.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT,
-					ITEM_HEIGHT);
-			convertView = (RelativeLayout) getLayoutInflater().inflate(R.layout.local_media_video_group_item,
-					null);
-			convertView.setLayoutParams(lp);
-			TextView textView = (TextView) convertView.findViewById(R.id.video_group_item_text);
-			textView.setText(getGroup(groupPosition).toString());
-			ImageView imageView = (ImageView) convertView.findViewById(R.id.video_group_item_image);
-			if (isExpanded) {
-				imageView.setBackgroundResource(R.drawable.video_arrow_close);
-			} else {
-				imageView.setBackgroundResource(R.drawable.video_arrow_open);
-			}
-			return convertView;
-		}
-
-		public long getChildId(int groupPosition, int childPosition) {
-			return childPosition;
-		}
-
-		public Object getGroup(int groupPosition) {
-			return treeNodes.get(groupPosition).parent;
-		}
-
-		public int getGroupCount() {
-			return treeNodes.size();
-		}
-
-		public long getGroupId(int groupPosition) {
-			return groupPosition;
-		}
-
 		public boolean isChildSelectable(int groupPosition, int childPosition) {
 			return true;
 		}
@@ -1053,21 +1036,16 @@ public class LocalMediaActivity extends BaseActivity {
 		public boolean hasStableIds() {
 			return true;
 		}
-
-		private class TreeNode {
-			Object parent;
-			List<Object> childs = new ArrayList<Object>();
-		}
-
+		
 	}
 
 	private class VideoGridViewAdapter extends BaseAdapter {
 
-		private VideoGridView mVideoGridView;
+		private VideoThumbnailGridView mVideoGridView;
 		private ArrayList<VideoItem> mVideoItems;
-		private ImageLoadManager mImageLoadManager;
 		private int mGroupPosition;
 		private int mItemWidth;
+		private int mDuration;
 		private ImageThumbnailItem mImage;
 		private TextView mTime;
 		private ImageTag mImageTag;
@@ -1075,11 +1053,10 @@ public class LocalMediaActivity extends BaseActivity {
 		private String mFilePath;
 		private String mThumbnailPath;
 
-		public VideoGridViewAdapter(VideoGridView view, ArrayList<VideoItem> videoItems, int groupPosition) {
+		public VideoGridViewAdapter(VideoThumbnailGridView view, ArrayList<VideoItem> videoItems, int groupPosition) {
 			mGroupPosition = groupPosition;
 			mVideoGridView = view;
 			mVideoItems = videoItems;
-			mImageLoadManager = new ImageLoadManager();
 			mItemWidth = mScreenWidth / 3;
 			mVideoGridView.setColumnWidth(mItemWidth);
 		}
@@ -1105,14 +1082,12 @@ public class LocalMediaActivity extends BaseActivity {
 
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
-
 			if (convertView == null) {
 				convertView = getLayoutInflater().inflate(R.layout.local_media_video_gridview_item, null);
 			}
-
 			mImage = (ImageThumbnailItem) convertView.findViewById(R.id.video_gridview_item_image);
 			mImage.setLayoutParams(new LinearLayout.LayoutParams(mItemWidth - 5, mItemWidth - 5));
-			mImage.setBackgroundDrawable(null);
+//			mImage.setBackgroundDrawable(null);
 
 			mVideoItem = mVideoItems.get(position);
 			mFilePath = mVideoItem.getFilePath();
@@ -1122,16 +1097,12 @@ public class LocalMediaActivity extends BaseActivity {
 			mImageTag.setFilePath(mFilePath);
 			mImageTag.setThumbnailPath(mThumbnailPath);
 			mImageTag.setType(ImageTag.VIDEO_THUMBNAIL);
-			mImageTag.setScreenWidth(mScreenWidth);
-			mImageTag.setScreenHeigh(mScreenHeight);
-			mImageTag.setPosition(position);
 			mImage.setTag(mImageTag);
 			mImageLoadManager.loadImage(mImage);
-
-			int duration = Integer.parseInt(mVideoItem.getDuration());
+			
+			mDuration = Integer.parseInt(mVideoItem.getDuration());
 			mTime = (TextView) convertView.findViewById(R.id.video_gridview_item_time);
-			mTime.setText(setDurationFormat(duration));
-
+			mTime.setText(setDurationFormat(mDuration));
 			return convertView;
 		}
 
@@ -1152,7 +1123,7 @@ public class LocalMediaActivity extends BaseActivity {
 
 	private void log(String str) {
 		if (DBG) {
-			Log.e(TAG, str);
+			Log.d(TAG, str);
 		}
 	}
 
@@ -1413,18 +1384,6 @@ public class LocalMediaActivity extends BaseActivity {
 			return mDuration;
 		}
 
-	}
-
-}
-
-class VideoGridView extends GridView {
-	public VideoGridView(Context context, AttributeSet attrs) {
-		super(context, attrs);
-	}
-
-	public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		int expandSpec = MeasureSpec.makeMeasureSpec(Integer.MAX_VALUE >> 2, MeasureSpec.AT_MOST);
-		super.onMeasure(widthMeasureSpec, expandSpec);
 	}
 
 }

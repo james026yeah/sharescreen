@@ -1,7 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="@drawable/welcome"
+    android:background="@drawable/welcome_bg"
     android:orientation="vertical" >
-</LinearLayout>
+    <ImageView
+        android:id="@+id/progress_indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="93.33dp" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_above="@id/progress_indicator"
+        android:layout_marginBottom="5.33dp"
+        android:textSize="13sp"
+        android:textColor="#6b7e8b"
+        android:textStyle="bold"
+        android:text="@string/welcome_loading_txt" />
+</RelativeLayout>

@@ -24,8 +24,6 @@ interface IMusicPlayService
     void setRepeatMode(int repeatmode);
     boolean getPreparedStatus();
     void pauseButtonPressed();
-    void setPlayOnPhone(boolean onphone);
-    boolean getPlayOnPhone();
     boolean getInitialed();
     void setInitialed(boolean ini);
 }

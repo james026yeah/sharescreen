@@ -31,34 +31,50 @@
         android:layout_height="50dp"
         android:background="@drawable/top_bar" >
 
-        <LinearLayout
+        <RelativeLayout
             android:id="@+id/image_view_list"
             android:layout_width="60dp"
             android:layout_height="fill_parent"
             android:layout_centerVertical="true"
-            android:gravity="center" >
+            android:background="@drawable/image_right_top_bg_sel" >
 
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
                 android:background="@drawable/image_btn_list"
                 android:contentDescription="@string/app_name" />
-        </LinearLayout>
 
-        <LinearLayout
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentRight="true"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/music_top_bar_line" />
+        </RelativeLayout>
+
+        <RelativeLayout
             android:id="@+id/image_view_push"
             android:layout_width="60dp"
             android:layout_height="fill_parent"
             android:layout_alignParentRight="true"
             android:layout_centerVertical="true"
-            android:gravity="center" >
+            android:background="@drawable/image_right_top_bg_sel" >
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentLeft="true"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/music_top_bar_line" />
 
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
                 android:background="@drawable/video_bth_push"
                 android:contentDescription="@string/app_name" />
-        </LinearLayout>
+        </RelativeLayout>
 
         <TextView
             android:id="@+id/image_view_name"
@@ -88,6 +104,7 @@
             android:layout_width="0dp"
             android:layout_height="fill_parent"
             android:layout_weight="1"
+            android:background="@drawable/image_right_top_bg_sel"
             android:contentDescription="@string/app_name"
             android:gravity="center" >
 
@@ -103,6 +120,7 @@
             android:layout_width="0dp"
             android:layout_height="fill_parent"
             android:layout_weight="1"
+            android:background="@drawable/image_right_top_bg_sel"
             android:contentDescription="@string/app_name"
             android:gravity="center" >
 
@@ -118,6 +136,7 @@
             android:layout_width="0dp"
             android:layout_height="fill_parent"
             android:layout_weight="1"
+            android:background="@drawable/image_right_top_bg_sel"
             android:contentDescription="@string/app_name"
             android:gravity="center" >
 
@@ -133,6 +152,7 @@
             android:layout_width="0dp"
             android:layout_height="fill_parent"
             android:layout_weight="1"
+            android:background="@drawable/image_right_top_bg_sel"
             android:contentDescription="@string/app_name"
             android:gravity="center" >
 
@@ -148,6 +168,7 @@
             android:layout_width="0dp"
             android:layout_height="fill_parent"
             android:layout_weight="1"
+            android:background="@drawable/image_right_top_bg_sel"
             android:contentDescription="@string/app_name"
             android:gravity="center" >
 
@@ -163,6 +184,7 @@
             android:layout_width="0dp"
             android:layout_height="fill_parent"
             android:layout_weight="1"
+            android:background="@drawable/image_right_top_bg_sel"
             android:contentDescription="@string/app_name"
             android:gravity="center" >
 

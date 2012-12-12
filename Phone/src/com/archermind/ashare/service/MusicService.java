@@ -1,5 +1,7 @@
 package com.archermind.ashare.service;
 
+import java.util.Map;
+
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -183,7 +185,7 @@ public class MusicService extends Service{
 //					onGetActionsresult((String)msg.obj);
 					break;
 				case MessageDefs.MSG_MDMC_ON_GET_GETTRANSPORTINFO:
-//					onGettransinforesult((Map)msg.obj);
+					onGettransinforesult((Map)msg.obj);
 					break;
 					
 				case MessageDefs.MSG_MDMC_ON_GET_IMAGESEEK:
@@ -229,4 +231,47 @@ public class MusicService extends Service{
 			}
 		}		
 	}
+	
+	protected void postNext(String uri,String type){
+		if(null != mService) {
+			try {
+			    Message msg = Message.obtain(null,
+			    		MessageDefs.MSG_MDMC_AV_TRANS_NEXT);
+			    Bundle data = new Bundle();
+			    data.putString(MessageDefs.KEY_ITEM_URI, uri);
+			    data.putString("type", type);
+			    // Location is unique for devices
+			    msg.replyTo = mMessenger;
+			    msg.setData(data);
+			    mService.send(msg);
+			} catch (RemoteException e) {
+			}
+		}
+	}
+	
+	protected void postGetTransportInfo(){
+		Log.e("james","in postGetTransportInfo");
+		if(null != mService) {
+			try {
+			    Message msg = Message.obtain(null,
+			    		MessageDefs.MSG_MDMC_AV_TRANS_GETTRANSPORTINFO);
+			    // Location is unique for devices
+			    msg.replyTo = mMessenger;
+			    mService.send(msg);
+			} catch (RemoteException e) {
+			}
+		}
+	}
+	
+	/**@param obj
+     * 	map.put("state", state);// value (stopped,playing)
+	 *  map.put("statu", statu);// value (OK,error)
+	 *	map.put("speed", speed);// value 1
+     * 
+     */
+    public void onGettransinforesult(Map obj) {
+		// TODO Auto-generated method stub
+		
+	}
+	
 }

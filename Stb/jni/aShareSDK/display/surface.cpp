@@ -264,14 +264,14 @@ int ASurface_decode(SkBitmap* bitmap, const void* src, size_t size, int *width, 
 	outBuf2 = pBuf8888;
 	stamp2 = _get__system_mstime();
 	LOGD("---------------------------------------\n");
-	LOGD("\t\tsw decode = %lld ms\n", stamp2 - stamp1);
+	LOGD("\t\tsw decode pure = %lld ms\n", stamp2 - stamp1);
 	LOGD("---------------------------------------\n");
 
 #else
 	stamp1 = _get__system_mstime();
     bool result = SkImageDecoder::DecodeMemory(src, size, bitmap,
-		    SkBitmap::kRGB_565_Config, SkImageDecoder::kDecodePixels_Mode,
-		    &fmt);
+		    SkBitmap::kARGB_8888_Config, SkImageDecoder::kDecodePixels_Mode,
+		    &fmt); //SkBitmap::kRGB_565_Config
     if (!result) {
         LOGE("decoder file fail!");
         return -1;
@@ -283,7 +283,7 @@ int ASurface_decode(SkBitmap* bitmap, const void* src, size_t size, int *width, 
     }
 	stamp2 = _get__system_mstime();
 	LOGD("---------------------------------------\n");
-	LOGD("\t\tsw decode = %lld ms\n", stamp2 - stamp1);
+	LOGD("\t\tsw decode SkImageDecoder::DecodeMemory = %lld ms\n", stamp2 - stamp1);
 	LOGD("---------------------------------------\n");
 #endif
     return 0;

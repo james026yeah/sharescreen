@@ -20,6 +20,10 @@ public class MediaCache {
 	private HashMap<String, ArrayList<VideoItem>> mVideoData = null;
 	private LocalMediaDbHelper mDbHelper;
 	private boolean mInitialized = false;
+	public interface MediaLoadProgressListener {
+        void onUpdateProgress(int progress);
+    };
+    private MediaLoadProgressListener mLoadListener;
 	public static FormatList sFormatList = new FormatList();
 	static {
 		sFormatList.add(new AudioMPEGFormat());
@@ -54,37 +58,57 @@ public class MediaCache {
 	public boolean isInitialized() {
 	    return mInitialized;
 	}
+	
+	public void setMediaLoadListener(MediaLoadProgressListener listener) {
+	    mLoadListener = listener;
+	}
+
 	public void init(LocalMediaDbHelper dbHelper) {
 		if(mInitialized || dbHelper == null) return;
 		long startTime, stopTime;
 		mDbHelper = dbHelper;
-
+		if(mLoadListener != null) {
+            mLoadListener.onUpdateProgress(0);
+        }
 		// Prepare Image datas
 		startTime = System.currentTimeMillis();
 		mImageData = mDbHelper.getImageAlbums();
 		stopTime = System.currentTimeMillis();
 		Log.v("DLNAService", "get image data cost time: " + (stopTime - startTime) + "ms");
+		if(mLoadListener != null) {
+		    mLoadListener.onUpdateProgress(20);
+		}
 
 		startTime = System.currentTimeMillis();
 		mAllMusicData = mDbHelper.getAudioList(null, null);
 		stopTime = System.currentTimeMillis();
 		Log.v("DLNAService", "get all music data cost time: " + (stopTime - startTime) + "ms");
+		if(mLoadListener != null) {
+		    mLoadListener.onUpdateProgress(40);
+		}
 
 		startTime = System.currentTimeMillis();
 		mMusicArtistData = mDbHelper.getAudioArtists(mAllMusicData);
 		stopTime = System.currentTimeMillis();
 		Log.v("DLNAService", "get artist data cost time: " + (stopTime - startTime) + "ms");
+        if(mLoadListener != null) {
+            mLoadListener.onUpdateProgress(60);
+        }
 
 		startTime = System.currentTimeMillis();
 		mMusicAlbumData = mDbHelper.getAudioAlbums(mAllMusicData);
 		stopTime = System.currentTimeMillis();
 		Log.v("DLNAService", "get album data cost time: " + (stopTime - startTime) + "ms");
-
+        if(mLoadListener != null) {
+            mLoadListener.onUpdateProgress(80);
+        }
 		startTime = System.currentTimeMillis();
 		mVideoData = mDbHelper.getVideoData();
 		stopTime = System.currentTimeMillis();
 		Log.v("DLNAService", "get video data cost time: " + (stopTime - startTime) + "ms");
-		
+        if(mLoadListener != null) {
+            mLoadListener.onUpdateProgress(100);
+        }		
 		mInitialized = true;
 	}
 

@@ -20,9 +20,12 @@ import android.os.RemoteException;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.BaseAdapter;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -47,6 +50,7 @@ public class MusicListActivity extends BaseActivity {
 	private MusicListAdapter adapter = null;
 	private ListView mMusicList;
 	private TextView mTitle;
+	private Animation mProgressBarAnim;
 //	private static List<MusicItem> mAllMusic;
 	
 	private ServiceConnection mMusicSerConn = new ServiceConnection() {
@@ -79,6 +83,7 @@ public class MusicListActivity extends BaseActivity {
 		if (getIntent().getBooleanExtra("scrollto", false)) {
 			mMusicList.setSelection((int) MusicData.getNowPlayPositionInList());
 		}
+		mProgressBarAnim = AnimationUtils.loadAnimation(this, R.anim.progress_bar_anim);
 //		Message msg = new Message();
 //		msg.what = 0;
 //		handler.sendMessageDelayed(msg, 100);
@@ -162,6 +167,8 @@ public class MusicListActivity extends BaseActivity {
 			TextView titlemain;
 			TextView titlesec;
 			TextView detail;
+			ImageView statusAroundImg;
+			FrameLayout statusImg;
 			
 //			Bitmap bm = null;
 
@@ -186,6 +193,7 @@ public class MusicListActivity extends BaseActivity {
 //					}
 //				}
 //			}
+			
 			if (convertView == null) {
 				view = getLayoutInflater().inflate(R.layout.music_list_item, null);
 			}
@@ -193,6 +201,13 @@ public class MusicListActivity extends BaseActivity {
 				view = convertView;
 			}
 			img = (ImageView) view.findViewById(R.id.img);
+			statusAroundImg = (ImageView) view.findViewById(R.id.list_play_status_around);
+			statusImg = (FrameLayout) view.findViewById(R.id.list_play_status);
+			statusImg.setVisibility(View.GONE);
+			if (MusicData.getMusicShowList().get(position) == MusicData.getNowPlayingMusic()) {
+				statusImg.setVisibility(View.VISIBLE);
+			}
+			statusAroundImg.startAnimation(mProgressBarAnim);
 			img.setImageBitmap(null);
 			img.setBackgroundDrawable(getResources().getDrawable(R.drawable.icon_music));
 			titlemain = (TextView) view.findViewById(R.id.title_main);

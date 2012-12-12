@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.cybergarage.upnp.std.av.renderer.AVTransport;
+
 import com.archermind.ashare.dlna.localmedia.VideoItem;
 
 import android.annotation.SuppressLint;
@@ -21,7 +23,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.PowerManager;
-import android.os.Vibrator;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -38,16 +39,19 @@ import android.widget.SeekBar;
 import android.widget.Toast;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
+import archermind.dlna.mobile.LocalMediaUtil.Defs;
 
 @SuppressLint({ "HandlerLeak", "HandlerLeak" })
 public class VideoViewActivity extends BaseActivity implements OnClickListener, OnAudioFocusChangeListener {
 
 	private static final String TAG = "VideoViewActivity";
+	private static final boolean DBUG = true;
+	private static final boolean EBUG = true;
 
 	public static final String VIDEO_INDEX = "video_index";
 	public static ArrayList<VideoItem> sVideoItemList = new ArrayList<VideoItem>();
 
-	//The number of milliseconds into hours, minutes, seconds
+	// The number of milliseconds into hours, minutes, seconds
 	private static final int TIME_SECOND = 1000;
 	private static final int TIME_MINUTE = TIME_SECOND * 60;
 	private static final int TIME_HOUR = TIME_MINUTE * 60;
@@ -57,20 +61,19 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 	private static final int HIDE_CONTROL_DEFAULT_TIME = 20 * 1000;
 
 	private static final int TIMER_INTERVAL_TIME = 800;
-	public static final float VOLUME_UP = 1f;
-	public static final float VOLUME_DOWN = -1f;
+	private static final float VOLUME_UP = 1f;
+	private static final float VOLUME_DOWN = -1f;
 
 	private RelativeLayout mTopLayout;
 	private RelativeLayout mBottomLayout;
 	private RelativeLayout mBackView;
 	private RelativeLayout mPushView;
-	
-//	private ImageView mMuteView;
-	private ImageView mPrevView;
-	private ImageView mPlayView;
-	private ImageView mPauseView;
-	private ImageView mStopView;
-	private ImageView mNextView;
+
+	private LinearLayout mPrevView;
+	private LinearLayout mPlayView;
+	private LinearLayout mPauseView;
+	private LinearLayout mStopView;
+	private LinearLayout mNextView;
 
 	private TextView mNameView;
 	private TextView mPromptView;
@@ -89,66 +92,69 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 	private MediaPlayer mMediaPlayer;
 	private AudioManager mAudioManager;
 
-	private String mVideoPath;
-	private String mVideoName;
-	private String mDeviceName = "XXX";
+	private String mDeviceName;
 
-	private int mDuration;
 	private int mRealTime;
-	private int mMaxSound;
-	private int mRealSound;
 	private int mCurrentIndex;
 	private int mVideoListMaxSize;
 
 	private boolean mIsPaused = false;
 	private boolean mIsReleased = false;
-//	private boolean mIsSilenced = false;
 	private boolean mIsHideControlLayout = false;
-	private boolean mIsPushed = false;
 	private boolean mIsTimeSeekBarTouched = false;
 	private boolean mIsPushStoped = false;
-//	private boolean mIsFirstPushed = false;
 	private boolean mIsPushPlayStoped = false;
 	private boolean mIsActivityOnPaused = false;
 
 	private Handler mTimeSeekBarHandler;
 	private Timer mTimer;
 	private QueryStateTask mQueryStateTask;
-	
+
 	private PowerManager mPowerManager;
 	private WakeLock mWakeLock;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		log("onCreate");
-		
+		Dlog("onCreate");
+
 		mPowerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
 		mWakeLock = mPowerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, "My Lock");
 		mWakeLock.acquire();
-		
-		AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-		audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+
+		mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+		mAudioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
 
 		mCurrentIndex = getIntent().getIntExtra(VIDEO_INDEX, 0);
 		mVideoListMaxSize = sVideoItemList.size();
 
-		mAudioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
-		mMaxSound = mAudioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-//		mRealSound = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-		
-		getVideoName();
-		getVideoPath();
+		if (LocalMediaUtil.getWhichOnRemote() == Defs.VIDEO) {
+			getFriendlyNameOfRenderer();
+			// Now you can directly push
+			Dlog("mVideoUri = " + getVideoUri());
+			Dlog("local uri = " + LocalMediaUtil.getCurrentUri());
+			if (getVideoUri().equals(LocalMediaUtil.getCurrentUri())) {
+				// TV has to play the contents of the current push
+				initPushedUI();
+				if (mWakeLock.isHeld()) {
+					mWakeLock.release();
+				}
+			} else {
+				// Can directly push the new content to the TV
+				postPlay(getVideoUri(), getVideoMetaData());
+				initPushedUI();
+				hideControlLayout();
+				mPromptView.setVisibility(View.GONE);
+				showProgressBar();
+			}
+		} else {
+			// Direct play of local video
+			initUnPushedUI();
+		}
 
-//		log("mCurrentIndex = " + mCurrentIndex);
-//		log("mVideoPath = " + mVideoPath);
-//		log("mVideoName = " + mVideoName);
-
-		initUnPushedUI();
 	}
 
 	private void initVideoView() {
-
 		mTopLayout = (RelativeLayout) findViewById(R.id.video_view_top_layout);
 		mBottomLayout = (RelativeLayout) findViewById(R.id.video_view_bottom_layout);
 		mTopLayout.getBackground().setAlpha(180);
@@ -157,25 +163,21 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 		mPromptView = (TextView) findViewById(R.id.video_view_prompt);
 		mBackView = (RelativeLayout) findViewById(R.id.video_view_back);
 		mPushView = (RelativeLayout) findViewById(R.id.video_view_push);
-		mPrevView = (ImageView) findViewById(R.id.video_view_prev);
-		mPlayView = (ImageView) findViewById(R.id.video_view_play);
-		mPauseView = (ImageView) findViewById(R.id.video_view_pause);
-		mStopView = (ImageView) findViewById(R.id.video_view_stop);
-		mNextView = (ImageView) findViewById(R.id.video_view_next);
-//		mMuteView = (ImageView) findViewById(R.id.video_view_mute);
+		mPrevView = (LinearLayout) findViewById(R.id.video_view_prev);
+		mPlayView = (LinearLayout) findViewById(R.id.video_view_play);
+		mPauseView = (LinearLayout) findViewById(R.id.video_view_pause);
+		mStopView = (LinearLayout) findViewById(R.id.video_view_stop);
+		mNextView = (LinearLayout) findViewById(R.id.video_view_next);
 		mRealTimeView = (TextView) findViewById(R.id.video_view_current_time);
 		mAllTimeView = (TextView) findViewById(R.id.video_view_all_time);
 
 		mNameView = (TextView) findViewById(R.id.video_view_name);
-		getVideoName();
-		mNameView.setText(mVideoName);
+		mNameView.setText(getVideoName());
 
 		mTimeSeekBar = (SeekBar) findViewById(R.id.video_view_progress_seekbar);
 		mTimeSeekBar.setProgress(mRealTime);
 		mTimeSeekBar.setOnSeekBarChangeListener(timeSeekBarListener);
 
-//		setMuteViewBg();
-		
 		mTopLayout.setOnClickListener(this);
 		mBottomLayout.setOnClickListener(this);
 		mPromptView.setOnClickListener(this);
@@ -186,7 +188,6 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 		mPauseView.setOnClickListener(this);
 		mStopView.setOnClickListener(this);
 		mNextView.setOnClickListener(this);
-//		mMuteView.setOnClickListener(this);
 
 	}
 
@@ -196,9 +197,9 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 				mMediaPlayer.release();
 				mMediaPlayer = null;
 			}
-			getVideoPath();
 			mMediaPlayer = new MediaPlayer();
-			mMediaPlayer.setDataSource(mVideoPath);
+			String path = getVideoPath();
+			mMediaPlayer.setDataSource(path);
 			mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 			mMediaPlayer.setOnPreparedListener(preparedListener);
 			mMediaPlayer.setOnCompletionListener(completionListener);
@@ -217,14 +218,14 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 
 		mSurfaceView = (SurfaceView) findViewById(R.id.video_view_surface);
 		mSurfaceView.setOnClickListener(this);
-		
+
 		mSurfaceHolder = mSurfaceView.getHolder();
 		mSurfaceHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
 		mSurfaceHolder.addCallback(new SurfaceHolder.Callback() {
 
 			@Override
 			public void surfaceCreated(SurfaceHolder holder) {
-				log("surfaceCreated");
+				Dlog("surfaceCreated");
 				initMediaPlayer();
 				mMediaPlayer.setDisplay(mSurfaceHolder);
 			}
@@ -236,7 +237,7 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 
 			@Override
 			public void surfaceDestroyed(SurfaceHolder holder) {
-				log("surfaceDestroyed");
+				Dlog("surfaceDestroyed");
 			}
 
 		});
@@ -246,14 +247,14 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 
 		@Override
 		public void onStopTrackingTouch(SeekBar seekBar) {
-			if (mIsPushed) {
-				log("seek mRealTime = " + mRealTime);
+			if (LocalMediaUtil.getWhichOnRemote() == Defs.VIDEO) {
+				Dlog("seek mRealTime = " + mRealTime);
 				postSeek(mRealTime + "");
 				mIsTimeSeekBarTouched = false;
 				mPlayView.setVisibility(View.GONE);
 				mPauseView.setVisibility(View.VISIBLE);
 			} else {
-				if(mMediaPlayer != null) {
+				if (mMediaPlayer != null) {
 					mMediaPlayer.seekTo(mRealTime);
 					mMediaPlayer.start();
 					mIsPaused = false;
@@ -265,16 +266,16 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 
 		@Override
 		public void onStartTrackingTouch(SeekBar seekBar) {
-			if (!mIsPushed) {
-				if(mMediaPlayer != null) {
+			if (LocalMediaUtil.getWhichOnRemote() == Defs.VIDEO) {
+				mIsTimeSeekBarTouched = true;
+				mPlayView.setVisibility(View.GONE);
+				mPauseView.setVisibility(View.VISIBLE);
+			} else {
+				if (mMediaPlayer != null) {
 					mMediaPlayer.pause();
 					mPauseView.setVisibility(View.GONE);
 					mPlayView.setVisibility(View.VISIBLE);
 				}
-			} else {
-				mIsTimeSeekBarTouched = true;
-				mPlayView.setVisibility(View.GONE);
-				mPauseView.setVisibility(View.VISIBLE);
 			}
 		}
 
@@ -288,19 +289,15 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 
 		@Override
 		public void onPrepared(MediaPlayer mp) {
-			log("prepare mRealTime = " + mRealTime);
-
+			Dlog("prepare mRealTime = " + mRealTime);
 			mp.seekTo(mRealTime);
-
-			mDuration = mp.getDuration();
-			mTimeSeekBar.setMax(mDuration);
-			mAllTimeView.setText(setDurationToTime(mDuration));
+			int duration = mp.getDuration();
+			mTimeSeekBar.setMax(duration);
+			mAllTimeView.setText(setDurationToTime(duration));
 			mRealTimeView.setText(setDurationToTime(mRealTime));
-			
 			initTimeSeekBarHandler();
 			mTimeSeekBarHandler.sendEmptyMessage(PROGRESS_SEEKBAR_REFRESH);
 			mHandler.sendEmptyMessageDelayed(HIDE_CONTROL_LAYOUT, HIDE_CONTROL_DEFAULT_TIME);
-			
 			mIsActivityOnPaused = false;
 			mp.start();
 		}
@@ -310,22 +307,15 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 
 		@Override
 		public void onCompletion(MediaPlayer mp) {
-			log("onCompletion is call");
-
-			if(!mIsActivityOnPaused) {
+			Dlog("onCompletion is call");
+			if (!mIsActivityOnPaused) {
 				setContentView(R.layout.local_media_video_view);
 				initVideoView();
-	
-				mMediaPlayer.stop();
-				mMediaPlayer.release();
-				mMediaPlayer = null;
-				mIsReleased = true;
-	
+				removeMediaPlayer();
 				mPauseView.setVisibility(View.GONE);
 				mPlayView.setVisibility(View.VISIBLE);
 				mNameView.setText("");
 				mTimeSeekBar.setProgress(0);
-//				setMuteViewBg();
 				mPromptView.setVisibility(View.VISIBLE);
 				mPromptView.setText(getResources().getString(R.string.video_play_end_prompt_message));
 				showControlLayout();
@@ -364,35 +354,32 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 	protected void onServiceConnected() {
 		super.onServiceConnected();
 	}
-	
+
 	@Override
 	protected void onGetFriendlyName(String friendlyName) {
-		if(friendlyName == null || friendlyName.equals("")) {
-			Toast.makeText(this, R.string.video_not_connection_toast_message, Toast.LENGTH_SHORT).show();
-		} else {
+		if (friendlyName != null && !friendlyName.equals("")) {
 			mDeviceName = friendlyName;
-			pushVideo();
+		} else {
+			Elog("friendlyName is null");
 		}
 	}
-	
-	private void getVideoName() {
-		mVideoName = sVideoItemList.get(mCurrentIndex).getTitle();
+
+	private String getVideoName() {
+		return sVideoItemList.get(mCurrentIndex).getTitle();
 	}
 
-	private void getVideoPath() {
-		mVideoPath = sVideoItemList.get(mCurrentIndex).getFilePath();
+	private String getVideoPath() {
+		return sVideoItemList.get(mCurrentIndex).getFilePath();
 	}
 
-//	private void setMuteViewBg() {
-//		if(mRealSound == 0) {
-//			mIsSilenced = true;
-//			mMuteView.setBackgroundResource(R.drawable.btn_media_mute);
-//		} else {
-//			mIsSilenced = false;
-//			mMuteView.setBackgroundResource(R.drawable.btn_media_volume);
-//		}
-//	}
-	
+	private String getVideoUri() {
+		return sVideoItemList.get(mCurrentIndex).getItemUri();
+	}
+
+	private String getVideoMetaData() {
+		return sVideoItemList.get(mCurrentIndex).metaData;
+	}
+
 	private void showProgressBar() {
 		mProgressBar = (LinearLayout) findViewById(R.id.video_push_progress_bar);
 		mProgressBarAnim = AnimationUtils.loadAnimation(this, R.anim.progress_bar_anim);
@@ -413,7 +400,7 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 	}
 
 	private void initUnPushedUI() {
-		log("initUnPushedUI is call");
+		Dlog("initUnPushedUI is call");
 		mIsPaused = false;
 		mIsReleased = false;
 		setContentView(R.layout.local_media_video_view);
@@ -421,82 +408,42 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 		initSurfaceView();
 	}
 
-	private void initPushedOutUI() {
-		log("initPushedOutUI is call");
+	private void initPushedUI() {
+		Dlog("initPushedUI is call");
 		mRealTime = 0;
 		setContentView(R.layout.local_media_video_view);
 		initVideoView();
 		mPromptView.setVisibility(View.VISIBLE);
-		mPromptView.setText(mVideoName + "  " + getResources().getString(R.string.video_prompt_prev_message)
+		mPromptView.setText(getVideoName() + "  " + getResources().getString(R.string.video_prompt_prev_message)
 				+ "  " + mDeviceName + "  " + getResources().getString(R.string.video_prompt_next_message));
 	}
 
-//	private void setMute() {
-//		if (mIsSilenced) {
-//			if (mIsPushed) {
-//				postGetVolume();
-//			} else {
-//				mMuteView.setBackgroundResource(R.drawable.btn_media_volume);
-//				mIsSilenced = false;
-//			}
-//		} else {
-//			if (mIsPushed) {
-//				postSetMute(0.0f);
-//			} else {
-//				mAudioManager.setStreamVolume(AudioManager.STREAM_MUSIC, 0, 0);
-//			}
-//			Vibrator vib = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-//			vib.vibrate(200);
-//			mMuteView.setBackgroundResource(R.drawable.btn_media_mute);
-//			mIsSilenced = true;
-//		}
-//	}
-
-	private void pushVideo() {
-		if (!mIsPushed) {
-			log("push out to TV");
-			log("current uri = " + sVideoItemList.get(mCurrentIndex).getItemUri());
-			mIsPushed = true;
-//			mIsFirstPushed = true;
-			postPlay(sVideoItemList.get(mCurrentIndex).getItemUri(),
-					sVideoItemList.get(mCurrentIndex).metaData);
-			if (mMediaPlayer != null) {
-				mMediaPlayer.stop();
-				mMediaPlayer.release();
-				mMediaPlayer = null;
-				mIsReleased = true;
-			}
-			hideControlLayout();
-			mPromptView.setVisibility(View.GONE);
-			showProgressBar();
-		} else {
-			log("push back to phone");
-			if(!mWakeLock.isHeld()) {
-				mWakeLock.acquire();
-			}
-			mIsPushed = false;
-			cancelTask();
-			postGetPositionInfo();
-			poststop();
-		}
+	private void pushOutVideo() {
+		removeMediaPlayer();
+		Dlog("push out to TV,  push uri = " + getVideoUri());
+		postPlay(getVideoUri(), getVideoMetaData());
+		Dlog("mRealTime = " + mRealTime);
+		postSeek(mRealTime + "");
+		hideControlLayout();
+		mPromptView.setVisibility(View.GONE);
+		showProgressBar();
 	}
 
 	@Override
-	public void onGetPlayresult(Boolean obj) {
-		log("onGetPlayresult is call");
-		if (obj) {
-//			log("mRealTime = " + mRealTime);
-//			postSeek(mRealTime + "");
+	public void onGetPlayresult(Boolean state) {
+		// the message send to TV success
+		if (state) {
+			LocalMediaUtil.setWhichOnRemote(Defs.VIDEO);
+			LocalMediaUtil.setCurrentUri(getVideoUri());
 			dismissProgressBar();
-			initPushedOutUI();
+			initPushedUI();
 			createTimer();
-			if(mWakeLock.isHeld()) {
+			if (mWakeLock.isHeld()) {
 				mWakeLock.release();
 			}
-//			postGetMute();
-//			postGetVolume();
 		} else {
-			log("onGetPlayresult is null");
+			// the message send TV failed
+			Elog("onGetPlayresult is null");
 		}
 	}
 
@@ -505,7 +452,7 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 		mQueryStateTask = new QueryStateTask();
 		mTimer.schedule(mQueryStateTask, TIMER_INTERVAL_TIME, TIMER_INTERVAL_TIME);
 	}
-	
+
 	private class QueryStateTask extends TimerTask {
 
 		@Override
@@ -523,59 +470,59 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 	private void cancelTask() {
 		if (mTimer != null) {
 			mTimer.cancel();
+			mTimer = null;
 		}
 		if (mQueryStateTask != null) {
 			mQueryStateTask.cancel();
+			mQueryStateTask = null;
 		}
 	}
 
 	@SuppressWarnings("rawtypes")
 	@Override
-	public void onGettransinforesult(Map obj) {
-		if (obj != null) {
-			// String state = (String) obj.get("state");
-			// String statu = (String) obj.get("statu");
-			// String speed = (String) obj.get("speed");
-			// log("state = " + state + "  statu = " + statu + "  speed = " +
-			// speed);
+	public void onGettransinforesult(Map map) {
+		if (map != null) {
+			String state = (String) map.get("state");
+			Dlog("state = " + state);
+			if (state.equals(AVTransport.PLAYING)) {
+				mIsPushPlayStoped = false;
+			}
+			if (state.equals(AVTransport.STOPPED)) {
+				mIsPushPlayStoped = true;
+			}
 		} else {
-			log("onGettransinforesult data is null");
+			Elog("onGettransinforesult data is null");
 		}
 	}
 
 	@SuppressWarnings("rawtypes")
 	@Override
-	public void onGetPositioninforesult(Map obj) {
-		if (obj != null) {
-			String duration = (String) obj.get("trackDuration");
-			String realTime = (String) obj.get("relTime");
+	public void onGetPositioninforesult(Map map) {
+		if (map != null) {
+			String duration = (String) map.get("trackDuration");
+			String realTime = (String) map.get("relTime");
 			int progressTV = setTimeToDuration(realTime);
 			int durationTV = setTimeToDuration(duration);
-
-			log("realTime = " + realTime + "   progressTV = " + progressTV + "   durationTV = " + durationTV);
-
-			if (!mIsPushed) {
-				mRealTime = progressTV;
+			Dlog("progressTV = " + progressTV + "   durationTV = " + durationTV);
+			mRealTime = progressTV;
+			// Sudden interruption of the equipment or push back
+			if (LocalMediaUtil.getWhichOnRemote() != Defs.VIDEO) {
+				cancelTask();
+				poststop();
 				initUnPushedUI();
+				LocalMediaUtil.setWhichOnRemote(Defs.NOT_ANY_ONE);
+				LocalMediaUtil.setCurrentUri("");
 				return;
 			}
-
+			// The push status, drag the progress bar
 			if (!mIsTimeSeekBarTouched) {
 				mTimeSeekBar.setMax(durationTV);
 				mTimeSeekBar.setProgress(progressTV);
 				mAllTimeView.setText(duration);
 				mRealTimeView.setText(realTime);
 			}
-
-			if(progressTV < durationTV) {
-				if (progressTV == durationTV - TIME_SECOND) {
-					mIsPushPlayStoped = true;
-				} else {
-					mIsPushPlayStoped = false;
-				}
-			}
-
-			if (progressTV == 0 && mIsPushPlayStoped) {
+			// The push status, play back ends
+			if (mIsPushPlayStoped) {
 				cancelTask();
 				mNameView.setText("");
 				mPromptView.setText(getResources().getString(R.string.video_play_end_prompt_message));
@@ -586,107 +533,65 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 				showControlLayout();
 				mHandler.removeMessages(HIDE_CONTROL_LAYOUT);
 			}
-
 		} else {
-			log("onGetPositioninforesult data is null");
+			Elog("onGetPositioninforesult data is null");
 		}
 	}
 
-//	@Override
-//	public void onGetGetmuteresult(String obj) {
-//		if (obj != null) {
-//			mIsSilenced = Boolean.parseBoolean(obj);
-//			log("mIsSilenced = " + mIsSilenced);
-//			if (mIsSilenced) {
-//				mMuteView.setBackgroundResource(R.drawable.btn_media_mute);
-//			} else {
-//				mMuteView.setBackgroundResource(R.drawable.btn_media_volume);
-//			}
-//		} else {
-//			log("onGetGetmuteresult is null");
-//		}
-//	}
-
 	@Override
 	protected void onRestart() {
-		log("onRestart");
-		if(mIsPushed) {
-			initPushedOutUI();
-			if(mWakeLock.isHeld()) {
+		Dlog("onRestart");
+		if (LocalMediaUtil.getWhichOnRemote() == Defs.VIDEO) {
+			initPushedUI();
+			if (mWakeLock.isHeld()) {
 				mWakeLock.release();
 			}
 		} else {
 			initUnPushedUI();
-			if(!mWakeLock.isHeld()) {
+			if (!mWakeLock.isHeld()) {
 				mWakeLock.acquire();
 			}
 		}
 		super.onRestart();
 	}
-	
+
 	@Override
 	protected void onPause() {
-		log("onPause");
+		Dlog("onPause");
 		mIsActivityOnPaused = true;
-		if(mMediaPlayer != null) {
-			mMediaPlayer.stop();
-			mMediaPlayer.release();
-			mMediaPlayer = null;
-			if(mWakeLock.isHeld()) {
+		if (mMediaPlayer != null) {
+			if (mWakeLock.isHeld()) {
 				mWakeLock.release();
 			}
 		}
+		removeMediaPlayer();
 		super.onPause();
 	}
-	
+
 	@Override
 	protected void onStop() {
-		log("onStop");
+		Dlog("onStop");
 		super.onStop();
 	}
-	
+
 	@Override
 	public void onDestroy() {
-		log("onDestroy");
-		if(mWakeLock.isHeld()) {
+		Dlog("onDestroy");
+		if (mWakeLock.isHeld()) {
 			mWakeLock.release();
 		}
 		super.onDestroy();
 	}
-	
-//	@Override
-//	public void onGetGetvolumeresult(String obj) {
-//		if (obj != null) {
-//			log("obj = " + obj);
-//			if (mIsFirstPushed) {
-//				postSetVolume(0.5f);
-//				mRealSound = (int) (0.5 * mMaxSound);
-//				mIsFirstPushed = false;
-//			} else {
-//				postSetVolume(Float.parseFloat(obj));
-//				mRealSound = (int) (Float.parseFloat(obj) * mMaxSound);
-//			}
-//			setMuteViewBg();
-//		} else {
-//			log("onGetGetvolumeresult is null");
-//		}
-//	}
 
 	private void prevVideo() {
-		if(mCurrentIndex == 0) {
+		if (mCurrentIndex == 0) {
 			Toast.makeText(this, R.string.video_first_number_toast_message, Toast.LENGTH_SHORT).show();
 		} else {
 			mCurrentIndex--;
-			if (mIsPushed) {
-				log("prev video");
-				postPlay(sVideoItemList.get(mCurrentIndex).getItemUri(),
-						sVideoItemList.get(mCurrentIndex).metaData);
-				if (mMediaPlayer != null) {
-					mMediaPlayer.stop();
-					mMediaPlayer.release();
-					mMediaPlayer = null;
-					mIsReleased = true;
-				}
+			if (LocalMediaUtil.getWhichOnRemote() == Defs.VIDEO) {
+				Dlog("prev video");
+				postPlay(getVideoUri(), getVideoMetaData());
+				removeMediaPlayer();
 				hideControlLayout();
 				mPromptView.setVisibility(View.GONE);
 				showProgressBar();
@@ -698,18 +603,12 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 	}
 
 	private void playVideo() {
-		if (mIsPushed) {
+		if (LocalMediaUtil.getWhichOnRemote() == Defs.VIDEO) {
 			if (mIsPushStoped) {
-				log("push out to TV");
-				postPlay(sVideoItemList.get(mCurrentIndex).getItemUri(),
-						sVideoItemList.get(mCurrentIndex).metaData);
+				Dlog("push out to TV");
+				postPlay(getVideoUri(), getVideoMetaData());
 				mIsPushStoped = false;
-				if (mMediaPlayer != null) {
-					mMediaPlayer.stop();
-					mMediaPlayer.release();
-					mMediaPlayer = null;
-					mIsReleased = true;
-				}
+				removeMediaPlayer();
 				hideControlLayout();
 				mPromptView.setVisibility(View.GONE);
 				showProgressBar();
@@ -719,11 +618,13 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 			mPlayView.setVisibility(View.GONE);
 			mPauseView.setVisibility(View.VISIBLE);
 		} else {
+			// The local play video end
 			if (mIsReleased) {
 				mIsReleased = false;
 				initUnPushedUI();
 			}
-			if(mIsPaused) {
+			// The local play video pause
+			if (mIsPaused) {
 				mIsPaused = false;
 				mPlayView.setVisibility(View.GONE);
 				mPauseView.setVisibility(View.VISIBLE);
@@ -733,38 +634,29 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 	}
 
 	private void pauseVideo() {
-		if (mIsPushed) {
+		if (LocalMediaUtil.getWhichOnRemote() == Defs.VIDEO) {
 			postpause();
 			mPauseView.setVisibility(View.GONE);
 			mPlayView.setVisibility(View.VISIBLE);
 		} else {
 			if (mMediaPlayer != null) {
-				if (mIsReleased == false) {
-					if (mIsPaused == false) {
-						mMediaPlayer.pause();
-						mPauseView.setVisibility(View.GONE);
-						mPlayView.setVisibility(View.VISIBLE);
-						mIsPaused = true;
-					}
+				if (!mIsReleased && !mIsPaused) {
+					mMediaPlayer.pause();
+					mPauseView.setVisibility(View.GONE);
+					mPlayView.setVisibility(View.VISIBLE);
+					mIsPaused = true;
 				}
 			}
 		}
 	}
 
 	private void stopVideo() {
-		if (mIsPushed) {
+		if (LocalMediaUtil.getWhichOnRemote() == Defs.VIDEO) {
 			cancelTask();
 			poststop();
 			mIsPushStoped = true;
 		} else {
-			if (mMediaPlayer != null) {
-				if (mIsReleased == false) {
-					mMediaPlayer.stop();
-					mMediaPlayer.release();
-					mMediaPlayer = null;
-					mIsReleased = true;
-				}
-			}
+			removeMediaPlayer();
 		}
 		setContentView(R.layout.local_media_video_view);
 		initVideoView();
@@ -772,26 +664,19 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 		mPlayView.setVisibility(View.VISIBLE);
 		mNameView.setText("");
 		mTimeSeekBar.setProgress(0);
-//		setMuteViewBg();
 		mPromptView.setVisibility(View.VISIBLE);
 		mPromptView.setText(getResources().getString(R.string.video_stop_prompt_message));
 	}
 
 	private void nextVideo() {
-		if(mCurrentIndex == mVideoListMaxSize - 1) {
+		if (mCurrentIndex == mVideoListMaxSize - 1) {
 			Toast.makeText(this, R.string.video_last_number_toast_message, Toast.LENGTH_SHORT).show();
 		} else {
 			mCurrentIndex++;
-			if (mIsPushed) {
-				log("next video");
-				postPlay(sVideoItemList.get(mCurrentIndex).getItemUri(),
-						sVideoItemList.get(mCurrentIndex).metaData);
-				if (mMediaPlayer != null) {
-					mMediaPlayer.stop();
-					mMediaPlayer.release();
-					mMediaPlayer = null;
-					mIsReleased = true;
-				}
+			if (LocalMediaUtil.getWhichOnRemote() == Defs.VIDEO) {
+				Dlog("next video");
+				postPlay(getVideoUri(), getVideoMetaData());
+				removeMediaPlayer();
 				hideControlLayout();
 				mPromptView.setVisibility(View.GONE);
 				showProgressBar();
@@ -802,8 +687,24 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 		}
 	}
 
-	private void log(String str) {
-		Log.e(TAG, str);
+	private void removeMediaPlayer() {
+		if (mMediaPlayer != null) {
+			mMediaPlayer.stop();
+			mMediaPlayer.release();
+			mMediaPlayer = null;
+			mIsReleased = true;
+			mIsPaused = false;
+		}
+	}
+
+	private void Elog(String str) {
+		if (EBUG)
+			Log.e(TAG, str);
+	}
+
+	private void Dlog(String str) {
+		if (DBUG)
+			Log.d(TAG, str);
 	}
 
 	Handler mHandler = new Handler() {
@@ -835,53 +736,26 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_BACK:
-			if (mMediaPlayer != null) {
-				mMediaPlayer.stop();
-				mMediaPlayer.release();
-				mMediaPlayer = null;
-				mHandler.removeMessages(HIDE_CONTROL_LAYOUT);
-			}
-//			finish();
+			removeMediaPlayer();
+			mHandler.removeMessages(HIDE_CONTROL_LAYOUT);
 			break;
 		case KeyEvent.KEYCODE_VOLUME_UP:
-			if(!mIsPushed) {
-				showControlLayout();
-				mRealSound = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-				if(mRealSound < mMaxSound) {
-					mRealSound ++;
-				}
-			} else {
+			if (LocalMediaUtil.getWhichOnRemote() == Defs.VIDEO) {
 				// set the message to TV to increase the volume
 				postSetVolume(VOLUME_UP);
 				return true;
+			} else {
+				showControlLayout();
 			}
-//			mMuteView.setBackgroundResource(R.drawable.btn_media_volume);
-//			mIsSilenced = false;
-//			if (mIsPushed) {
-//				postSetVolume((float) mRealSound / mMaxSound);
-//			}
 			break;
 		case KeyEvent.KEYCODE_VOLUME_DOWN:
-			if(!mIsPushed) {
-				showControlLayout();
-				mRealSound = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
-				if(mRealSound > 0) {
-					mRealSound --;
-				}
-				if(mRealSound == 0) {
-					Vibrator vib = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-					vib.vibrate(200);
-//					mMuteView.setBackgroundResource(R.drawable.btn_media_mute);
-//					mIsSilenced = true;
-				}
-			} else {
+			if (LocalMediaUtil.getWhichOnRemote() == Defs.VIDEO) {
 				// set the message to TV to decrease the volume
 				postSetVolume(VOLUME_DOWN);
 				return true;
+			} else {
+				showControlLayout();
 			}
-//			if (mIsPushed) {
-//				postSetVolume((float) mRealSound / mMaxSound);
-//			}
 			break;
 		}
 		return super.onKeyDown(keyCode, event);
@@ -909,28 +783,38 @@ public class VideoViewActivity extends BaseActivity implements OnClickListener, 
 			showControlLayout();
 			break;
 		case R.id.video_view_back:
-			if (mMediaPlayer != null) {
-				mMediaPlayer.stop();
-				mMediaPlayer.release();
-				mMediaPlayer = null;
-				mHandler.removeMessages(HIDE_CONTROL_LAYOUT);
-				finish();
-			}
+			removeMediaPlayer();
+			mHandler.removeMessages(HIDE_CONTROL_LAYOUT);
+			finish();
 			break;
 		case R.id.video_view_push:
-			getFriendlyNameOfRenderer();
+			// Connected equipment
+			if (LocalMediaUtil.getConnected()) {
+				// is in the push state now
+				if (LocalMediaUtil.getWhichOnRemote() == Defs.VIDEO) {
+					Dlog("push back to phone");
+					LocalMediaUtil.setWhichOnRemote(Defs.NOT_ANY_ONE);
+					if (!mWakeLock.isHeld()) {
+						mWakeLock.acquire();
+					}
+				} else {
+					// is not in the push state now
+					getFriendlyNameOfRenderer();
+					pushOutVideo();
+				}
+			} else {
+				// not connected equipment
+				Toast.makeText(this, R.string.video_not_connection_toast_message, Toast.LENGTH_SHORT).show();
+			}
 			break;
 		case R.id.video_view_prompt:
 		case R.id.video_view_surface:
-			if(mIsHideControlLayout) {
+			if (mIsHideControlLayout) {
 				showControlLayout();
 			} else {
 				hideControlLayout();
 			}
 			break;
-//		case R.id.video_view_mute:
-//			setMute();
-//			break;
 		case R.id.video_view_prev:
 			prevVideo();
 			break;

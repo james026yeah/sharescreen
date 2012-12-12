@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     
-    <archermind.dlna.mobile.VideoGridView
+    <archermind.dlna.mobile.VideoThumbnailGridView
         android:id="@+id/video_gridview"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"

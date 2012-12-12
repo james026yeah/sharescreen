@@ -237,6 +237,7 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 			if(null != mUIHandler)
 			{
 	    		mUIHandler.sendEmptyMessage(TypeDefs.MSG_DMR_AV_TRANS_STOP);
+	    		DLNAPlayer.mIsPlayCompletion = true;
 	    		return true;
 			}
 		} else if(actionName.equals(AVTransport.PLAY)) {
@@ -244,8 +245,10 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 			{
 				if(null != mUIHandler)
 				{
+					DLNAPlayer.mstartSeek = 0;
 	    		    mUIHandler.sendEmptyMessage(TypeDefs.MSG_DMR_AV_TRANS_PLAY);
-				    return true;
+	    		    DLNAPlayer.mIsPlayCompletion = false;
+	    		    return true;
 				}
 			}
 			else
@@ -299,6 +302,7 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 			    Log.d(TAG, "Seek uint:" + unit.getValue() + ", target:" + target.getValue());
 			    if(null != mUIHandler)
 			    {
+			    	DLNAPlayer.mstartSeek = msg.arg1;
 	    		    mUIHandler.sendMessage(msg);
 	    		    return true;
 			    }
@@ -315,12 +319,14 @@ public class RendererProcess extends HandlerThread implements ActionListener {
 		else if(actionName.equals(AVTransport.NEXT)) {			
 			if(null != mUIHandler)
 			{
+				DLNAPlayer.mstartSeek = 0;
 	    		mUIHandler.sendEmptyMessage(TypeDefs.MSG_DMR_AV_TRANS_PLAY);
 	    		return true;
 			}
 		} else if(actionName.equals(AVTransport.PREVIOUS)) {			
 			if(null != mUIHandler)
 			{
+				DLNAPlayer.mstartSeek = 0;
 	    		mUIHandler.sendEmptyMessage(TypeDefs.MSG_DMR_AV_TRANS_PLAY);
 	    		return true;
 			}

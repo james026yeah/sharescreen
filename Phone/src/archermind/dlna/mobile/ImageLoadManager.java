@@ -1,8 +1,9 @@
 package archermind.dlna.mobile;
 
-import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -20,18 +21,31 @@ public class ImageLoadManager {
 	private static final int IMAGE_FULL = ImageTag.IMAGE_FULL;
 	private static final int VIDEO_THUMBNAIL = ImageTag.VIDEO_THUMBNAIL;
 	
-	private static Map<String, SoftReference<Bitmap>> mBitmaps;
+	private static Map<String, WeakReference<Bitmap>> mBitmaps = new HashMap<String, WeakReference<Bitmap>>();
 	
 	private int mScreenWidth;
 	private int mScreenHeight;
 
 	public ImageLoadManager() {
-		if(mBitmaps != null) {
-			mBitmaps = null;
-			mScreenWidth = 0;
-			mScreenHeight = 0;
+		clearBitmaps();
+	}
+	
+	public void clearBitmaps() {
+		if(!mBitmaps.isEmpty()) {
+			Set<String> set= mBitmaps.keySet();
+			for(String path : set) {
+				mBitmaps.put(path, null);
+			}
+			mBitmaps.clear();
 		}
-		mBitmaps = new HashMap<String, SoftReference<Bitmap>>();
+	}
+	
+	public void setScreenWidth(int width) {
+		mScreenWidth = width;
+	}
+	
+	public void setScreenHeight(int height) {
+		mScreenHeight = height;
 	}
 	
 	public BitmapDrawable loadImage(ImageView target) {
@@ -40,14 +54,9 @@ public class ImageLoadManager {
 		String path = tag.getFilePath();
 		int type = tag.getType();
 		
-		if(mScreenWidth == 0 || mScreenHeight == 0) {
-			mScreenWidth = tag.getScreenWidth();
-			mScreenHeight = tag.getScreenHeight();
-		}
-
 		if (IMAGE_THUMBNAIL == type || VIDEO_THUMBNAIL == type) {
 			if (mBitmaps.containsKey(path)) {
-				SoftReference<Bitmap> temp = mBitmaps.get(path);
+				WeakReference<Bitmap> temp = mBitmaps.get(path);
 				if (temp != null) {
 					if (temp.get() != null) {
 						target.setBackgroundDrawable(new BitmapDrawable(temp.get()));
@@ -78,7 +87,7 @@ public class ImageLoadManager {
 		
 		@Override
 		protected void onPostExecute(Bitmap result) {
-			mBitmaps.put(mTag.getFilePath(), new SoftReference<Bitmap>(result));
+			mBitmaps.put(mTag.getFilePath(), new WeakReference<Bitmap>(result));
 			if(mTag.equals(mImageView.getTag())) {
 				if (IMAGE_THUMBNAIL == mTag.getType() || VIDEO_THUMBNAIL == mTag.getType()) {
 					mImageView.setBackgroundDrawable(new BitmapDrawable(result));
@@ -94,62 +103,33 @@ public class ImageLoadManager {
 	private Bitmap createBitmap(ImageTag tag) {
 		Bitmap bitmap = null;
 		String thumbnailPath = tag.getThumbnailPath();
-		if (thumbnailPath != null) {
-			bitmap = createThumbnail(tag);
-			if(bitmap != null) {
-				return bitmap;
-			}
-		}
 		int type = tag.getType();
 		switch(type) {
 		case IMAGE_THUMBNAIL:
-			bitmap = compressPictures(tag.getFilePath(), IMAGE_THUMBNAIL);
+			if (thumbnailPath != null) {
+				bitmap = compressPictures(thumbnailPath, type);
+				if(bitmap != null) {
+					return bitmap;
+				}
+			}
+			bitmap = compressPictures(tag.getFilePath(), type);
+			break;
+		case VIDEO_THUMBNAIL:
+			if (thumbnailPath != null) {
+				bitmap = compressPictures(thumbnailPath, type);
+				if(bitmap != null) {
+					return bitmap;
+				}
+			}
+			bitmap = ThumbnailUtils.createVideoThumbnail(tag.getFilePath(), Thumbnails.MICRO_KIND);
 			break;
 		case IMAGE_FULL:
 			bitmap = createImageFull(tag);
-			break;
-		case VIDEO_THUMBNAIL:
-			bitmap = ThumbnailUtils.createVideoThumbnail(tag.getFilePath(), Thumbnails.MICRO_KIND);
 			break;
 		}
 		return bitmap;
 	}
 
-	
-	private Bitmap createThumbnail(ImageTag tag) {
-		Bitmap bitmap = null;
-		BitmapFactory.Options options = new BitmapFactory.Options();
-		
-		if(VIDEO_THUMBNAIL == tag.getType()) {
-			bitmap = compressPictures(tag.getThumbnailPath(), VIDEO_THUMBNAIL);
-		} else {
-			bitmap = BitmapFactory.decodeFile(tag.getThumbnailPath(), options);
-		}
-		
-		if(IMAGE_FULL == tag.getType()) {
-			if(bitmap != null) {
-				int width = bitmap.getWidth();
-				int height = bitmap.getHeight();
-				
-				Matrix matrix = new Matrix();
-				if(tag.getScale() == 0) {
-					matrix.setScale(1.0f, 1.0f);
-				} else {
-					matrix.setScale(tag.getScale(), tag.getScale());
-				}
-				bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
-				
-				width = bitmap.getWidth();
-				height = bitmap.getHeight();
-				
-				matrix = new Matrix();
-				matrix.setRotate(tag.getRotateValue());
-				bitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height, matrix, true);
-			}
-		}
-		return bitmap;
-	}
-	
 	
 	private Bitmap compressPictures(String path, int type) {
 		Bitmap bitmap = null;
@@ -191,14 +171,14 @@ public class ImageLoadManager {
 			Matrix matrix = new Matrix();
 
 			if (tag.getScale() == 0) {
-				if (width > tag.getScreenWidth() || height > tag.getScreenHeight()) {
+				if (width > mScreenWidth || height > mScreenHeight) {
 					tag.setIsBigImage(true);
 					tag.setMaxScale(3.0f);
 					tag.setMinScale(1.0f);
 					tag.setScale(1.0f);
 				} else {
-					float scaleWidth = (float) tag.getScreenWidth() / (float) width;
-					float scaleHeight = (float) tag.getScreenHeight() / (float) height;
+					float scaleWidth = (float) mScreenWidth / (float) width;
+					float scaleHeight = (float) mScreenHeight / (float) height;
 					tag.setIsBigImage(false);
 					tag.setMaxScale(Math.min(scaleWidth, scaleHeight));
 					tag.setMinScale(1.0f);

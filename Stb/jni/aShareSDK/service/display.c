@@ -129,7 +129,7 @@ int display_info_init(struct display_info *di)
 	 * initialize fb_pre_offset != yoffset
 	 */	
 	di->fb_pre_offset = !di->vi.yoffset;
-	di->quality = QUALITY_LEVEL3;
+	di->quality = QUALITY_LEVEL1;
 	LOG_D("--------------------------------\n  width : %8d\n  height: %8d\n  bpp   : %8d\n	R(%2d, %2d)\n	G(%2d, %2d)\n	B(%2d, %2d)\n	A(%2d, %2d)\n"
 			"  yoffset=%d\n"
 			"  xoffset=%d\n"

@@ -14,9 +14,6 @@ public class ImageTag {
 	private float mScale;
 	private boolean mIsBigImage;
 	private int mType;
-	private int mScreenWidth;
-	private int mScreenHeight;
-	private int mPosition;
 
 	//set methods
 	
@@ -52,17 +49,6 @@ public class ImageTag {
 		mType = type;
 	}
 	
-	public void setScreenWidth(int width) {
-		mScreenWidth = width;
-	}
-	
-	public void setScreenHeigh(int height) {
-		mScreenHeight = height;
-	}
-	
-	public void setPosition(int position) {
-		mPosition = position;
-	}
 	
 	//get methods
 	
@@ -96,18 +82,6 @@ public class ImageTag {
 	
 	public int getType() {
 		return mType;
-	}
-	
-	public int getScreenWidth() {
-		return mScreenWidth;
-	}
-	
-	public int getScreenHeight() {
-		return mScreenHeight;
-	}
-	
-	public int getPosition() {
-		return mPosition;
 	}
 	
 }

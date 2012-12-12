@@ -14,43 +14,75 @@
         android:layout_gravity="center_vertical"
         android:src="@drawable/icon_music"/>
     
-    <LinearLayout 
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="vertical"
         android:paddingLeft="15dip"
-        android:paddingRight="15dip"
-        android:orientation="vertical" >
-         
-        <TextView 
-            android:id="@+id/title_main"
+        android:paddingRight="15dip" >
+
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="5dip"
-            android:textAppearance="@style/MusicListTextAppearanceFirst"
-            android:singleLine="true"
-            android:ellipsize="marquee"/>
-        
-        <LinearLayout android:layout_width="match_parent"
+            android:layout_marginBottom="5dip" >
+
+            <TextView
+                android:id="@+id/title_main"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="5dip"
+                android:layout_toLeftOf="@+id/list_play_status"
+                android:ellipsize="marquee"
+                android:singleLine="true"
+                android:textAppearance="@style/MusicListTextAppearanceFirst" />
+
+            <FrameLayout
+                android:id="@+id/list_play_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:layout_alignParentRight="true" >
+
+                <ImageView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="@string/app_name"
+                    android:src="@drawable/music_list_play_inner" />
+                <ImageView
+                    android:id="@+id/list_play_status_around"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="@string/app_name"
+                    android:src="@drawable/music_list_play_around" />
+            </FrameLayout>
+
+        </RelativeLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <TextView 
+            android:orientation="horizontal" >
+
+            <TextView
                 android:id="@+id/title_sec"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:singleLine="true"
                 android:gravity="left|center_vertical"
-                android:textAppearance="@style/MusicListTextAppearanceSecond"/>
-            <TextView 
+                android:singleLine="true"
+                android:textAppearance="@style/MusicListTextAppearanceSecond" />
+
+            <TextView
                 android:id="@+id/detail"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:singleLine="true"
                 android:gravity="right|center_vertical"
-                android:textAppearance="@style/MusicListTextAppearanceSecond"/>
+                android:singleLine="true"
+                android:textAppearance="@style/MusicListTextAppearanceSecond" />
         </LinearLayout>
     </LinearLayout>
+
     <ImageView 
         android:contentDescription="@string/app_name"
         android:layout_width="match_parent"

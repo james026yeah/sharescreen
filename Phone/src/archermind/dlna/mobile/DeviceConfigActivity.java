@@ -67,6 +67,8 @@ public class DeviceConfigActivity extends BaseActivity {
 	private TextView mTitle;
 	private ImageView mLeftTopBtn;
 	
+	private TextView mSSID;
+	
 	private boolean mPaused = false;
 
 	private AdapterView.OnItemClickListener mItemClickListener = new OnItemClickListener() {
@@ -77,6 +79,7 @@ public class DeviceConfigActivity extends BaseActivity {
 				Log.d(TAG, "Show password input dialog: ");
 				mTargetAP = mScanResult.get(position);
 				showDialog(DIALOG_SSID_AND_PWD);
+				mSSID.setText("SSID: " + mTargetAP.SSID);
 			} else {
 				Log.d(TAG, "Connect to render: "
 						+ mDeviceList.get(position).mDevName);
@@ -302,8 +305,8 @@ public class DeviceConfigActivity extends BaseActivity {
 					R.layout.dialog_ssid_and_pwd, null);
 			dialog.setContentView(dlgContent);
 
-			TextView ssid = (TextView) dlgContent.findViewById(R.id.item_ssid);
-			ssid.setText("SSID: " + mTargetAP.SSID);
+			mSSID = (TextView) dlgContent.findViewById(R.id.item_ssid);
+			mSSID.setText("SSID: " + mTargetAP.SSID);
 
 			final EditText pwd = (EditText) dialog.findViewById(R.id.item_pwd);
 			TextView send = (TextView) dlgContent.findViewById(R.id.item_ok);

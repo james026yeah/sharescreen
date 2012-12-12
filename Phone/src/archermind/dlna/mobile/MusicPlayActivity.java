@@ -12,7 +12,6 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -38,11 +37,9 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 	private String TAG = "MusicPlayActivity";
 	private TextView mArtistTextView;
 	private TextView mTitleTextView;
-	private IMusicPlayService mMusicPlaySer = null;
+	private IMusicPlayService mMusicPlayService = null;
 	private SeekBar mMusicProgress;
-//	private AudioManager audioManager;
-//	private int currentVolume, maxVolume;
-	private static boolean mIsPlayOnLocal = true;
+//	private static boolean mIsPlayOnLocal = true;
 	private ImageButton mPostButton;
 	private ImageButton mStatusButton;
 	private TextView mDuration;
@@ -59,10 +56,7 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 	public static final int TIME_SECOND = 1000;
 	public static final int TIME_MINUTE = TIME_SECOND * 60;
 	public static final int TIME_HOUR = TIME_MINUTE * 60;
-	public static final float VOLUME_UP = 1f;
-	public static final float VOLUME_DOWN = -1f;
 	
-	public static int NOT_ANY_ONE = -1;
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -79,10 +73,6 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 		mRepeat = (ImageButton) findViewById(R.id.repeat);
 		mMusicImg = (ImageView) findViewById(R.id.musicimg);
 		mPostButton = (ImageButton) findViewById(R.id.post);
-//		audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-
-//		maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-//		currentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
 		
 
 		IntentFilter filter = new IntentFilter();
@@ -120,6 +110,7 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 	protected void onGetFriendlyName(String friendlyName) {
 		if (friendlyName != null) {
 			mIsDLNAConnected = true;
+			LocalMediaUtil.setConnected(true);
 		}
 	};
 
@@ -128,67 +119,33 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 			switch (msg.what) {
 			case 0:
 				try {
-					mMusicProgress.setMax((int) mMusicPlaySer.duration());
-					mMusicProgress.setProgress((int) mMusicPlaySer.position());
-					mNowPosition.setText(setDurationFormat((int) mMusicPlaySer.position()));
+					updateMusicInfo();
+					mNowPosition.setText(setDurationFormat((int) mMusicPlayService.position()));
+					mMusicProgress.setProgress((int) mMusicPlayService.position());
 					mRepeat.setOnClickListener(new RepeatBtnClickListener());
 					mShuffle.setOnClickListener(new ShuffleBtnClickListener());
 					mPostButton.setOnClickListener(new PostBtnListener());
-					mArtistTextView.setText(mMusicPlaySer.getArtistName());
-					mTitleTextView.setText(mMusicPlaySer.getTrackName());
-					mDuration.setText(setDurationFormat((int) mMusicPlaySer.duration()));
-					if (mMusicPlaySer.isPlaying()) {
+					if (mMusicPlayService.isPlaying()) {
 						mStatusButton.setImageResource(R.drawable.video_btn_pause);
 					} else {
 						mStatusButton.setImageResource(R.drawable.video_btn_start);
 					}
-					if (mMusicPlaySer.getShuffleMode()) {
+					if (mMusicPlayService.getShuffleMode()) {
 						mShuffle.setBackgroundResource(R.drawable.music_bth_shuffle_play_normal);
 					} else {
 						mShuffle.setBackgroundResource(R.drawable.music_bth_shuffle_play_closed_normal);
 					}
-					if (mMusicPlaySer.getRepeatMode() == 0) {
+					if (mMusicPlayService.getRepeatMode() == 0) {
 						mRepeat.setBackgroundResource(R.drawable.music_bth_list_normal);
-					} else if (mMusicPlaySer.getRepeatMode() == 1) {
+					} else if (mMusicPlayService.getRepeatMode() == 1) {
 						mRepeat.setBackgroundResource(R.drawable.music_bth_single_cycle_normal);
-						mMusicPlaySer.setShuffleMode(false);
+						mMusicPlayService.setShuffleMode(false);
 						mShuffle.setBackgroundResource(R.drawable.music_bth_shuffle_play_closed_normal);
-					} else if (mMusicPlaySer.getRepeatMode() == 2) {
+					} else if (mMusicPlayService.getRepeatMode() == 2) {
 						mRepeat.setBackgroundResource(R.drawable.music_bth_repeat_play_normal);
 					}
-					mMusicProgress.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-						
-						@Override
-						public void onStopTrackingTouch(SeekBar seekBar) {
-							if (!mIsPlayOnLocal) {
-								postSeek(mRemoteSeekPosition + "");
-							}
-							mSeekBarTouchMode = false;
-						}
-						
-						@Override
-						public void onStartTrackingTouch(SeekBar seekBar) {
-							mSeekBarTouchMode = true;
-						}
-						
-						@Override
-						public void onProgressChanged(SeekBar seekBar, int progress,boolean fromUser) {
-							if (!mIsPlayOnLocal) {
-								if (mSeekBarTouchMode) {
-									mRemoteSeekPosition = progress;
-								}
-							} else {
-								if (mSeekBarTouchMode) {
-									try {
-										mMusicPlaySer.seekTo(progress);
-									} catch (RemoteException e) {
-										e.printStackTrace();
-									}
-								}
-							}
-						}
-					});
-					if (!mIsPlayOnLocal) {
+					mMusicProgress.setOnSeekBarChangeListener(new MusicProgressChangeListener());
+					if (LocalMediaUtil.getWhichOnRemote() == LocalMediaUtil.Defs.MUSIC) {
 						postGetPositionInfo();
 						if (!mIsOnRemotePause) {
 							mStatusButton.setImageResource(R.drawable.video_btn_pause);
@@ -200,11 +157,11 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 				break;
 
 			case 1:
-				if (mIsPlayOnLocal) {
+				if (LocalMediaUtil.getWhichOnRemote() != LocalMediaUtil.Defs.MUSIC) {
 					try {
-						mMusicProgress.setProgress((int) mMusicPlaySer.position());
-						mNowPosition.setText(setDurationFormat((int) mMusicPlaySer.position()));
-						if (mMusicPlaySer.isPlaying()) {
+						mMusicProgress.setProgress((int) mMusicPlayService.position());
+						if (mMusicPlayService.isPlaying()) {
+							mNowPosition.setText(setDurationFormat((int) mMusicPlayService.position()));
 							mNowPosition.setVisibility(View.VISIBLE);
 		                } else {
 		                    int vis = mNowPosition.getVisibility();
@@ -220,6 +177,7 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 			}
 		};
 	};
+	
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
@@ -227,15 +185,14 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 		unregisterReceiver(mReceiver);
 	}
 
-
 	private ServiceConnection mMusicSerConn = new ServiceConnection() {
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
-			mMusicPlaySer = null;
+			mMusicPlayService = null;
 		}
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
-			mMusicPlaySer = IMusicPlayService.Stub.asInterface(service);
+			mMusicPlayService = IMusicPlayService.Stub.asInterface(service);
 		}
 	};
 
@@ -243,14 +200,14 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_VOLUME_UP:
-			if (!mIsPlayOnLocal) {
+			if (LocalMediaUtil.getWhichOnRemote() == LocalMediaUtil.Defs.MUSIC) {
 				postSetVolume(MusicUtils.Defs.VOLUME_UP);
 				return true;
 			}
 			break;
 
 		case KeyEvent.KEYCODE_VOLUME_DOWN:
-			if (!mIsPlayOnLocal) {
+			if (LocalMediaUtil.getWhichOnRemote() == LocalMediaUtil.Defs.MUSIC) {
 				postSetVolume(MusicUtils.Defs.VOLUME_DOWN);
 				return true;
 			}
@@ -271,9 +228,7 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 	public void doClick(View view) throws RemoteException {
 		switch (view.getId()) {
 		case R.id.pause_play:
-			if (mIsPlayOnLocal) {
-				mMusicPlaySer.pauseButtonPressed();
-			} else {
+			if (LocalMediaUtil.getWhichOnRemote() == LocalMediaUtil.Defs.MUSIC) {
 				if (mIsOnRemotePause) {
 					postPauseToPlay();
 					mStatusButton.setImageResource(R.drawable.video_btn_pause);
@@ -283,50 +238,53 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 					mStatusButton.setImageResource(R.drawable.video_btn_start);
 					mIsOnRemotePause = true;
 				}
+			} else {
+				mMusicPlayService.pauseButtonPressed();
 			}
 			break;
 		case R.id.stop:
-			if (mIsPlayOnLocal) {
-				mMusicPlaySer.stop();
-				mMusicPlaySer.setInitialed(false);
-			} else {
+			if (LocalMediaUtil.getWhichOnRemote() == LocalMediaUtil.Defs.MUSIC) {
 				poststop();
-				mIsPlayOnLocal = true;
+				LocalMediaUtil.setWhichOnRemote(LocalMediaUtil.Defs.NOT_ANY_ONE);
+//				mIsPlayOnLocal = true;
 				mIsOnRemotePause = true;
-				mMusicPlaySer.setPlayOnPhone(true);
 			}
+			mMusicPlayService.stop();
+			mMusicPlayService.setInitialed(false);
 			finish();
 			overridePendingTransition(R.anim.push_left_in, R.anim.push_right_out);
 			break;
 		case R.id.next:
-			mMusicPlaySer.next();
-			if (!mIsPlayOnLocal) {
+			mMusicPlayService.next();
+			updateMusicInfo();
+			if (LocalMediaUtil.getWhichOnRemote() == LocalMediaUtil.Defs.MUSIC) {
 				MusicItem music = MusicData.getNowPlayingMusic();
-				mMusicPlaySer.pause();
-				mMusicProgress.setMax((int) mMusicPlaySer.duration());
-				mArtistTextView.setText(music.getArtist());
-				mTitleTextView.setText(music.getTitle());
-				mDuration.setText(setDurationFormat(Integer.parseInt(music.getDuration())));
+				mMusicPlayService.pause();
+//				mMusicProgress.setMax((int) mMusicPlayService.duration());
+//				mArtistTextView.setText(music.getArtist());
+//				mTitleTextView.setText(music.getTitle());
+//				mDuration.setText(setDurationFormat(Integer.parseInt(music.getDuration())));
 				postNext(music.getItemUri(),music.metaData);
-			} else if (mIsPlayOnLocal) {
-				if (mMusicPlaySer.getPreparedStatus()) {
-					mMusicPlaySer.play();
+			} else {
+				if (mMusicPlayService.getPreparedStatus()) {
+					mMusicPlayService.play();
 				}
 			}
 			break;
 		case R.id.prev:
-			mMusicPlaySer.prev();
-			if (!mIsPlayOnLocal) {
+			mMusicPlayService.prev();
+			updateMusicInfo();
+			if (LocalMediaUtil.getWhichOnRemote() == LocalMediaUtil.Defs.MUSIC) {
 				MusicItem music = MusicData.getNowPlayingMusic();
-				mMusicPlaySer.pause();
-				mMusicProgress.setMax((int) mMusicPlaySer.duration());
-				mArtistTextView.setText(music.getArtist());
-				mTitleTextView.setText(music.getTitle());
-				mDuration.setText(setDurationFormat(Integer.parseInt(music.getDuration())));
+				mMusicPlayService.pause();
+//				mMusicProgress.setMax((int) mMusicPlayService.duration());
+//				mArtistTextView.setText(music.getArtist());
+//				mTitleTextView.setText(music.getTitle());
+//				mDuration.setText(setDurationFormat(Integer.parseInt(music.getDuration())));
 				postNext(music.getItemUri(),music.metaData);
-			} else if (mIsPlayOnLocal) {
-				if (mMusicPlaySer.getPreparedStatus()) {
-					mMusicPlaySer.play();
+			} else {
+				if (mMusicPlayService.getPreparedStatus()) {
+					mMusicPlayService.play();
 				}
 			}
 			break;
@@ -358,8 +316,9 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 		if (obj) {
 			mPostButton.setClickable(true);
 			try {
-				mMusicPlaySer.pause();
-				mIsPlayOnLocal = false;
+				mStatusButton.setImageResource(R.drawable.video_btn_pause);
+				mMusicPlayService.pause();
+//				mIsPlayOnLocal = false;
 				postGetPositionInfo();
 			} catch (RemoteException e) {
 				e.printStackTrace();
@@ -373,21 +332,21 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 		if (obj != null) {
 			int positionInt = (int) fromDateStringToInt((String) obj.get("relTime"));
 			mRemotePlayPosition = positionInt;
-			if (!mSeekBarTouchMode && !mIsPlayOnLocal) {
-				mMusicProgress.setProgress(positionInt);
+			if (!mSeekBarTouchMode && (LocalMediaUtil.getWhichOnRemote() == LocalMediaUtil.Defs.MUSIC)) {
 				mNowPosition.setText(setDurationFormat(positionInt));
+				mMusicProgress.setProgress(positionInt);
 				postGetPositionInfo();
 			}
 		} else {
-			mIsPlayOnLocal = true;
+//			mIsPlayOnLocal = true;
 			try {
-				mMusicPlaySer.setPlayOnPhone(true);
-				mMusicPlaySer.seekTo(mRemotePlayPosition);
+//				mMusicPlayService.setPlayOnPhone(true);
+				mMusicPlayService.seekTo(mRemotePlayPosition);
 			} catch (RemoteException e) {
 				e.printStackTrace();
 			}
 			try {
-				if (mMusicPlaySer.isPlaying()) {
+				if (mMusicPlayService.isPlaying()) {
 					mStatusButton.setImageResource(R.drawable.video_btn_pause);
 				} else {
 					mStatusButton.setImageResource(R.drawable.video_btn_start);
@@ -429,20 +388,24 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 		}
 	}
 	
+	public void updateMusicInfo() {
+		MusicItem music = MusicData.getNowPlayingMusic();
+		mArtistTextView.setText(music.getArtist());
+		mTitleTextView.setText(music.getTitle());
+		mDuration.setText(setDurationFormat(Integer.parseInt(music.getDuration())));
+		mMusicProgress.setMax(Integer.parseInt(music.getDuration()));
+		setMusicImg();
+	}
+	
 	private BroadcastReceiver mReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			if (mIsPlayOnLocal) {
-				MusicItem music = MusicData.getNowPlayingMusic();
+			if (LocalMediaUtil.getWhichOnRemote() != LocalMediaUtil.Defs.MUSIC) {
 				try {
-					mMusicProgress.setMax((int) mMusicPlaySer.duration());
-					mMusicProgress.setProgress((int) mMusicPlaySer.position());
-					if (mMusicPlaySer.isPlaying()) {
-						mArtistTextView.setText(music.getArtist());
-						mTitleTextView.setText(music.getTitle());
-						mDuration.setText(setDurationFormat((int) mMusicPlaySer.duration()));
+					mMusicProgress.setProgress((int) mMusicPlayService.position());
+					if (mMusicPlayService.isPlaying()) {
+						updateMusicInfo();
 						mStatusButton.setImageResource(R.drawable.video_btn_pause);
-						setMusicImg();
 					} else {
 						mStatusButton.setImageResource(R.drawable.video_btn_start);
 					}
@@ -480,35 +443,35 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 		@Override
 		public void onClick(View v) {
 			if (mIsDLNAConnected) {
-				if (mIsPlayOnLocal) {
+				if (LocalMediaUtil.getWhichOnRemote() != LocalMediaUtil.Defs.MUSIC) {
 					MusicItem music = MusicData.getNowPlayingMusic();
 					try {
 						   LocalMediaUtil.setWhichOnRemote(LocalMediaUtil.Defs.MUSIC);
 							mPostButton.setClickable(false);
-							mMusicPlaySer.pause();
-							mMusicPlaySer.setPlayOnPhone(false);
-							mIsPlayOnLocal = false;
+							mMusicPlayService.pause();
+//							mMusicPlayService.setPlayOnPhone(false);
+//							mIsPlayOnLocal = false;
 							mIsOnRemotePause = false;
-							postPlay(music.getItemUri(),music.metaData);
+							mMusicPlayService.postToRemote();
 							Log.e(TAG,music.getItemUri());
-							postSeek(mMusicPlaySer.position() + "");
-							Log.d(TAG, "isPlayOnPhone" + mIsPlayOnLocal);
+							postSeek(mMusicPlayService.position() + "");
+//							Log.d(TAG, "isPlayOnPhone" + mIsPlayOnLocal);
 					} catch (RemoteException e) {
 						e.printStackTrace();
 					}
 				} else {
-					mIsPlayOnLocal = true;
+//					mIsPlayOnLocal = true;
 					poststop();
 					LocalMediaUtil.setWhichOnRemote(LocalMediaUtil.Defs.NOT_ANY_ONE);
 					try {
-						mMusicPlaySer.setPlayOnPhone(true);
-						mMusicPlaySer.play();
-						mMusicPlaySer.seekTo(mRemotePlayPosition);
+//						mMusicPlayService.setPlayOnPhone(true);
+						mMusicPlayService.play();
+						mMusicPlayService.seekTo(mRemotePlayPosition);
 					} catch (RemoteException e) {
 						e.printStackTrace();
 					}
 					try {
-						if (mMusicPlaySer.isPlaying()) {
+						if (mMusicPlayService.isPlaying()) {
 							mStatusButton.setImageResource(R.drawable.video_btn_pause);
 						} else {
 							mStatusButton.setImageResource(R.drawable.video_btn_start);
@@ -527,12 +490,12 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 		@Override
 		public void onClick(View v) {
 			try {
-				if (mMusicPlaySer.getShuffleMode()) {
-					mMusicPlaySer.setShuffleMode(false);
+				if (mMusicPlayService.getShuffleMode()) {
+					mMusicPlayService.setShuffleMode(false);
 					mShuffle.setBackgroundResource(R.drawable.music_bth_shuffle_play_closed_normal);
 					Toast.makeText(getApplicationContext(), R.string.shuffle_close, Toast.LENGTH_SHORT).show();
 				} else {
-					mMusicPlaySer.setShuffleMode(true);
+					mMusicPlayService.setShuffleMode(true);
 					mShuffle.setBackgroundResource(R.drawable.music_bth_shuffle_play_normal);
 					Toast.makeText(getApplicationContext(), R.string.shuffle_open, Toast.LENGTH_SHORT).show();
 				}
@@ -542,20 +505,53 @@ public class MusicPlayActivity extends BaseActivity implements Runnable {
 		}
 	}
 	
+	class MusicProgressChangeListener implements OnSeekBarChangeListener {
+		@Override
+		public void onStopTrackingTouch(SeekBar seekBar) {
+			if (LocalMediaUtil.getWhichOnRemote() == LocalMediaUtil.Defs.MUSIC) {
+				postSeek(mRemoteSeekPosition + "");
+				Log.e("james","postSeekto" + mRemoteSeekPosition);
+			}
+			mSeekBarTouchMode = false;
+		}
+		
+		@Override
+		public void onStartTrackingTouch(SeekBar seekBar) {
+			mSeekBarTouchMode = true;
+		}
+		
+		@Override
+		public void onProgressChanged(SeekBar seekBar, int progress,boolean fromUser) {
+			if (LocalMediaUtil.getWhichOnRemote() == LocalMediaUtil.Defs.MUSIC) {
+				if (mSeekBarTouchMode) {
+					mRemoteSeekPosition = progress;
+				}
+			} else {
+				if (mSeekBarTouchMode) {
+					try {
+						mMusicPlayService.seekTo(progress);
+					} catch (RemoteException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+	}
+	
 	class RepeatBtnClickListener implements OnClickListener {
 		@Override
 		public void onClick(View v) {
 			try {
-				mMusicPlaySer.setRepeatMode((mMusicPlaySer.getRepeatMode()+1)%3);
-				if (mMusicPlaySer.getRepeatMode() == 0) {
+				mMusicPlayService.setRepeatMode((mMusicPlayService.getRepeatMode()+1)%3);
+				if (mMusicPlayService.getRepeatMode() == 0) {
 					mRepeat.setBackgroundResource(R.drawable.music_bth_list_normal);
 					Toast.makeText(getApplicationContext(), R.string.list_normal, Toast.LENGTH_SHORT).show();
-				} else if (mMusicPlaySer.getRepeatMode() == 1) {
+				} else if (mMusicPlayService.getRepeatMode() == 1) {
 					mRepeat.setBackgroundResource(R.drawable.music_bth_single_cycle_normal);
 					Toast.makeText(getApplicationContext(), R.string.single_cycle, Toast.LENGTH_SHORT).show();
-					mMusicPlaySer.setShuffleMode(false);
+					mMusicPlayService.setShuffleMode(false);
 					mShuffle.setBackgroundResource(R.drawable.music_bth_shuffle_play_closed_normal);
-				} else if (mMusicPlaySer.getRepeatMode() == 2) {
+				} else if (mMusicPlayService.getRepeatMode() == 2) {
 					mRepeat.setBackgroundResource(R.drawable.music_bth_repeat_play_normal);
 					Toast.makeText(getApplicationContext(), R.string.list_cycle, Toast.LENGTH_SHORT).show();
 				}

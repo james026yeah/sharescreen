@@ -10,19 +10,27 @@
         android:layout_height="wrap_content"
         android:background="@drawable/top_bar" >
 
-        <LinearLayout
+        <RelativeLayout
             android:id="@+id/image_thumbnail_back"
             android:layout_width="50dp"
             android:layout_height="40dp"
             android:layout_centerVertical="true"
-            android:gravity="center">
+            android:background="@drawable/image_right_top_bg_sel" >
 
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
                 android:background="@drawable/remote_btn_close_sel"
                 android:contentDescription="@string/app_name" />
-        </LinearLayout>
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentRight="true"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/music_top_bar_line" />
+        </RelativeLayout>
 
         <TextView
             android:id="@+id/image_thumbnail_name"
@@ -30,6 +38,9 @@
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
             android:textColor="#ffffff"
+            android:singleLine="true"
+            android:layout_marginLeft="55dp"
+            android:layout_marginRight="55dp"
             android:textSize="16sp"
             android:textStyle="bold" />
     </RelativeLayout>

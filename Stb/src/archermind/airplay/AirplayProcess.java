@@ -189,6 +189,7 @@ public class AirplayProcess extends HandlerThread {
     {
     	Log.v("EagleTag","Callback java function:"+Thread.currentThread().getStackTrace()[2].getMethodName());
     	Log.v("EagleTag","Callback java function:"+url+startPositon);
+    	mUIHandler.sendEmptyMessage(MSG_AIRPLAY_STOP);
     	setResourceUrl(url);
     	airplayPlay();
     	seekPosition((startPositon/100) * getTotalTime());

@@ -100,6 +100,7 @@ public class DLNAPlayer extends Activity {
 	public static long mTotalTime = 0;
 	public static long mCurrentPosition = 0;
 	public static boolean mIsPlayCompletion = true;
+	public static int mstartSeek = 0;
 
 	public static final int TIME_SECOND = 1000;
 	public static final int TIME_MINUTE = TIME_SECOND * 60;
@@ -254,6 +255,27 @@ public class DLNAPlayer extends Activity {
 		bind2RendererService();
 	}
 
+	@Override
+	protected void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
+		setIntent(intent);
+		Bundle data = intent.getExtras();
+		if (null != data) {
+			mUri = data.getString(TypeDefs.KEY_MEDIA_URI);
+			Log.d(TAG, "Media URI:" + mUri);
+			if (mUri.isEmpty()) {
+				finish();
+				return;
+			}
+		}
+		mMediaType = data.getInt(TypeDefs.KEY_MEDIA_TYPE);
+		if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO) {
+			mCurrAudioInfo = data.getParcelable(TypeDefs.KEY_CURR_MEDIA_INFO);
+			play(mUri);
+			initInfo();
+		}
+	}
+
 	private OnCompletionListener mAudioCompletionListener = new OnCompletionListener() {
 		public void onCompletion(android.media.MediaPlayer mp) {
 			stop();
@@ -306,6 +328,9 @@ public class DLNAPlayer extends Activity {
 		public void onPrepared(MediaPlayer mp) {
 			// TODO Auto-generated method stub
 			mp.start();
+			if(mstartSeek != 0)
+				seek(mstartSeek);
+			mstartSeek = 0;			
 			mIsPlayCompletion = false;
 		}
 	};
@@ -316,12 +341,16 @@ public class DLNAPlayer extends Activity {
 		public void onPrepared(MediaPlayer mp) {
 			// TODO Auto-generated method stub
 			mVPlayer.start();
+			if(mstartSeek != 0)
+				seek(mstartSeek);
+			mstartSeek = 0;	
 			mIsPlayCompletion = false;
 		}
 		
 	};
 
 	public void play(String url) {
+		mIsPlayCompletion = false;
 		if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO) {
 			try {
 				mMediaPlayer.reset();
@@ -375,8 +404,8 @@ public class DLNAPlayer extends Activity {
 	}
 
 	public void pause() {
-		mStartView.setVisibility(View.VISIBLE);
-		mPauseView.setVisibility(View.GONE);
+		mStartView.setVisibility(View.GONE);
+		mPauseView.setVisibility(View.VISIBLE);
 		show();
 		if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO) {
 			if (mMediaPlayer != null) {
@@ -416,7 +445,7 @@ public class DLNAPlayer extends Activity {
 
 	public void resume() {
 		mStartView.setVisibility(View.GONE);
-		mPauseView.setVisibility(View.VISIBLE);
+		mPauseView.setVisibility(View.GONE);
 		show();
 		if (mMediaType == TypeDefs.MEDIA_TYPE_DLNA_AUDIO) {
 			if (mMediaPlayer != null) {

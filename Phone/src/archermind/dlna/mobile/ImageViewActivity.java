@@ -49,8 +49,6 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 	
 	private static final int IMAGE_SETTINGS_REQUEST = 0;
 	
-	private static final float ROTATE_DEFAULT_VALUE = 0.0f;
-	
 	private static final float SCALE_IN_VALUE = 1.25f;
 	private static final float SCALE_OUT_VALUE = 0.8f;
 	
@@ -65,8 +63,8 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 	private LinearLayout mBottomLayout;
 
 	private LinearLayout mCoverView;
-	private LinearLayout mListView;
-	private LinearLayout mPushView;
+	private RelativeLayout mListView;
+	private RelativeLayout mPushView;
 	private TextView mNameView;
 	private LinearLayout mPrevView;
 	private LinearLayout mRotateLeftView;
@@ -111,18 +109,24 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 		mImageListMaxSize = sImageItemList.size();
 
 		setContentView(R.layout.local_media_image_view);
-
-		DisplayMetrics dm = new DisplayMetrics();
-		getWindowManager().getDefaultDisplay().getMetrics(dm);
-		mScreenWidth = dm.widthPixels;
-		mScreenHeight = dm.heightPixels;
+		getScreenWidth();
 		
 		mImageLoadManager = new ImageLoadManager();
+		mImageLoadManager.setScreenWidth(mScreenWidth);
+		mImageLoadManager.setScreenHeight(mScreenHeight);
 		
 		getSharedPreferenceValue();
 		initImageView();
 	}
 
+	
+	private void getScreenWidth() {
+		DisplayMetrics dm = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(dm);
+		mScreenWidth = dm.widthPixels;
+		mScreenHeight = dm.heightPixels;
+	}
+	
 	
 	@Override
 	protected void onServiceConnected() {
@@ -161,11 +165,11 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 
 		mTopLayout = (RelativeLayout) findViewById(R.id.image_view_top_layout);
 		mBottomLayout = (LinearLayout) findViewById(R.id.image_view_bottom_layout);
-		mTopLayout.getBackground().setAlpha(150);
-		mBottomLayout.getBackground().setAlpha(150);
+		mTopLayout.getBackground().setAlpha(180);
+		mBottomLayout.getBackground().setAlpha(180);
 
-		mListView = (LinearLayout) findViewById(R.id.image_view_list);
-		mPushView = (LinearLayout) findViewById(R.id.image_view_push);
+		mListView = (RelativeLayout) findViewById(R.id.image_view_list);
+		mPushView = (RelativeLayout) findViewById(R.id.image_view_push);
 		mNameView = (TextView) findViewById(R.id.image_view_name);
 		mPrevView = (LinearLayout) findViewById(R.id.image_view_prev);
 		mRotateLeftView = (LinearLayout) findViewById(R.id.image_view_rotate_left);
@@ -607,17 +611,14 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 					tag.setFilePath(filePath);
 					tag.setThumbnailPath(thumbnailPath);
 					tag.setType(ImageTag.IMAGE_FULL);
-					tag.setScreenWidth(mScreenWidth);
-					tag.setScreenHeigh(mScreenHeight);
-					tag.setPosition(mCurrentIndex);
-					if (width > tag.getScreenWidth() || height > tag.getScreenHeight()) {
+					if (width > mScreenWidth || height > mScreenHeight) {
 						tag.setIsBigImage(true);
 						tag.setMaxScale(3.0f);
 						tag.setMinScale(1.0f);
 						tag.setScale(1.0f);
 					} else {
-						float scaleWidth = (float) tag.getScreenWidth() / (float) width;
-						float scaleHeight = (float) tag.getScreenHeight() / (float) height;
+						float scaleWidth = (float) mScreenWidth / (float) width;
+						float scaleHeight = (float) mScreenHeight / (float) height;
 						tag.setIsBigImage(false);
 						tag.setMaxScale(Math.min(scaleWidth, scaleHeight));
 						tag.setMinScale(1.0f);
@@ -869,9 +870,6 @@ public class ImageViewActivity extends BaseActivity implements OnClickListener {
 				tag.setFilePath(filePath);
 				tag.setThumbnailPath(thumbnailPath);
 				tag.setType(ImageTag.IMAGE_FULL);
-				tag.setScreenWidth(mScreenWidth);
-				tag.setScreenHeigh(mScreenHeight);
-				tag.setPosition(position);
 				mImageTagMaps.put(position, tag);
 			}
 			

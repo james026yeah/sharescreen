@@ -3,7 +3,10 @@ package com.archermind.ashare.service;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+
+import org.cybergarage.upnp.std.av.renderer.AVTransport;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -20,7 +23,9 @@ import android.media.MediaPlayer.OnSeekCompleteListener;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.util.Log;
+import archermind.dlna.mobile.LocalMediaUtil;
 import archermind.dlna.mobile.MusicData;
+import archermind.dlna.mobile.MusicUtils;
 
 import com.archermind.ashare.dlna.localmedia.MusicItem;
 
@@ -30,7 +35,6 @@ public class MusicPlayService extends MusicService implements OnAudioFocusChange
 	private static MediaPlayer mMusicPlayer;
 	
 	private static boolean mIsSupposedToBePlaying = false;
-//	private static int MusicData.getNowPlayPositionInList() = -1;
 	private static boolean mIsPrepared = false;
 	private static boolean mIsPlayOnPhone = true;
 	private boolean mServiceInUse = false;
@@ -59,12 +63,15 @@ public class MusicPlayService extends MusicService implements OnAudioFocusChange
 			public void onCompletion(MediaPlayer mp) {
 				if (MusicData.getNowPlayPositionInList() != MusicData.getMusicPlayList().size() - 1) {
 					next();
-					if (mIsPlayOnPhone) {
+					if (LocalMediaUtil.getWhichOnRemote() != LocalMediaUtil.Defs.MUSIC) {
 						mp.start();
 					}
-					Intent intent = new Intent("statuschanged");
-					intent.putExtra("title", "from playFrom" + MusicData.getNowPlayPositionInList());
+					Intent intent = new Intent(MusicUtils.Defs.MUSIC_PLAY_ON_COMPLETE);
 					sendBroadcast(intent);
+					
+					Intent xintent = new Intent("statuschanged");
+					xintent.putExtra("title", "from playFrom" + MusicData.getNowPlayPositionInList());
+					sendBroadcast(xintent);
 				} else {
 					pause();
 				}
@@ -98,13 +105,6 @@ public class MusicPlayService extends MusicService implements OnAudioFocusChange
 		IntentFilter filter = new IntentFilter();
 		filter.addAction("com.archermind.exit");
 		registerReceiver(mReceiver, filter);
-	}
-
-	@Override
-	public void onDestroy() {
-		// TODO Auto-generated method stub
-		Log.e("james","service die");
-		super.onDestroy();
 	}
 
 	@Override
@@ -142,9 +142,6 @@ public class MusicPlayService extends MusicService implements OnAudioFocusChange
 	private void pause() {
 		mMusicPlayer.pause();
 		mIsSupposedToBePlaying = false;
-		Intent intent = new Intent("statuschanged");
-		intent.putExtra("title", "from playFrom" + MusicData.getNowPlayPositionInList());
-		sendBroadcast(intent);
 	}
 	
 	@Override
@@ -157,9 +154,12 @@ public class MusicPlayService extends MusicService implements OnAudioFocusChange
 		mMusicPlayer.stop();
 		mIsSupposedToBePlaying = false;
 		
-		Intent intent = new Intent("statuschanged");
-		intent.putExtra("title", "from playFrom" + MusicData.getNowPlayPositionInList());
+		Intent intent = new Intent(MusicUtils.Defs.MUSIC_STOP);
 		sendBroadcast(intent);
+		
+		Intent xintent = new Intent("statuschanged");
+		xintent.putExtra("title", "from playFrom" + MusicData.getNowPlayPositionInList());
+		sendBroadcast(xintent);
 	}
 	
 	private void seekTo(int position) {
@@ -178,6 +178,8 @@ public class MusicPlayService extends MusicService implements OnAudioFocusChange
 		Log.d(TAG,"MusicPlayService playFrom:" + i);
 		if (i >= 0 && i < MusicData.getMusicPlayList().size()){
 			mIsInitialed = true;
+			MusicData.setNowPlayPositionInList(i);
+			MusicData.setNowPlayingMusic(MusicData.getMusicPlayList().get(i));
 			mMusicPlayer.reset();
 			try {
 				mMusicPlayer.setDataSource(MusicData.getMusicPlayList().get(i).getFilePath());
@@ -190,8 +192,7 @@ public class MusicPlayService extends MusicService implements OnAudioFocusChange
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			MusicData.setNowPlayPositionInList(i);
-			MusicData.setNowPlayingMusic(MusicData.getMusicPlayList().get(i));
+			
 		} else if (mRepeatMode == 2) {
 			if (MusicData.getNowPlayPositionInList() == MusicData.getMusicPlayList().size() - 1){
 				playFrom(0);
@@ -216,9 +217,12 @@ public class MusicPlayService extends MusicService implements OnAudioFocusChange
 				playFrom(mRandom.nextInt(MusicData.getMusicPlayList().size()));
 			}
 		}
-		Intent intent = new Intent("statuschanged");
-		intent.putExtra("title", "from playFrom"+MusicData.getNowPlayPositionInList());
+		Intent intent = new Intent(MusicUtils.Defs.MUSIC_INFO_REFRESH);
 		sendBroadcast(intent);
+		
+		Intent xintent = new Intent("statuschanged");
+		xintent.putExtra("title", "from playFrom"+MusicData.getNowPlayPositionInList());
+		sendBroadcast(xintent);
 	}
 	
 	public void prev() {
@@ -234,9 +238,12 @@ public class MusicPlayService extends MusicService implements OnAudioFocusChange
 				playFrom(mRandom.nextInt(MusicData.getMusicPlayList().size()));
 			}
 		}
-		Intent intent = new Intent("statuschanged");
-		intent.putExtra("title", "from playFrom"+MusicData.getNowPlayPositionInList());
+		Intent intent = new Intent(MusicUtils.Defs.MUSIC_INFO_REFRESH);
 		sendBroadcast(intent);
+		
+		Intent xintent = new Intent("statuschanged");
+		xintent.putExtra("title", "from playFrom"+MusicData.getNowPlayPositionInList());
+		sendBroadcast(xintent);
 	}
 	
 	public boolean getShuffleMode() {
@@ -258,6 +265,24 @@ public class MusicPlayService extends MusicService implements OnAudioFocusChange
 	public void postToRemote() {
 		MusicItem music = MusicData.getNowPlayingMusic();
 		postPlay(music.getItemUri(),music.metaData);
+		postGetTransportInfo();
+	}
+	
+	@Override
+	public void onGettransinforesult(Map obj) {
+		Log.e("james","" + "onGettransinforesult" + obj.get("state"));
+		if (obj.get("state") != AVTransport.STOPPED) {
+//			postGetTransportInfo();
+		} else if (LocalMediaUtil.getWhichOnRemote() == LocalMediaUtil.Defs.MUSIC) {
+			
+		}
+//		if (obj.get("state") == AVTransport.STOPPED) {
+//			next();
+//			MusicItem music = MusicData.getNowPlayingMusic();
+//			postNext(music.getItemUri(), music.metaData);
+//		} else {
+//			postGetCurrentTranSportActions();
+//		}
 	}
 	
 	public String getTrackName() {
@@ -363,15 +388,6 @@ public class MusicPlayService extends MusicService implements OnAudioFocusChange
 		@Override
 		public void postToRemote(){
 			mService.get().postToRemote();
-		}
-		@Override
-		public void setPlayOnPhone(boolean onphone) {
-			mIsPlayOnPhone = onphone;
-		}
-
-		@Override
-		public boolean getPlayOnPhone() {
-			return mIsPlayOnPhone;
 		}
 
 		@Override
